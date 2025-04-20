@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { CompanyModal } from "./components/modals/companyModal"
 import { Dat_Company } from "./components/dat_company"
 import { useToggle } from "./hooks/useToggle"
+import { Prueba } from "./components/prueba"
 
 
 function App() {
@@ -13,9 +14,10 @@ function App() {
   const [isOpen, toggleModal] = useToggle(false);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter>    
       <div className="container mx-auto">
         <Routes>
+          <Route path="/prueba" element={<Prueba /> } />
           <Route path="/" element={<Navigate to="tasks" />} />
           <Route path="/tasks"
             element={
@@ -25,7 +27,7 @@ function App() {
         </Routes>
         {/* Renderiza el modal solo si está abierto */}
         {isOpen && <CompanyModal isOpen={isOpen} toggleModal={toggleModal} />}
-        <Toaster /> 
+        <Toaster />         
       </div>
     </BrowserRouter>
   )
