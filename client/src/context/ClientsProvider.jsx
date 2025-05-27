@@ -10,7 +10,7 @@ const ClientsContext = createContext();
 export const useApiClientsContext = () => {
   const context = useContext(ClientsContext);
   if (!context) {
-    throw new Error('useApiDataClientsContext debe usarse dentro de DataClientsProvider');
+    throw new Error('useApiDataClientsContext debe usarse dentro de ClientsProvider');
   }
   return context;
 };
@@ -49,5 +49,3 @@ export const ClientsProvider = ({ children }) => {
     </ClientsContext.Provider>
   );
 };
-
-export {  }

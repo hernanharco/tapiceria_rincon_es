@@ -10,7 +10,7 @@ const CompanyContext = createContext();
 export const useApiCompanyContext = () => {
   const context = useContext(CompanyContext);
   if (!context) {
-    throw new Error('useApiDataCompanyContext debe usarse dentro de DataCompanyProvider');
+    throw new Error('useApiDataCompanyContext debe usarse dentro de CompanyProvider');
   }
   return context;
 };
@@ -49,5 +49,3 @@ export const CompanyProvider = ({ children }) => {
     </CompanyContext.Provider>
   );
 };
-
-export {  }
