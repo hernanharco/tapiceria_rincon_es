@@ -1,16 +1,31 @@
+
+import useCompany from '../../hooks/useCompany';
+import useClients from '../../hooks/useClients';
+
 export function Document() {
+
+    const { empresas, loading, error } = useCompany();
+    const { clientes } = useClients();
+
+    if (loading) return <p>Cargando empresas...</p>;
+    if (error) return <p>Error cargando datos</p>;
+
+    // console.log("Datos desde useDataCompany:", empresas);
+    // console.log("Datos desde Clientes:", clientes);
+
     return (
         <div>
             {/* Datos del cliente */}
-            <p>Jenny Katerine Osorio Rueda</p>
-            <p>Gonzalez Abarca N 24</p>
-            <p>33400 Aviles</p>
-            <p>Tfno. 602573781</p>
-            <p>N.I.E. Y9509223W</p>
-            <p>
-                e-mail:{" "}
-                <a href="mailto:tapiceriarincon2@gmail.com">tapiceriarincon2@gmail.com</a>
-            </p>
+            {empresas.length > 0 && (
+                <>
+                    <p>{empresas[0].name}</p>
+                    <p>{empresas[0].address}</p>
+                    <p>{empresas[0].zip_code} {empresas[0].city}</p>
+                    <p>TFNO. {empresas[0].number}</p>
+                    <p>N.I.E: {empresas[0].cif}</p>
+                    <p>e-mail: {empresas[0].email}</p>
+                </>
+            )}
             <p>&nbsp;</p>
             <p>FACTURA</p>
             <p>&nbsp;</p>
@@ -25,12 +40,17 @@ export function Document() {
                             <p>Cod. Cliente</p>
                             <p>Observaciones</p>
                         </td>
+                        {/* Tabla de cliente */}
                         <td style={{ width: '7.79569%' }}>&nbsp;</td>
                         <td style={{ width: '51.6667%' }}>
-                            <p>Hospital de San Agustin</p>
-                            <p>Servicio de Salud del Principado de Asturias</p>
-                            <p>Camino de Heroes S/N</p>
-                            <p>33400 Aviles</p>
+                            {clientes.length > 0 && (
+                                <>
+                                    <p>{clientes[0].name}</p>
+                                    <p>{clientes[0].address}</p>
+                                    <p>{clientes[0].zip_code} {clientes[0].city}</p>
+                                    <p>TFNO. {clientes[0].number}</p>                                                                      
+                                </>
+                            )}                            
 
                             {/* Subtabla dentro de la celda */}
                             <table style={{ borderCollapse: 'collapse', width: '100%' }} border="1">
@@ -38,11 +58,11 @@ export function Document() {
                                     <tr>
                                         <td style={{ width: '33.3333%' }}>Asturias</td>
                                         <td style={{ width: '33.3333%' }}>NIF-CIF</td>
-                                        <td style={{ width: '33.3333%' }}>Q-8350064-E</td>
+                                        <td style={{ width: '33.3333%' }}>{clientes[0].cif}</td>
                                     </tr>
                                 </tbody>
                             </table>
-                        </td>
+                        </td> {/*termina tabla del cliente*/}
                     </tr>
                 </tbody>
             </table>

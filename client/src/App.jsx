@@ -1,15 +1,18 @@
 // src/App.jsx
 
 import { Document } from './components/document/document';
-import { DataCompanyProvider } from './context/DataCompanyProvider';
+import { CompanyProvider } from './context/CompanyProvider';
+import { ClientsProvider } from './context/ClientsProvider';
 
 function App() {
   return (
-    <DataCompanyProvider>
+    <CompanyProvider>
+    <ClientsProvider>
       <div className="App">
         <Document />
       </div>
-    </DataCompanyProvider>
+    </ClientsProvider>
+    </CompanyProvider>
   );
 }
 

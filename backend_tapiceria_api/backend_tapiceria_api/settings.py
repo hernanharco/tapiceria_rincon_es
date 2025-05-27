@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'drf_spectacular',  # Para la documentación Swagger
     'corsheaders',  # Para permitir CORS (Cross-Origin Resource Sharing)
+    'drf_spectacular',  # Para la documentación Swagger    
 
     # Applications
     'mi_app',  # Reemplaza 'mi_app' con el nombre de tu aplicación
@@ -53,6 +53,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # <--- Primero
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'backend_tapiceria_api.urls'
@@ -137,6 +139,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
 }
 
 SPECTACULAR_SETTINGS = {
@@ -145,3 +148,6 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# cors authorization
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
