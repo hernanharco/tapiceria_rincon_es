@@ -1,4 +1,4 @@
-export function Prueba() {
+export function Document() {
     return (
         <div>
             {/* Datos del cliente */}

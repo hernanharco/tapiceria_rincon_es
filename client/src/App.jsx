@@ -1,25 +1,16 @@
+// src/App.jsx
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
-import { document } from "./components/document"
+import { Document } from './components/document/document';
+import { DataCompanyProvider } from './context/DataCompanyProvider';
 
-
-function App() { 
-
+function App() {
   return (
-    <BrowserRouter>    
-      <div className="container mx-auto">
-        <Routes>
-          <Route path="/document" element={<document /> } />
-          <Route path="/" element={<Navigate to="tasks" />} />
-          <Route path="/tasks"
-            element={
-              <Dat_Company isOpen={isOpen} toggleModal={toggleModal} />
-            }
-          />
-        </Routes>              
+    <DataCompanyProvider>
+      <div className="App">
+        <Document />
       </div>
-    </BrowserRouter>
-  )
+    </DataCompanyProvider>
+  );
 }
 
-export default App
+export default App;
