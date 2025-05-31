@@ -25,7 +25,7 @@ class DataClient(models.Model):
         DataCompany, on_delete=models.CASCADE, related_name='clients')
 
     def __str__(self):
-        return f"{self.name} ({self.cif})"
+        return f"{self.name} {self.cif}"
 
 
 class Document(models.Model):
@@ -53,7 +53,7 @@ class DataDocument(models.Model):
     importe = models.DecimalField(max_digits=10, decimal_places=2)       
 
     def __str__(self):
-        return f"Línea de {self.documento.num_factura}"
+        return f"Referencia {self.referencia} Línea de {self.documento.num_factura} "
 
 class FooterDocument(models.Model):
     footer_documento = models.ForeignKey(

@@ -7,7 +7,7 @@ import { DataDocumentsProvider } from './DataDocumentsProvider';
 import { FootersProvider } from './FootersProvider';
 import { PagosProvider } from './PagosProvider';
 
-const AppProvider = ({ children }) => {
+export const AppProvider = ({ children }) => {
     return (
         <CompanyProvider>
             <ClientsProvider>
@@ -25,4 +25,3 @@ const AppProvider = ({ children }) => {
     );
 };
 
-export default AppProvider;

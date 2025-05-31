@@ -1,17 +1,9 @@
-// src/App.jsx
 
-import React from 'react';
-import { Document } from './components/document/document';
-import AppProvider from './context/AppProvider';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './routes/router.jsx';
 
 function App() {
-  return (
-    <AppProvider>
-      <div className="App">
-        <Document />
-      </div>
-    </AppProvider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

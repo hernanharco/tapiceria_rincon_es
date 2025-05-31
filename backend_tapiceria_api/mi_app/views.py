@@ -1,4 +1,7 @@
 from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework import status
+
 from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago
 from .serializers import (
     DataCompanySerializer,
@@ -17,6 +20,15 @@ class DataCompanyViewSet(viewsets.ModelViewSet):
 class DataClientViewSet(viewsets.ModelViewSet):
     queryset = DataClient.objects.all()
     serializer_class = DataClientSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("Errores de validación:", serializer.errors)  # 👈 LOG
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class DocumentViewSet(viewsets.ModelViewSet):

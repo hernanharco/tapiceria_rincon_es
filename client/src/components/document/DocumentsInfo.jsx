@@ -1,9 +1,7 @@
 // documents_info.jsx
-import useDocuments from '../../hooks/useDocuments';
 
-export const DocumentsInfo = () => {
 
-    const { documentos } = useDocuments();
+export const DocumentsInfo = ({ documentos }) => {
 
     // Validación extra: aseguramos que sea un array
     if (!Array.isArray(documentos) || documentos.length === 0) {
@@ -13,10 +11,9 @@ export const DocumentsInfo = () => {
     const documento = documentos[0];
 
     return (
-        <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700">
-                Num. Factura. <span className="font-normal">{documento.num_factura}</span>
-            </p>
+        <details className="space-y-2">
+            <summary className="text-sm font-semibold text-gray-700">Num. Factura. <span className="font-normal">{documento.num_factura}</span>
+            </summary>
             <p className="text-sm font-semibold text-gray-700">
                 Fecha Factura. <span className="font-normal">{documento.fecha_factura}</span>
             </p>
@@ -26,6 +23,6 @@ export const DocumentsInfo = () => {
             <p className="text-sm font-semibold text-gray-700">
                 Observaciones. <span className="font-normal">{documento.observaciones}</span>
             </p>
-        </div>
+        </details>
     );
 };

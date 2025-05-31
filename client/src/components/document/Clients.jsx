@@ -1,5 +1,5 @@
 // src/components/clients/Clients.jsx
-import useClients from '../../hooks/useClients';
+import { useClients } from "../../hooks/useClients";
 
 export const Clients = () => {
 
@@ -11,8 +11,8 @@ export const Clients = () => {
     const cliente = clientes[0];
 
     return (
-        <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700">{cliente.name}</p>
+        <details className="space-y-2">
+            <summary className="text-sm font-semibold text-gray-700">{cliente.name}</summary>
             <p className="text-sm text-gray-700">{cliente.address}</p>
             <p className="text-sm text-gray-700">{cliente.zip_code} {cliente.city}</p>
             <p className="text-sm text-gray-700">TFNO. {cliente.number}</p>
@@ -21,13 +21,13 @@ export const Clients = () => {
             <table style={{ borderCollapse: 'collapse', width: '100%' }} border="1">
                 <tbody>
                     <tr>
-                        <td style={{ width: '33.3333%' }}>Asturias</td>
-                        <td style={{ width: '33.3333%' }}>NIF-CIF</td>
-                        <td style={{ width: '33.3333%' }}>{cliente.cif}</td>
+                        <td style={{ width: '33.3333%' }} className="text-sm text-gray-700">Asturias</td>
+                        <td style={{ width: '33.3333%' }} className="text-sm text-gray-700">NIF-CIF</td>
+                        <td style={{ width: '33.3333%' }} className="text-sm text-gray-700">{cliente.cif}</td>
                     </tr>
                 </tbody>
             </table>
-        </div>
+        </details>
     );
 };
 

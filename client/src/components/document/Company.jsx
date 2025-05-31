@@ -1,5 +1,5 @@
 // src/components/company/Company.jsx
-import useCompany from '../../hooks/useCompany';
+import { useCompany } from '../../hooks/useCompany';
 
 export const Company = () => {
 
@@ -11,13 +11,14 @@ export const Company = () => {
     const empresa = empresas[0];
 
     return (
-        <div className="space-y-1">
-            <p className="text-sm font-semibold text-gray-700">{empresa.name}</p>
+        <details className="space-y-1">
+            <summary className="text-sm font-semibold text-gray-700">{empresa.name}                
+            </summary>
             <p className="text-sm text-gray-700">{empresa.address}</p>
             <p className="text-sm text-gray-700">{empresa.zip_code} {empresa.city}</p>
             <p className="text-sm text-gray-700">TFNO. {empresa.number}</p>
             <p className="text-sm text-gray-700">N.I.E: {empresa.cif}</p>
             <p className="text-sm text-gray-700">e-mail: {empresa.email}</p>
-        </div>
+        </details>
     );
 };

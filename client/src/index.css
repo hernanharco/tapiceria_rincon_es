@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+@media print {
+  body {
+    background-color: white;
+  }
+
+  table, td, th {
+    border: 1px solid black !important;
+    color: black !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* modo oscuro para la tabla */
