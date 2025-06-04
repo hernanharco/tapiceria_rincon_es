@@ -31,6 +31,16 @@ export const FootersProvider = ({ children }) => {
     }
   };
 
+  // Cargar footers a partir de un ID
+  const loadFooterPorId = async (id) => {
+    try {
+      const res = await axios.get(`http://localhost:8000/api/footers/${id}/`);
+      setFooters([res.data]); // Actualizamos el estado con el footer encontrado
+    } catch (err) {
+      setError(err);
+    }
+  };
+
   // Cargar datos al inicio
   useEffect(() => {
     cargarFooters().then(() => setLoading(false));
@@ -40,6 +50,7 @@ export const FootersProvider = ({ children }) => {
     footers,
     loading,
     error,
+    loadFooterPorId,
     refetchclientes: cargarFooters,
   };
 

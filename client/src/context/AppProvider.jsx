@@ -6,6 +6,7 @@ import { DocumentsProvider } from './DocumentsProvider';
 import { DataDocumentsProvider } from './DataDocumentsProvider';
 import { FootersProvider } from './FootersProvider';
 import { PagosProvider } from './PagosProvider';
+import { HistoryProvider } from './HistoryProvider';
 
 export const AppProvider = ({ children }) => {
     return (
@@ -15,7 +16,9 @@ export const AppProvider = ({ children }) => {
                     <DataDocumentsProvider>
                         <FootersProvider>
                             <PagosProvider>
-                                {children}
+                                <HistoryProvider>
+                                    {children}
+                                </HistoryProvider>
                             </PagosProvider>
                         </FootersProvider>
                     </DataDocumentsProvider>

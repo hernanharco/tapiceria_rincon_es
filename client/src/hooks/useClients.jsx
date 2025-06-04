@@ -3,7 +3,7 @@
 import { useApiClientsContext } from "../context/ClientsProvider";
 
 // Este es el hook que usas en tus componentes
-export const useClients = () => {
+const useClients = () => {
   const context = useApiClientsContext();
 
   if (!context) {
@@ -12,3 +12,5 @@ export const useClients = () => {
 
   return context;
 };
+
+export default useClients;

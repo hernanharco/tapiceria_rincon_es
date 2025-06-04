@@ -7,7 +7,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, product = null
     cantidad: 1,
     precio: 0,
     dto: 0,
-    documento: ''
+    document: ''
   });
 
   // Si hay un producto, lo cargamos al estado inicial
@@ -22,7 +22,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, product = null
         precio: 0,
         dto: 0,
         importe: 0,
-        documento: '' // Esto puede venir desde props o contexto
+        document: '' // Esto puede venir desde props o contexto
       });
     }
   }, [product]);
@@ -37,8 +37,8 @@ export default function ProductModal({ isOpen, onClose, onSubmit, product = null
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const importe = formData.cantidad * formData.precio * (1 - formData.dto / 100);
-
+    const importe = formData.cantidad * formData.precio * (1 - formData.dto / 100);  
+    
     onSubmit({
       ...formData,
       importe: importe.toFixed(2),

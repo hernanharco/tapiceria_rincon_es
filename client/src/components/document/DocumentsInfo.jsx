@@ -1,28 +1,31 @@
 // documents_info.jsx
 
+import useDocuments from '../../hooks/useDocuments';
 
-export const DocumentsInfo = ({ documentos }) => {
+export const DocumentsInfo = () => {
+
+    const { documents } = useDocuments();
 
     // Validación extra: aseguramos que sea un array
-    if (!Array.isArray(documentos) || documentos.length === 0) {
+    if (!Array.isArray(documents) || documents.length === 0) {
         return null;
     }
 
-    const documento = documentos[0];
+    const document = documents[0];
 
     return (
-        <details className="space-y-2">
-            <summary className="text-sm font-semibold text-gray-700">Num. Factura. <span className="font-normal">{documento.num_factura}</span>
-            </summary>
-            <p className="text-sm font-semibold text-gray-700">
-                Fecha Factura. <span className="font-normal">{documento.fecha_factura}</span>
+        <div className="space-y-2">
+            <p className="text-sm font-semibold text-gray-700">Num. Factura. <span className="font-normal">{document.num_factura}</span>
             </p>
             <p className="text-sm font-semibold text-gray-700">
-                Cod. Cliente. <span className="font-normal">{documento.cod_cliente}</span>
+                Fecha Factura. <span className="font-normal">{document.fecha_factura}</span>
             </p>
             <p className="text-sm font-semibold text-gray-700">
-                Observaciones. <span className="font-normal">{documento.observaciones}</span>
+                Cod. Cliente. <span className="font-normal">{document.cod_cliente}</span>
             </p>
-        </details>
+            <p className="text-sm font-semibold text-gray-700">
+                Observaciones. <span className="font-normal">{document.observaciones}</span>
+            </p>
+        </div>
     );
 };

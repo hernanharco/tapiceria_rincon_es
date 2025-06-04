@@ -8,7 +8,7 @@ const useDocuments = () => {
   const context = useApiDocumentsContext();
 
   if (!context) {
-    throw new Error("useClients debe usarse dentro de DocumentsProvider");
+    throw new Error("useDocuments debe usarse dentro de DocumentsProvider");
   }
 
   return context;

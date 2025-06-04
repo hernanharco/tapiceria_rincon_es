@@ -3,7 +3,7 @@
 import { useApiCompanyContext } from "../context/CompanyProvider";
 
 // Este es el hook que usas en tus componentes
-export const useCompany = () => {
+const useCompany = () => {
   const context = useApiCompanyContext();
 
   if (!context) {
@@ -12,4 +12,6 @@ export const useCompany = () => {
 
   return context;
 };
+
+export default useCompany;
 

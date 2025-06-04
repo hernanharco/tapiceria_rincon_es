@@ -1,6 +1,6 @@
 // src/context/ApiContext.jsx
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 // 1. Creamos el Contexto

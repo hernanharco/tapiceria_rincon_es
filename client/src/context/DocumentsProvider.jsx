@@ -17,7 +17,7 @@ export const useApiDocumentsContext = () => {
 
 // 3. El Provider que carga los datos
 export const DocumentsProvider = ({ children }) => {
-  const [documentos, setDocumentos] = useState([]);
+  const [documents, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -37,7 +37,7 @@ export const DocumentsProvider = ({ children }) => {
   }, []);
 
   const value = {
-    documentos,
+    documents,
     loading,
     error,
     refetchclientes: cargarDocuments,
