@@ -1,6 +1,6 @@
 // src/context/ApiContext.jsx
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 // 1. Creamos el Contexto
@@ -27,13 +27,14 @@ export const DataDocumentsProvider = ({ children }) => {
       const res = await axios.get('http://localhost:8000/api/datadocuments/');
       setDatadocuments(res.data);
     } catch (err) {
+      console.error("Error al cargar documentos:", err); // 👈 Muestra detalles del error
       setError(err);
     }
   };
 
   // Insertar nuevo producto
   const addProduct = async (newProduct) => {
-    console.log('DataDocumentsProvider. Nuevo producto a agregar:', newProduct);
+    // console.log('DataDocumentsProvider. Nuevo producto a agregar:', newProduct);
     try {
       const response = await axios.post('http://localhost:8000/api/datadocuments/', newProduct);
       setDatadocuments((prev) => [...prev, response.data]); // Agrega respuesta del servidor
@@ -70,9 +71,23 @@ export const DataDocumentsProvider = ({ children }) => {
     }
   };
 
+  // Nueva función: Buscar documento por num_factura
+  const getDocumentsByNum = (num_document) => {
+    // Para debugging: muestra el primer documento y sus tipos    
+    if (!num_document) return null;
+    // const ejemplo = datadocuments[0];
+    // console.log("Primer documento:", ejemplo);
+    // console.log("Tipo de num_document:", typeof num_document);
+    // console.log("Tipo de documento.documento:", typeof ejemplo.documento);
+    // Filtro seguro: convierte ambos a string y limpia espacios
+    return datadocuments.filter(doc => String(doc.documento).trim().toLowerCase() === String(num_document).trim().toLowerCase());
+  };
+
   // Cargar datos al inicio
   useEffect(() => {
-    cargarDatadocuments().then(() => setLoading(false));
+    cargarDatadocuments().then(() => {
+      setLoading(false);
+    });
   }, []);
 
   const value = {
@@ -82,7 +97,8 @@ export const DataDocumentsProvider = ({ children }) => {
     refetchdatadocuments: cargarDatadocuments,
     addProduct, // ✅ Exponemos esta función para usarla en el modal
     deleteProduct, // Exponemos la función para borrar productos
-    updateProduct // Exponemos la función para actualizar productos
+    updateProduct, // Exponemos la función para actualizar productos
+    getDocumentsByNum,
   };
 
   return (

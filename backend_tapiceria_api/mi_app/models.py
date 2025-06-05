@@ -31,21 +31,21 @@ class DataClient(models.Model):
 class Document(models.Model):
     num_factura = models.CharField(max_length=50, primary_key=True)
     fecha_factura = models.DateField()
+    observaciones = models.TextField(blank=True, null=True)
     cod_cliente = models.ForeignKey(
         DataClient,
         on_delete=models.CASCADE,
         related_name='documentos'  # Esto permite acceder desde DataClient
-    )
-    observaciones = models.TextField(blank=True, null=True)
+    )    
 
     def __str__(self):
-        return f"Factura {self.num_factura}"
+        return f"Doc {self.num_factura} - {self.cod_cliente}"
 
 
 class DataDocument(models.Model):
     documento = models.ForeignKey(
         Document, on_delete=models.CASCADE, related_name='lineas')
-    referencia = models.CharField(max_length=50)
+    referencia = models.CharField(max_length=20, blank=True, null=True)
     descripcion = models.TextField()
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio = models.DecimalField(max_digits=10, decimal_places=2)

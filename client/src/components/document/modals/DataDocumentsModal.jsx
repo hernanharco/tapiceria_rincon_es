@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ProductModal({ isOpen, onClose, onSubmit, product = null, documento }) {
+export default function ProductModal({ isOpen, onClose, onSubmit, product = null, documento}) {
   const [formData, setFormData] = useState({
     referencia: '',
     descripcion: '',
     cantidad: 1,
     precio: 0,
-    dto: 0,
-    document: ''
+    dto: 0,    
   });
 
   // Si hay un producto, lo cargamos al estado inicial
@@ -21,8 +20,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, product = null
         cantidad: 1,
         precio: 0,
         dto: 0,
-        importe: 0,
-        document: '' // Esto puede venir desde props o contexto
+        importe: 0,        
       });
     }
   }, [product]);
@@ -63,8 +61,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, product = null
               name="referencia"
               value={formData.referencia}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"              
             />
           </div>
 

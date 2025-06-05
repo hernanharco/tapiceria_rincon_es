@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DocumentsFooter from './DocumentsFooter';
 import ProductModal from './modals/DataDocumentsModal';
 import useDataDocuments from '../../hooks/useDataDocuments';
-import useDocuments from '../../hooks/useDocuments';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('es-ES', {
@@ -11,12 +10,14 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-export const TableDocuments = () => {
-  const { datadocuments, addProduct, updateProduct, deleteProduct, refetchdatadocuments } = useDataDocuments();
-  const { documents } = useDocuments();
+export const TableDocuments = ({ numDocument }) => {
+  // console.log("Numero de Documento en TableDocuments", numDocument);
+
+  const { datadocuments, addProduct, updateProduct, deleteProduct, refetchdatadocuments, getDocumentsByNum } = useDataDocuments();
 
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Manejador de guardar/editar producto
   const handleSaveProduct = async (producto) => {
@@ -43,7 +44,24 @@ export const TableDocuments = () => {
     }
   };
 
-  const hasItems = Array.isArray(datadocuments) && datadocuments.length > 0;
+  const hasItems = Array.isArray(filteredProducts) && filteredProducts.length > 0;
+
+  // Filtrar productos cada vez que cambie numDocument
+  useEffect(() => {
+    if (!numDocument) {
+      setFilteredProducts([]);
+      return;
+    }
+
+    if (numDocument && !isNaN(Number(numDocument))) {
+      const index = parseInt(numDocument, 10);
+      const results = getDocumentsByNum(index); // Asegúrate que esta función exista y funcione bien
+      // console.log("resultado de busqueda por filtro", results);
+      setFilteredProducts(results || []);
+    } else {
+      setFilteredProducts([]);
+    }
+  }, [numDocument, datadocuments]);
 
   return (
     <div className="border border-gray-300 rounded-lg bg-white shadow-sm px-4 md:px-6 py-2">
@@ -79,7 +97,7 @@ export const TableDocuments = () => {
                 </tr>
               </thead>
               <tbody>
-                {datadocuments.map((item, idx) => (
+                {filteredProducts.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50 transition-colors duration-150 ">
                     <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell ">
                       {item.referencia || '-'}
@@ -127,7 +145,7 @@ export const TableDocuments = () => {
 
             {/* Tarjetas - Solo visibles en móvil */}
             <div className="space-y-4 md:hidden">
-              {datadocuments.map((item, idx) => (
+              {filteredProducts.map((item, idx) => (
                 <div key={idx} className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm">
                   <h3 className="font-semibold text-gray-700 mb-2">Producto #{idx + 1}</h3>
                   <p><strong>Descripción:</strong> {item.descripcion || '-'}</p>
@@ -178,7 +196,7 @@ export const TableDocuments = () => {
           }}
           onSubmit={handleSaveProduct}
           product={editingProduct}
-          documento={documents[0]?.num_factura || ''}
+          documento={numDocument}
         />
       )}
     </div>
