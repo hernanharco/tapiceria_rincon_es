@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
@@ -67,7 +67,7 @@ export const Sidebar = () => {
             <ul>
               {/* Inicio */}
               <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
-                <Link to="/inicio" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
+                <Link to="/imprimir" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
                   <span><FaHome /></span>
                   {isOpen && <span className="ml-3">Inicio</span>}
                 </Link>

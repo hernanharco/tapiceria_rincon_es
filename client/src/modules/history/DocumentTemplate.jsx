@@ -1,11 +1,35 @@
 import React from 'react';
 
 // Tus componentes (deben estar bien definidos)
-import { Company } from './Company';
+import { Company } from '..pdf/Company';
 import { Clients } from './Clients';
 import { TableDocuments } from './TableDocuments';
 import { Pagos } from './Pagos';
 import { DocumentsInfo } from './DocumentsInfo';
+
+import {
+  Document,
+  Page,
+  View,
+  Text,
+  StyleSheet
+} from '@react-pdf/renderer';
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    fontFamily: 'Helvetica'
+  },
+  section: {
+    marginBottom: 10
+  },
+  header: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: 'bold'
+  }
+});
 
 // Función de formato de moneda
 const formatCurrency = (value) => {

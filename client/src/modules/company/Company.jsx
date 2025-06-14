@@ -1,5 +1,5 @@
 // src/components/company/Company.jsx
-import useCompany from '../../hooks/useCompany';
+import useCompany from './hooks/useCompany';
 
 export const Company = () => {
 

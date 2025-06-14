@@ -1,6 +1,6 @@
 
-import useFooters from '../../hooks/useFooters';
-import useDataDocuments from '../../hooks/useDataDocuments';
+import useFooters from '../hooks/useFooters';
+import useDataDocuments from '../hooks/useDataDocuments';
 
 export default function DocumentsFooter() {
   const { footers, loadFooterPorId, refetchclientes } = useFooters();

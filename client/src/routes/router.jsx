@@ -2,8 +2,8 @@
 import { createBrowserRouter } from 'react-router-dom';
 
 // Componentes
-import {Sidebar} from '../components/sidebar/Sidebar';
-import {AppProvider} from '../context/AppProvider';
+import {Sidebar} from '../modules/sidebar/Sidebar';
+import {AppProvider} from '../modules/context/AppProvider';
 
 // Paginas
 import {PrintableView} from '../pages/PrintableView';
@@ -20,10 +20,10 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <PrintableView />,
+        element: <HistoryDocumentsView />,
       },     
       {
-        path: '/inicio',
+        path: '/imprimir',
         element: <PrintableView />,
       },
       {

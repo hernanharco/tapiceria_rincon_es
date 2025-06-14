@@ -62,6 +62,19 @@ export const DocumentsProvider = ({ children }) => {
   //   return () => clearInterval(intervalId); // limpiar al desmontar
   // }, []);
 
+
+  // Nueva función: Buscar documento por num_factura
+  const getDocumentsByNum = (codClient) => {
+    // Para debugging: muestra el primer documento y sus tipos    
+    if (!codClient) return null;
+    const ejemplo = documents[0];
+    // console.log("Primer documento:", ejemplo);
+    // console.log("Tipo de num_document:", typeof codClient, " - ", codClient);
+    // console.log("Tipo de documento.documento:", typeof ejemplo.cod_cliente, " - ", ejemplo.cod_cliente);
+    // Filtro seguro: convierte ambos a string y limpia espacios
+    return documents.filter(doc => String(doc.cod_cliente).trim().toLowerCase() === String(codClient).trim().toLowerCase());
+  };
+
   const value = {
     documents,
     loading,
@@ -69,6 +82,7 @@ export const DocumentsProvider = ({ children }) => {
     refetch: cargarDocuments, // permite recargar manualmente
     clearDocuments,
     addProduct,
+    getDocumentsByNum,
   };
 
   return (

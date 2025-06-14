@@ -1,5 +1,5 @@
 
-import { HistoryTemplate } from '../components/history/HistoryTemplate';
+import { HistoryTemplate } from '../modules/history/HistoryTemplate.jsx';
 
 export const HistoryDocumentsView = () => {
   

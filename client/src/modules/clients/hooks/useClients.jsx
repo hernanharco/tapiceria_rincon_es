@@ -1,6 +1,6 @@
 // src/hooks/useDataCompany.js
 
-import { useApiClientsContext } from "../context/ClientsProvider";
+import { useApiClientsContext } from "../context/ClientsProvider"
 
 // Este es el hook que usas en tus componentes
 const useClients = () => {

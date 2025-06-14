@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { CreateClientsModal } from '../components/clients/CreateClientsModal';
+import { CreateClientsModal } from '../modules/clients/CreateClientsModal';
 
 // Hooks personalizados
-import useClients from '../hooks/useClients';
-import useCompany from '../hooks/useCompany';
+import useClients from '../modules/clients/hooks/useClients';
+import useCompany from '../modules/company/hooks/useCompany';
 
 export const CreateClientView = () => {
   const [showModal, setShowModal] = useState(false);

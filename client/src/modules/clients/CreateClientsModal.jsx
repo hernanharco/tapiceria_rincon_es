@@ -48,16 +48,16 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">
+    <div className="fixed inset-0 bg-gray bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-black p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
+        <h3 className="text-xl font-bold mb-4 text-white">
           {isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* CIF */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">CIF</label>
+            <label className="block text-sm font-medium text-white">CIF</label>
             <input
               type="text"
               name="cif"
@@ -71,7 +71,7 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
 
           {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nombre</label>
+            <label className="block text-sm font-medium text-white">Nombre</label>
             <input
               type="text"
               name="name"
@@ -85,7 +85,7 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
 
           {/* Dirección */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Dirección</label>
+            <label className="block text-sm font-medium text-white">Dirección</label>
             <input
               type="text"
               name="address"
@@ -98,7 +98,7 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
 
           {/* Código postal */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Código Postal</label>
+            <label className="block text-sm font-medium text-white">Código Postal</label>
             <input
               type="text"
               name="zip_code"
@@ -111,7 +111,7 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
 
           {/* Ciudad */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Ciudad</label>
+            <label className="block text-sm font-medium text-white">Ciudad</label>
             <input
               type="text"
               name="city"
@@ -124,7 +124,7 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
 
           {/* Teléfono */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+            <label className="block text-sm font-medium text-white">Teléfono</label>
             <input
               type="tel"
               name="number"

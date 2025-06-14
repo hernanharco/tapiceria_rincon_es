@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { HistoryTableDocument } from './HistoryTableDocument';
 import { HistoryModals } from './HistoryModals';
 
-import useKeys from '../../hooks/useKeys';
-import useClients from '../../hooks/useClients'; // Importamos el contexto
+import useKeys from '../documents/hooks/useKeys';
+import useClients from '../clients/hooks/useClients'; // Importamos el hook de clientes
 
 export const HistoryTemplate = () => {
   const [showModal, setShowModal] = useState(false);
@@ -72,6 +72,32 @@ export const HistoryTemplate = () => {
 
   }, [showSuggestions, suggestions, activeSuggestionIndex]);
 
+  // Con este efecto hacemos que cuando presionemos f8 no coloca en el buscado
+  useEffect(() => {
+    const handleKeyDownGlobal = (e) => {
+      if (e.keyCode === 119) {
+        e.preventDefault();
+        inputRef.current?.focus(); // Enfoca el input de búsqueda
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDownGlobal);
+    return () => document.removeEventListener('keydown', handleKeyDownGlobal);
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      setShowSuggestions(true);
+    } else {
+      if(showSuggestions && suggestions.length === 0 && searchTerm.trim())
+        setShowSuggestions(false);
+    }
+  }, [searchTerm]);
+
+  //   useEffect(() => {
+  //   setActiveSuggestionIndex(-1);
+  // }, [searchTerm]);
+
   // Limpiar selección al cerrar el dropdown
   useEffect(() => {
     if (!showSuggestions) {
@@ -124,7 +150,10 @@ export const HistoryTemplate = () => {
       </div>
 
       {/* Tabla de documentos - Componente externo */}
-      <HistoryTableDocument setShowModal={setShowModal} />
+      <HistoryTableDocument
+        setShowModal={setShowModal}
+        searchTerm={searchTerm}
+      />
 
       {/* Modal reutilizable */}
       <HistoryModals

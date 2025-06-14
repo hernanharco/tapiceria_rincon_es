@@ -1,18 +1,18 @@
 
-import { TableDocuments } from '../document/TableDocuments';
-import useDocuments from '../../hooks/useDocuments';
+import { TableDocuments } from './TableDocuments';
+import useDocuments from '../hooks/useDocuments';
 import { useEffect } from 'react';
 
 export const DocumentsInfo = ({
-    isOpen,
-    cif,
-    name,
-    numDocument,
-    setNumDocument,
-    date,
-    setDate,
-    observation,
-    setObservation,
+    isOpen = false,
+    cif = '',
+    numDocument = '',
+    setNumDocument = () => { }, // Función vacía si no se pasa
+    date = '',
+    setDate = () => { },
+    observation = '',
+    setObservation = () => { },
+    search = () => { },
 }) => {
 
     const { documents, addProduct } = useDocuments();
@@ -31,17 +31,23 @@ export const DocumentsInfo = ({
     };
 
     // 1. Asignar número de documento al cargar documentos
-    useEffect(() => {
-        const nextNum = getNextNumBudget(documents);
-        if (nextNum !== numDocument) {
-            setNumDocument(nextNum);
+    useEffect(() => {  
+        console.log("HistoryTableDocuments search", search)      
+        if (search) {
+            console.log("estoy en HistoryTableDocuments en usseEffect", documents)
+            const nextNum = getNextNumBudget(documents);
+            if (nextNum !== numDocument) {
+                setNumDocument(nextNum);
+            }
+            // Reseteamos la fecha para que aparezca vacia
+            setDate("00/00/0000");
         }
-        // Reseteamos la fecha para que aparezca vacia
-        setDate("00/00/0000");
+
     }, [isOpen]);
 
     // 2. Establecer la fecha automática solo una vez al abrir
     useEffect(() => {
+        // console.log("Date", date)
         if (isOpen && (!date || date.trim() === '')) {
             const today = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
             setDate(today);
@@ -56,12 +62,14 @@ export const DocumentsInfo = ({
             fecha_factura: date,
             observaciones: observation
         };
+        console.log("DataToSave", dataToSave)
         addProduct(dataToSave);
     };
 
     // 4. Ejecutar guardarDocumento apenas el componente se monta
     useEffect(() => {
-        saveDocument(); // Se ejecuta solo una vez
+        saveDocument(); // Se ejecuta solo una vez         
+        
     }, [date]);
 
     return (
@@ -129,6 +137,7 @@ export const DocumentsInfo = ({
             {/* Tabla u otros componentes - esta tabla lo que hace es comenzar agregar los productos */}
             <TableDocuments
                 numDocument={numDocument}
+                search={search}
             />
         </div>
     );

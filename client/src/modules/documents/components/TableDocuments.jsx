@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DocumentsFooter from './DocumentsFooter';
 import ProductModal from './modals/DataDocumentsModal';
-import useDataDocuments from '../../hooks/useDataDocuments';
+import useDataDocuments from '../hooks/useDataDocuments';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('es-ES', {
@@ -10,17 +10,19 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-export const TableDocuments = ({ numDocument }) => {
-  // console.log("Numero de Documento en TableDocuments", numDocument);
+export const TableDocuments = ({
+  numDocument,
+  search = () => { },
+}) => {
 
   const { datadocuments, addProduct, updateProduct, deleteProduct, refetchdatadocuments, getDocumentsByNum } = useDataDocuments();
-
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Manejador de guardar/editar producto
   const handleSaveProduct = async (producto) => {
+    // console.log("handleSaveProduct in HistoryTableDocument", producto)
     try {
       if (producto.id) {
         await updateProduct(producto.id, producto);
@@ -48,6 +50,7 @@ export const TableDocuments = ({ numDocument }) => {
 
   // Filtrar productos cada vez que cambie numDocument
   useEffect(() => {
+    console.log("Numero de Documento en TableDocuments", numDocument);
     if (!numDocument) {
       setFilteredProducts([]);
       return;

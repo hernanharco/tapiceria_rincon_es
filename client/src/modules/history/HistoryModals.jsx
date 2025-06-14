@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { DocumentsInfo } from '../document/DocumentsInfo';
+import { DocumentsInfo } from '../documents/components/DocumentsInfo';
 
 export const HistoryModals = ({ isOpen, onClose, title, children, searchTerm }) => {
 
@@ -53,7 +53,7 @@ export const HistoryModals = ({ isOpen, onClose, title, children, searchTerm }) 
             {children}
           </div>
 
-          {/* Informacion del Documento */}
+          {/* Guardar la Informacion de los datos del Documento */}
           <DocumentsInfo
             cif={cif}
             name={name}
@@ -77,10 +77,10 @@ export const HistoryModals = ({ isOpen, onClose, title, children, searchTerm }) 
               Cancelar
             </button>
             <button
-              onClick={handleSaveProduct}
+              onClick={onClose}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Guardar_m
+              Guardar
             </button>
           </div>
         </div>

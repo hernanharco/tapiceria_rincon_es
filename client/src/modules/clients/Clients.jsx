@@ -1,5 +1,5 @@
 // src/components/clients/Clients.jsx
-import useClients from "../../hooks/useClients";
+import useClients from "../documents/hooks/useClients";
 
 export const Clients = () => {
 
