@@ -6,7 +6,7 @@ import {Sidebar} from '../modules/sidebar/Sidebar';
 import {AppProvider} from '../modules/context/AppProvider';
 
 // Paginas
-import {PrintableView} from '../pages/PrintableView';
+import {PrintableViewPDF} from '../modules/pdf/PrintableViewPDF';
 import {HistoryDocumentsView} from '../pages/HistoryDocumentsView';
 import {CreateClientView} from '../pages/CreateClientView';
 
@@ -24,7 +24,11 @@ export const router = createBrowserRouter([
       },     
       {
         path: '/imprimir',
-        element: <PrintableView />,
+        element: <PrintableViewPDF />,
+      },
+      {
+        path: '/imprimir/:numfactura/:cif',
+        element: <PrintableViewPDF />,
       },
       {
         path: '/historial',

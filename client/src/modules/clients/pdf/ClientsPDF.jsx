@@ -7,7 +7,11 @@ import {
 // Estilos del componente
 const styles = {
     container: {
-        marginBottom: 10
+        marginBottom: 20,
+        padding: 10,
+        backgroundColor: '#f9f9f9',
+        border: '1px solid #eaeaea',
+        borderRadius: 4
     },
     name: {
         fontSize: 9,

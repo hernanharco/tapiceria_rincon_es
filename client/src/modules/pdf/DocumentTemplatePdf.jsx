@@ -11,6 +11,9 @@ import {
 import { CompanyPDF } from '../company/pdf/CompanyPDF';
 import { ClientsPDF } from '../clients/pdf/ClientsPDF';
 import { DocumentInfoPDF } from '../documents/pdf/DocumentsInfoPDF';
+import { TableDocumentsPDF } from '../documents/pdf/TableDocumentsPDF';
+import { DocumentsFooterPDF } from '../documents/pdf/DocumentsFooterPDF';
+import { PagosPDF } from '../documents/pdf/PagosPDF';
 
 // Define tus estilos al inicio del archivo
 const styles = StyleSheet.create({
@@ -30,7 +33,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10
+    marginBottom: 10,
+    alignItems: 'stretch', // ⭐ Esto hace que ambos hijos se estiren verticalmente
+  },
+  column: {
+    flex: 1,
+    paddingRight: 5,
+    paddingLeft: 5,
+    display: 'flex',
+    flexDirection: 'column'
   },
   label: {
     fontSize: 10,
@@ -51,7 +62,16 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-export const DocumentTemplatePdf = ({ company, client, document }) => {
+export const DocumentTemplatePdf = ({ company, client, document, filteredProducts, footers, cashPDF }) => {
+  console.log('🚀 Datos completos recibidos en PDF:', {
+    company,
+    client,
+    document,
+    filteredProducts,
+    footers,
+    cashPDF,
+  });
+  
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -65,40 +85,30 @@ export const DocumentTemplatePdf = ({ company, client, document }) => {
 
         {/* Cliente + Información del Documento */}
         <View style={styles.row}>
-          <View style={{ width: '48%' }}>
+          {/* DocumentsInfoPDF */}
+          <View style={styles.column}>
+            {document && <DocumentInfoPDF document={document} />}
+          </View>
+          <View style={{ width: 10 }} /> {/* Espacio entre bloques */}
+          {/* ClientsPDF */}
+          <View style={styles.column}>
             {client && <ClientsPDF client={client} />}
           </View>
-          {/* DocumentsInfoPDF cuando lo tengas listo */}
-          <View style={{ width: '48%' }}>
-            {client && <DocumentInfoPDF client={document} />}
-          </View>
         </View>
 
-        {/* Información del documento */}
+        {/* Información de los datos documento se construye la tabla */}
         <View style={styles.section}>
-          <Text style={styles.label}>Fecha:</Text>
-          <Text style={styles.value}>2025-04-05</Text>
-          <Text style={styles.label}>Número de Albarán:</Text>
-          <Text style={styles.value}>ALB-2025-001</Text>
+          {filteredProducts && <TableDocumentsPDF filteredProducts={filteredProducts} />}
         </View>
 
-        {/* Tabla simple ejemplo */}
+        {/* Informacion donde se muestra el total de los productos */}
         <View style={styles.section}>
-          <Text style={styles.label}>Productos:</Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={styles.value}>Servicio Web</Text>
-            <Text style={styles.value}>{formatCurrency(500)}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={styles.value}>Soporte técnico</Text>
-            <Text style={styles.value}>{formatCurrency(200)}</Text>
-          </View>
+          {footers && <DocumentsFooterPDF footers={footers} />}
         </View>
 
         {/* Forma de pago */}
         <View style={styles.section}>
-          <Text style={styles.label}>Forma de Pago:</Text>
-          <Text style={styles.value}>Transferencia bancaria</Text>
+          {cashPDF && <PagosPDF cashPDF={cashPDF} />}
         </View>
       </Page>
     </Document>

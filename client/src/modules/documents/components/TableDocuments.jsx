@@ -1,5 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import DocumentsFooter from './DocumentsFooter';
+
+ 
+import { DocumentsFooter } from './DocumentsFooter';
 import ProductModal from './modals/DataDocumentsModal';
 import useDataDocuments from '../hooks/useDataDocuments';
 
@@ -50,7 +53,7 @@ export const TableDocuments = ({
 
   // Filtrar productos cada vez que cambie numDocument
   useEffect(() => {
-    console.log("Numero de Documento en TableDocuments", numDocument);
+    // console.log("Numero de Documento en TableDocuments", numDocument);
     if (!numDocument) {
       setFilteredProducts([]);
       return;
@@ -181,7 +184,10 @@ export const TableDocuments = ({
 
             {/* Pie de documento fuera de la tabla */}
             <div className="mt-6">
-              <DocumentsFooter />
+              <DocumentsFooter 
+                numDocument={numDocument}
+                filteredProducts={filteredProducts}  
+              />
             </div>
           </>
         ) : (

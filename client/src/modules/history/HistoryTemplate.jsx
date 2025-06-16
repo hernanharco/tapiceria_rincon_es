@@ -124,8 +124,7 @@ export const HistoryTemplate = () => {
         {showSuggestions && suggestions.length > 0 && (
           <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
             {suggestions.map((client, index) => (
-              <li
-                key={client.id}
+              <li key={client.cif}
                 onClick={() => {
                   setSearchTerm(`(${client.cif}) ${client.name}`);
                   setShowSuggestions(false);

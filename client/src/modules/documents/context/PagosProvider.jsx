@@ -1,5 +1,3 @@
-// src/context/ApiContext.jsx
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -10,7 +8,7 @@ const PagosContext = createContext();
 export const useApiPagosContext = () => {
   const context = useContext(PagosContext);
   if (!context) {
-    throw new Error('useApiDataPagosContext debe usarse dentro de PagosProvider');
+    throw new Error('useApiPagosContext debe usarse dentro de PagosProvider');
   }
   return context;
 };
@@ -21,13 +19,25 @@ export const PagosProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cargar Pagos desde la API
+  // Cargar todos los pagos desde la API
   const cargarPagos = async () => {
     try {
       const res = await axios.get('http://localhost:8000/api/pagos/');
-      setPagos(res.data);      
+      setPagos(res.data);
     } catch (err) {
       setError(err);
+    }
+  };
+
+  // 🔹 Nueva función: traer pagos donde cliente_id === id
+  const getPagosByClienteId = async (clienteId) => {
+    try {
+      const res = await axios.get(`http://localhost:8000/api/pagos/?cliente=${clienteId}`);
+      setPagos(res.data); // Actualizamos el estado local con los resultados
+      return res.data; // Devolvemos los datos para usarlos en componentes
+    } catch (err) {
+      setError(err);
+      throw err;
     }
   };
 
@@ -41,6 +51,7 @@ export const PagosProvider = ({ children }) => {
     loading,
     error,
     refetchclientes: cargarPagos,
+    getPagosByClienteId, // 👈 Añadimos la nueva función al contexto
   };
 
   return (

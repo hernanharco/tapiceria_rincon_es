@@ -19,7 +19,7 @@ export const DocumentsProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Cargar documentos desde la API
-  const cargarDocuments = async () => {
+  const refetch = async () => {
     try {
       const res = await axios.get('http://localhost:8000/api/documents/');
       setDocuments(res.data);
@@ -31,7 +31,7 @@ export const DocumentsProvider = ({ children }) => {
   };
 
   // Insertar nuevo Documento
-  const addProduct = async (newProduct) => {    
+  const addProduct = async (newProduct) => {
     // console.log('DocumentsProvider. Nuevo numero de documento a agregar:', newProduct); mnhu5t6y 6y78
     try {
       const response = await axios.post('http://localhost:8000/api/documents/', newProduct);
@@ -43,6 +43,24 @@ export const DocumentsProvider = ({ children }) => {
     }
   };
 
+  // Eliminar un documento por su ID
+  const deleteProduct = async (numFactura) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:8000/api/documents/${numFactura}/`
+      );
+
+      // Eliminar del estado local solo si la petición fue exitosa
+      setDocuments((prev) =>
+        prev.filter((doc) => doc.num_factura !== numFactura)
+      );
+
+      return response.data; // Opcional, útil si devuelves algo del servidor
+    } catch (err) {
+      throw err;
+    }
+  };
+
   // Limpiar documentos
   const clearDocuments = () => {
     setDocuments([]);
@@ -50,17 +68,23 @@ export const DocumentsProvider = ({ children }) => {
 
   // Cargar datos al inicio
   useEffect(() => {
-    cargarDocuments();
+    refetch();
   }, []);
 
-  // // Sondeo periódico (cada 10 segundos)
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     cargarDocuments();
-  //   }, 10000); // cada 10 segundos
+  // Función para buscar un cliente por su CIF
+  const getDocumentByNum = async (num) => {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/documents/${num}/`);
 
-  //   return () => clearInterval(intervalId); // limpiar al desmontar
-  // }, []);
+      // Retorna los datos del cliente encontrado
+      return response.data;
+
+    } catch (err) {
+      console.error('Error al buscar el cliente:', err);
+      setError('No se pudo encontrar el cliente con CIF: ' + cif);
+      return null; // Retorna null si hay error
+    }
+  };
 
 
   // Nueva función: Buscar documento por num_factura
@@ -79,10 +103,12 @@ export const DocumentsProvider = ({ children }) => {
     documents,
     loading,
     error,
-    refetch: cargarDocuments, // permite recargar manualmente
+    refetch, // permite recargar manualmente
     clearDocuments,
     addProduct,
+    deleteProduct,
     getDocumentsByNum,
+    getDocumentByNum,
   };
 
   return (

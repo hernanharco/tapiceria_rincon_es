@@ -26,7 +26,16 @@ class DataClient(models.Model):
 
     def __str__(self):
         return f"{self.name} {self.cif}"
-
+    
+# class NumDocument(models.Model):
+#     cod_cliente = models.ForeignKey(
+#         DataClient,
+#         on_delete=models.CASCADE,
+#         related_name='documentos'  # Esto permite acceder desde DataClient
+#     )
+#     num_presupuesto = models.CharField(max_length=50) 
+#     num_albaran = models.CharField(max_length=50)
+#     num_factura = models.CharField(max_length=50)
 
 class Document(models.Model):
     num_factura = models.CharField(max_length=50, primary_key=True)
@@ -57,7 +66,10 @@ class DataDocument(models.Model):
 
 class FooterDocument(models.Model):
     footer_documento = models.ForeignKey(
-        Document, on_delete=models.CASCADE, related_name='footerdocumentos')
+        Document, 
+        on_delete=models.CASCADE, 
+        related_name='footerdocumentos'
+    )
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     base_imponible = models.DecimalField(max_digits=10, decimal_places=2)
     iva = models.DecimalField(max_digits=5, decimal_places=2)

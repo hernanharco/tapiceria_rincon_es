@@ -42,16 +42,7 @@ export const HistoryModalsSearch = ({ isOpen, onClose, title, children, selected
                             aria-label="Cerrar modal"
                         >
                             &times;
-                        </button>
-
-                        {/* Botones para Imprimir y Descargar */}
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
-                            aria-label="Cerrar modal"
-                        >
-                            imprimir
-                        </button>
+                        </button>                        
 
                     </div>
 
@@ -71,9 +62,7 @@ export const HistoryModalsSearch = ({ isOpen, onClose, title, children, selected
                         observation={selectedItem.observaciones}
 
                         search={search}
-                    />
-
-                    {/* Aqui estabamos dibujando la tabla antes */}
+                    />                    
 
                     {/* Botones inferiores */}
                     <div className="flex justify-end space-x-3 mt-4">

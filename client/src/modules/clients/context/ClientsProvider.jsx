@@ -73,6 +73,21 @@ export const ClientsProvider = ({ children }) => {
     }
   };
 
+  // Función para buscar un cliente por su CIF
+  const getClientByCif = async (cif) => {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/clients/${cif}/`);
+
+      // Retorna los datos del cliente encontrado
+      return response.data;
+
+    } catch (err) {
+      console.error('Error al buscar el cliente:', err);
+      setError('No se pudo encontrar el cliente con CIF: ' + cif);
+      return null; // Retorna null si hay error
+    }
+  };
+
   // Buscar desde backend con ?q=
   const fetchClientsFromBackend = async (term) => {
     if (!term.trim()) {
@@ -112,6 +127,7 @@ export const ClientsProvider = ({ children }) => {
     deleteClients,
     updateClients,
     fetchClientsFromBackend,
+    getClientByCif,
   };
 
   return (

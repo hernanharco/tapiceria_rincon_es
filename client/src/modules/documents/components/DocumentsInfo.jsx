@@ -1,7 +1,9 @@
 
+import { useEffect } from 'react';
+
+// Importamos los componentes necesarios
 import { TableDocuments } from './TableDocuments';
 import useDocuments from '../hooks/useDocuments';
-import { useEffect } from 'react';
 
 export const DocumentsInfo = ({
     isOpen = false,
@@ -31,10 +33,10 @@ export const DocumentsInfo = ({
     };
 
     // 1. Asignar número de documento al cargar documentos
-    useEffect(() => {  
-        console.log("HistoryTableDocuments search", search)      
+    useEffect(() => {
+        // console.log("HistoryTableDocuments search", search)
         if (search) {
-            console.log("estoy en HistoryTableDocuments en usseEffect", documents)
+            // console.log("estoy en HistoryTableDocuments en usseEffect", documents)
             const nextNum = getNextNumBudget(documents);
             if (nextNum !== numDocument) {
                 setNumDocument(nextNum);
@@ -62,14 +64,14 @@ export const DocumentsInfo = ({
             fecha_factura: date,
             observaciones: observation
         };
-        console.log("DataToSave", dataToSave)
+        // console.log("DataToSave", dataToSave)
         addProduct(dataToSave);
     };
 
     // 4. Ejecutar guardarDocumento apenas el componente se monta
     useEffect(() => {
         saveDocument(); // Se ejecuta solo una vez         
-        
+
     }, [date]);
 
     return (
