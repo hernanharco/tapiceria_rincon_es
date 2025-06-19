@@ -1,15 +1,20 @@
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
+
 
 from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago
+
 from .serializers import (
     DataCompanySerializer,
     DataClientSerializer,
     DocumentSerializer,
     DataDocumentSerializer,
     FooterDocumentSerializer,
-    PagoSerializer
+    PagoSerializer,
+    
 )
 
 class DataCompanyViewSet(viewsets.ModelViewSet):
@@ -19,27 +24,24 @@ class DataCompanyViewSet(viewsets.ModelViewSet):
 
 class DataClientViewSet(viewsets.ModelViewSet):
     queryset = DataClient.objects.all()
-    serializer_class = DataClientSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("Errores de validación:", serializer.errors)  # 👈 LOG
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        self.perform_create(serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    serializer_class = DataClientSerializer 
 
 class DocumentViewSet(viewsets.ModelViewSet):
-    queryset = Document.objects.all()
+    
     serializer_class = DocumentSerializer
+    queryset = Document.objects.all()
 
+    @action(detail=False, url_path='dataclient/(?P<doc_id>[^/.]+)', methods=['get'])
+    def get_queryset(self):
+        doc = self.request.query_params.get('dataclient')
+        if doc:
+            # Asegúrate de usar el campo correcto de DataClient, ej: cif
+            return Document.objects.filter(dataclient__cif=doc)
+        return super().get_queryset()
 
 class DataDocumentViewSet(viewsets.ModelViewSet):
     queryset = DataDocument.objects.all()
     serializer_class = DataDocumentSerializer
-
 
 class FooterDocumentViewSet(viewsets.ModelViewSet):    
     serializer_class = FooterDocumentSerializer

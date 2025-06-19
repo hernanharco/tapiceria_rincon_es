@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Configuración global
+const API_URL = 'http://localhost:8000/api/documents/';
+
 const DocumentsContext = createContext();
 
 export const useApiDocumentsContext = () => {
@@ -21,7 +24,8 @@ export const DocumentsProvider = ({ children }) => {
   // Cargar documentos desde la API
   const refetch = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/documents/');
+      const res = await axios.get(API_URL);
+      // console.log('DocumentsProvider. Datos obtenidos:', res.data);
       setDocuments(res.data);
     } catch (err) {
       setError(err);
@@ -32,23 +36,24 @@ export const DocumentsProvider = ({ children }) => {
 
   // Insertar nuevo Documento
   const addProduct = async (newProduct) => {
-    // console.log('DocumentsProvider. Nuevo numero de documento a agregar:', newProduct); mnhu5t6y 6y78
+    // console.log('DocumentsProvider. Nuevo numero de documento a agregar:', newProduct);
     try {
-      const response = await axios.post('http://localhost:8000/api/documents/', newProduct);
+      const response = await axios.post(API_URL, newProduct);
       setDocuments((prev) => [...prev, response.data]); // Agrega respuesta del servidor
       return response.data;
     } catch (err) {
-      setError(err);
-      throw err;
+      const errorData = err.response?.data || {};
+      const errorMessage = errorData.detail || JSON.stringify(errorData) || err.message;
+      console.error('Error al guardar:', errorMessage);
+      throw new Error(`No se pudo guardar el documento: ${errorMessage}`);
     }
   };
 
   // Eliminar un documento por su ID
   const deleteProduct = async (numFactura) => {
+    // console.log('DocumentsProvider. Eliminando documento con numFactura:', numFactura);
     try {
-      const response = await axios.delete(
-        `http://localhost:8000/api/documents/${numFactura}/`
-      );
+      const response = await axios.delete(`${API_URL}${numFactura}/`);
 
       // Eliminar del estado local solo si la petición fue exitosa
       setDocuments((prev) =>
@@ -72,31 +77,69 @@ export const DocumentsProvider = ({ children }) => {
   }, []);
 
   // Función para buscar un cliente por su CIF
-  const getDocumentByNum = async (num) => {
-    try {
-      const response = await axios.get(`http://localhost:8000/api/documents/${num}/`);
+  const getDocumentByDoc = async (doc) => {
+    // console.log('DocumentsProvider. Buscando documento por doc:', doc);
 
-      // Retorna los datos del cliente encontrado
+    if (!doc || typeof doc !== 'string' || doc.trim() === '') {
+      console.warn('Valor inválido para doc:', doc);
+      return [];
+    }
+
+    try {
+      const url = `${API_URL}?dataclient=${doc}`;
+      // console.log('Haciendo GET a:', url);
+
+      const response = await axios.get(url);
+      // console.log('Respuesta completa:', response);
+      // console.log('Datos recibidos:', response.data);
+      // console.log('¿Es un array?:', Array.isArray(response.data));
+
+      if (!Array.isArray(response.data)) {
+        console.error('El backend no devolvió un array');
+        return [];
+      }
+
       return response.data;
 
     } catch (err) {
-      console.error('Error al buscar el cliente:', err);
-      setError('No se pudo encontrar el cliente con CIF: ' + cif);
-      return null; // Retorna null si hay error
+      console.error('Error al obtener documentos:', err);
+      setError('No se pudo encontrar el cliente con CIF: ' + doc);
+      return [];
     }
   };
+
+  // const getNumDocumentId = async (cif) => {
+  //   console.log("DocumentsProvider. Buscando ID del documento para CIF:", cif);
+  //   try {
+  //     const response = await getClientByCif(cif); // Suponiendo que ya tienes esta función
+  //     console.log("DocumentsProvider. Respuesta de getClientByCif:", response);
+  //     if (response.length === 0) {
+  //       console.error("No se encontraron documentos para el cliente.");
+  //       return null;
+  //     }
+  //     return response[response.length - 1].id; // ID del último documento
+  //   } catch (error) {
+  //     console.error("Error al obtener el ID del documento:", error);
+  //     return null;
+  //   }
+  // };
 
 
   // Nueva función: Buscar documento por num_factura
   const getDocumentsByNum = (codClient) => {
-    // Para debugging: muestra el primer documento y sus tipos    
-    if (!codClient) return null;
-    const ejemplo = documents[0];
-    // console.log("Primer documento:", ejemplo);
-    // console.log("Tipo de num_document:", typeof codClient, " - ", codClient);
-    // console.log("Tipo de documento.documento:", typeof ejemplo.cod_cliente, " - ", ejemplo.cod_cliente);
-    // Filtro seguro: convierte ambos a string y limpia espacios
-    return documents.filter(doc => String(doc.cod_cliente).trim().toLowerCase() === String(codClient).trim().toLowerCase());
+    console.log('DocumentsProvider. Buscando documentos por num_factura:', codClient);
+    // Validación inicial
+    if (!codClient) return [];
+
+    // Asegurarnos de tener codClient como string limpio
+    const target = String(codClient).trim().toLowerCase();
+
+    // Filtro seguro: convertimos ambos a string, limpiamos y comparamos    
+    return documents.filter(doc => {
+      // Verifica que doc.cod_cliente exista y sea convertible a string      
+      const docCodCliente = String(doc.num_documents_rel || '').trim().toLowerCase();
+      return docCodCliente === target;
+    });
   };
 
   const value = {
@@ -108,7 +151,7 @@ export const DocumentsProvider = ({ children }) => {
     addProduct,
     deleteProduct,
     getDocumentsByNum,
-    getDocumentByNum,
+    getDocumentByDoc,
   };
 
   return (

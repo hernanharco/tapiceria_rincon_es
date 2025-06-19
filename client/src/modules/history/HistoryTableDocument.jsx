@@ -3,6 +3,11 @@ import { useState, useEffect } from "react";
 import { FaEdit, FaTrashAlt, FaPrint } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
+
+dayjs.locale('es'); // Configura el idioma por defecto
+
 // Importamos los hooks necesarios
 import useHistory from "./hooks/useHistory";
 import useDocuments from '../documents/hooks/useDocuments'; // Asegúrate de que la ruta es correcta
@@ -11,7 +16,7 @@ import useDocuments from '../documents/hooks/useDocuments'; // Asegúrate de que
 import { HistoryModalsSearch } from "./HistoryModalsSearch";
 
 export const HistoryTableDocument = ({ setShowModal, searchTerm }) => {
-    const { getDocumentsByNum, deleteProduct } = useDocuments();
+    const { getDocumentByDoc, deleteProduct } = useDocuments();
     const [showModalSearch, setShowModalSearch] = useState(false);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [selectedItem, setSelectedItem] = useState([])
@@ -39,22 +44,39 @@ export const HistoryTableDocument = ({ setShowModal, searchTerm }) => {
 
     // Filtrar productos cada vez que cambie numDocument
     useEffect(() => {
-        if (!cif) {
-            setFilteredProducts([]);
-            setIsDisabled(true);
-            return;
-        }
+        const fetchDocuments = async () => {
+            if (!cif) {
+                setFilteredProducts([]);
+                setIsDisabled(true);
+                return;
+            }
 
-        const index = String(cif).trim();
-        const results = getDocumentsByNum(index);
-        setFilteredProducts(results || []);
-        setIsDisabled(false);
-    }, [cif, getDocumentsByNum]);
+            // Asegúrate de estar dentro de una función async
+            try {
+                const indexDocuments = String(cif).trim();
+                // Llamamos a la función y esperamos su respuesta
+                const filteredDocs = await getDocumentByDoc(indexDocuments);
+
+                // Ordenar los documentos por fecha de forma descendente
+                const sortedDocs = sortDocumentsByDate(filteredDocs || []);
+
+                // Actualizar estado
+                setFilteredProducts(filteredDocs || []);
+                setIsDisabled(false);
+            } catch (error) {
+                console.error("Error al obtener documentos:", error);
+                setFilteredProducts([]);
+            }
+        };
+
+        fetchDocuments();
+    }, [getDocumentByDoc, cif]);
 
     // 
     const handleUpdate = (item) => {
+        console.log("Actualizar documento:", item);
         setSelectedItem({
-            num_factura: item.num_factura,
+            num_factura: item.num_presupuesto,
             cod_cliente: item.cod_cliente,
             fecha_factura: item.fecha_factura,
             observaciones: item.observaciones,
@@ -63,18 +85,18 @@ export const HistoryTableDocument = ({ setShowModal, searchTerm }) => {
     };
 
     const handleDelete = async (item) => {
+        console.log("Eliminar documento:", item);
         if (
             window.confirm(
-                `¿Estás seguro de eliminar el registro con número: ${item.num_factura}?`
+                `¿Estás seguro de eliminar el registro con número: ${item.num_presupuesto}?`
             )
         ) {
             try {
-                console.log("Eliminar documento:", item.num_factura);
-                await deleteProduct(item.num_factura); // Elimina del backend
+                await deleteProduct(item.id); // Elimina del backend                
 
-                // Actualizar la lista local
-                const updatedList = getDocumentsByNum(cif); // Recargamos los documentos del cliente
-                setFilteredProducts(updatedList); // Actualizamos la tabla localmente
+                // Con esto hacemos una busqueda y actualizamos la lista de documentos
+                const filteredDocs = await getDocumentByDoc(item.dataclient);
+                setFilteredProducts(filteredDocs || []);
 
                 alert("Documento eliminado correctamente");
             } catch (error) {
@@ -100,6 +122,17 @@ export const HistoryTableDocument = ({ setShowModal, searchTerm }) => {
     const handlePrint = (item) => {
 
         navigate(`/imprimir/${item.num_factura}/${cif}`);
+    };
+
+    const sortDocumentsByDate = (documents) => {
+        return documents.sort((a, b) => {
+            const dateA = new Date(a.fecha_factura);
+            const dateB = new Date(b.fecha_factura);
+
+            if (dateA > dateB) return -1; // Más reciente primero
+            if (dateA < dateB) return 1;
+            return 0;
+        });
     };
 
     return (
@@ -156,12 +189,15 @@ export const HistoryTableDocument = ({ setShowModal, searchTerm }) => {
                             <tr key={idx} className="hover:bg-gray-50 transition-colors duration-150">
                                 {/* Columna Fecha */}
                                 <td className="px-6 py-4 text-center text-sm text-gray-800">
-                                    {item.fecha_documento || item.fecha_factura || displayCurrentDate}
+                                    {item.fecha_factura
+                                        ? dayjs(item.fecha_factura).format('dddd, D [de] MMMM [de] YYYY')
+                                        : dayjs().format('dddd, D [de] MMMM [de] YYYY')
+                                    }
                                 </td>
 
                                 {/* Columna Presupuesto */}
                                 <td className="px-6 py-4 text-center text-sm text-gray-800">
-                                    {item.num_factura ? item.num_factura : '-'}
+                                    {item.num_presupuesto ? item.num_presupuesto : '-'}
                                 </td>
 
                                 {/* Columna Acciones */}

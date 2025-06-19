@@ -59,7 +59,7 @@ export const HistoryModalsSearch = ({ isOpen, onClose, title, children, selected
                         cif={selectedItem.cod_cliente}
                         numDocument={selectedItem.num_factura}
                         date={selectedItem.fecha_factura}
-                        observation={selectedItem.observaciones}
+                        observation={selectedItem.observaciones}                  
 
                         search={search}
                     />                    

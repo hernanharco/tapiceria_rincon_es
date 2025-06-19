@@ -12,12 +12,10 @@ class DataClientSerializer(serializers.ModelSerializer):
         model = DataClient
         fields = '__all__'
 
-
-class DocumentSerializer(serializers.ModelSerializer):
+class DocumentSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Document
-        fields = '__all__'
-
+        fields = '__all__'    
 
 class DataDocumentSerializer(serializers.ModelSerializer):
     class Meta:

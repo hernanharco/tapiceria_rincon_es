@@ -89,8 +89,8 @@ DATABASES = {
         'HOST': 'localhost',   # O la IP si está en otro servidor
         'PORT': '3329',        # Puerto por defecto de MySQL
         'OPTIONS': {
-            'connect_timeout': 28800,
-            'init_command': "SET innodb_strict_mode=1",
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         }
     }
 }

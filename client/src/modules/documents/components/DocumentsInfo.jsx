@@ -1,15 +1,13 @@
-
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // Importamos los componentes necesarios
 import { TableDocuments } from './TableDocuments';
-import useDocuments from '../hooks/useDocuments';
+import useDocuments from '../hooks/useDocuments'
 
 export const DocumentsInfo = ({
-    isOpen = false,
+    isOpen = true,
     cif = '',
-    numDocument = '',
-    setNumDocument = () => { }, // Función vacía si no se pasa
+    numDocument = '', // valor inicial desde props
     date = '',
     setDate = () => { },
     observation = '',
@@ -17,66 +15,83 @@ export const DocumentsInfo = ({
     search = () => { },
 }) => {
 
-    const { documents, addProduct } = useDocuments();
+    const [localNumDocument, setLocalNumDocument] = useState(numDocument); // ✅ Usamos otro nombre    
+    const { addProduct, getDocumentByDoc } = useDocuments();
+    // const isInitialMount = useRef(true);
+    const userChangedDate = useRef(false);
 
-    // Función pura para calcular el siguiente número de presupuesto
-    const getNextNumBudget = (docs) => {
-        if (!docs || docs.length === 0) return "1";
-
-        const numbersBudget = docs
-            .map(doc => parseInt(doc.num_factura, 10))
-            .filter(n => !isNaN(n));
-
-        const maxNumFactura = Math.max(...numbersBudget);
-        const nextNumBudget = !isNaN(maxNumFactura) ? maxNumFactura + 1 : 1;
-        return nextNumBudget.toString();
-    };
+    // Este useEffect se ejecuta SOLO UNA VEZ al cargar el componente
+    useEffect(() => {
+        setDate("00/00/0000");
+    }, []); // <-- Arreglo vacío = se ejecuta solo una vez
 
     // 1. Asignar número de documento al cargar documentos
     useEffect(() => {
-        // console.log("HistoryTableDocuments search", search)
-        if (search) {
-            // console.log("estoy en HistoryTableDocuments en usseEffect", documents)
-            const nextNum = getNextNumBudget(documents);
-            if (nextNum !== numDocument) {
-                setNumDocument(nextNum);
+        const fetchClientDocuments = async () => {
+            if (!cif) return;
+
+            try {
+                const response = await getDocumentByDoc(cif);
+
+                // console.log("typeof response:", typeof response);
+                // console.log("response completo:", response);
+
+                // Verificar si es un array y tiene datos
+                if (!Array.isArray(response) || response.length === 0) {
+                    // console.log("No hay documentos válidos");
+                    setLocalNumDocument("1");
+                    return;
+                }
+
+                // Obtener el último documento
+                const lastDocument = response[response.length - 1];
+                const currentNum = parseInt(lastDocument.num_presupuesto, 10);
+
+                if (!isNaN(currentNum)) {
+                    const nextNum = (currentNum + 1).toString();
+                    setLocalNumDocument(nextNum);
+                    return;
+                }
+
+                // Si no hay datos válidos, asignamos "1"
+                // console.log("No se encontró número de presupuesto válido");
+                setLocalNumDocument("1");
+
+            } catch (error) {
+                console.error("Error al obtener documentos del cliente:", error);
+                setLocalNumDocument("1"); // Fallback por seguridad
             }
-            // Reseteamos la fecha para que aparezca vacia
-            setDate("00/00/0000");
+        };
+
+        if (isOpen) {
+            fetchClientDocuments(); // Solo ejecutamos cuando el componente está abierto
         }
 
-    }, [isOpen]);
-
-    // 2. Establecer la fecha automática solo una vez al abrir
-    useEffect(() => {
-        // console.log("Date", date)
-        if (isOpen && (!date || date.trim() === '')) {
-            const today = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
-            setDate(today);
-        }
-    }, [isOpen, date]);
+    }, [isOpen, cif]);
 
     // 3. Función para guardar documento
     const saveDocument = () => {
-        const dataToSave = {
-            cod_cliente: cif,
-            num_factura: numDocument,
+        
+        const saveToDocuments = {
+            dataclient: cif,
             fecha_factura: date,
-            observaciones: observation
+            observaciones: observation,
+            num_presupuesto: localNumDocument
         };
-        // console.log("DataToSave", dataToSave)
-        addProduct(dataToSave);
+        addProduct(saveToDocuments);
     };
 
     // 4. Ejecutar guardarDocumento apenas el componente se monta
     useEffect(() => {
-        saveDocument(); // Se ejecuta solo una vez         
-
+        if (userChangedDate.current) {
+            saveDocument();
+            userChangedDate.current = false; // Resetear para próxima interacción
+        }
     }, [date]);
 
     return (
         <div>
-            <details open={isOpen} className="p-4 border border-gray-300 rounded bg-gray-50">
+            <details open={!isOpen} className="p-4 border border-gray-300 rounded bg-gray-50">
                 <summary className="font-semibold text-gray-700 mb-3 cursor-pointer">Información del Cliente</summary>
 
                 {/* Campo Num. Presupuesto */}
@@ -87,7 +102,7 @@ export const DocumentsInfo = ({
                     <input
                         id="numPresupuesto"
                         type="text"
-                        value={numDocument}
+                        value={localNumDocument || "Cargando..."}
                         readOnly
                         className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md"
                     />
@@ -102,7 +117,10 @@ export const DocumentsInfo = ({
                         id="fechaPresupuesto"
                         type="date"
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        onChange={(e) => {
+                            setDate(e.target.value);
+                            userChangedDate.current = true; // 👈 Indicamos que el usuario cambió la fecha                          
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
@@ -136,9 +154,10 @@ export const DocumentsInfo = ({
                     />
                 </div>
             </details>
+
             {/* Tabla u otros componentes - esta tabla lo que hace es comenzar agregar los productos */}
             <TableDocuments
-                numDocument={numDocument}
+                numDocument={localNumDocument}
                 search={search}
             />
         </div>

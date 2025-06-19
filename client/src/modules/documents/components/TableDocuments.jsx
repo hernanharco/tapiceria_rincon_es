@@ -18,6 +18,8 @@ export const TableDocuments = ({
   search = () => { },
 }) => {
 
+  // console.log("TableDocuments. numDocument:", numDocument);
+
   const { datadocuments, addProduct, updateProduct, deleteProduct, refetchdatadocuments, getDocumentsByNum } = useDataDocuments();
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);

@@ -19,76 +19,70 @@ export const useApiClientsContext = () => {
 // 3. Proveedor de estado – Con búsqueda conectada al backend
 export const ClientsProvider = ({ children }) => {
   const [clients, setClients] = useState([]);
-  const [filteredClients, setFilteredClients] = useState([]); // ✅ Nuevo estado para resultados de búsqueda
+  const [filteredClients, setFilteredClients] = useState([]); // ✅ Resultados de búsqueda
   const [loading, setLoading] = useState(true);
-  const [loadingSearch, setLoadingSearch] = useState(false); // ✅ Nuevo estado para búsqueda
+  const [loadingSearch, setLoadingSearch] = useState(false);
   const [error, setError] = useState(null);
 
   // Cargar todos los clientes desde Django
-  const cargarClientes = async () => {
+  const refetchClients = async () => {
     try {
-      const res = await axios.get(API_URL);
-      setClients(res.data);
+      const res = await axios.get(API_URL); // ✅ Usamos la variable
+      setClients(res.data); // ✅ Axios ya parsea JSON
     } catch (err) {
-      setError(err.response?.data || 'Error al cargar clientes');
+      setError('No se pudieron cargar los clientes.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Insertar nuevo cliente
-  const addClients = async (newClient) => {
+  // Crear cliente
+  const addClients = async (cliente) => {
     try {
-      const response = await axios.post(API_URL, newClient);
-      setClients((prev) => [...prev, response.data]);
-      return response.data;
+      const res = await axios.post(API_URL, cliente); // ✅ Enviamos datos directamente
+      setClients([...clients, res.data]); // ✅ Agregar nuevo cliente a la lista
     } catch (err) {
-      setError(err.response?.data || 'Error al guardar cliente');
-      throw err;
+      console.error('Error al crear cliente:', err.response?.data || err.message);
+      throw new Error('No se pudo guardar el cliente.');
     }
   };
 
-  // Eliminar cliente
-  const deleteClients = async (id) => {
+  // Eliminar cliente por CIF
+  const deleteClients = async (cif) => {
     try {
-      await axios.delete(`${API_URL}${id}/`);
-      setClients((prev) => prev.filter((cliente) => cliente.id !== id));
+      await axios.delete(`${API_URL}${cif}/`);
+      setClients(clients.filter((client) => client.cif !== cif));
     } catch (err) {
-      setError(err.response?.data || 'Error al borrar cliente');
-      throw err;
+      console.error('Error al eliminar cliente:', err.response?.data || err.message);
+      throw new Error('No se pudo eliminar el cliente.');
     }
   };
 
-  // Actualizar cliente
-  const updateClients = async (id, updatedClient) => {
+  // Actualizar cliente por CIF
+  const updateClients = async (cif, cliente) => {
     try {
-      const res = await axios.put(`${API_URL}${id}/`, updatedClient);
-      setClients((prev) =>
-        prev.map((cliente) => (cliente.id === id ? res.data : cliente))
-      );
-      return res.data;
+      const res = await axios.put(`${API_URL}${cif}/`, cliente);
+      setClients(clients.map((c) => (c.cif === cif ? res.data : c)));
     } catch (err) {
-      setError(err.response?.data || 'Error al actualizar cliente');
-      throw err;
+      console.error('Error al actualizar cliente:', err.response?.data || err.message);
+      throw new Error('No se pudo actualizar el cliente.');
     }
   };
 
-  // Función para buscar un cliente por su CIF
+  // Buscar cliente por CIF exacto
   const getClientByCif = async (cif) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/clients/${cif}/`);
-
-      // Retorna los datos del cliente encontrado
-      return response.data;
-
+      const res = await axios.get(`${API_URL}${cif}/`);
+      return res.data;
     } catch (err) {
-      console.error('Error al buscar el cliente:', err);
-      setError('No se pudo encontrar el cliente con CIF: ' + cif);
-      return null; // Retorna null si hay error
+      console.error('Error al buscar cliente por CIF:', err.response?.data || err.message);
+      setError(`No se pudo encontrar el cliente con CIF: ${cif}`);
+      return null;
     }
   };
 
-  // Buscar desde backend con ?q=
+  // Buscar clientes con término de búsqueda
   const fetchClientsFromBackend = async (term) => {
     if (!term.trim()) {
       setFilteredClients([]);
@@ -99,10 +93,10 @@ export const ClientsProvider = ({ children }) => {
 
     try {
       const res = await axios.get(`${API_URL}?q=${encodeURIComponent(term)}`);
-      setFilteredClients(res.data); // ✅ Recibimos resultados del backend
+      setFilteredClients(res.data);
     } catch (err) {
-      console.error('Error al buscar clientes', err);
-      setFilteredClients([]); // ❌ Si hay error, no mostramos nada
+      console.error('Error al buscar clientes:', err.response?.data || err.message);
+      setFilteredClients([]);
     } finally {
       setLoadingSearch(false);
     }
@@ -110,19 +104,19 @@ export const ClientsProvider = ({ children }) => {
 
   // Cargar datos iniciales
   useEffect(() => {
-    cargarClientes();
+    refetchClients();
   }, []);
 
   // Valor compartido a través del contexto
   const value = {
     clients,
-    filteredClients, // ✅ Añadimos filteredClients al contexto si quieres usarlo en otros componentes
+    filteredClients,
     loading,
-    loadingSearch, // ✅ Opcional: útil si quieres mostrar un spinner mientras se busca
+    loadingSearch,
     error,
 
     // Funciones
-    refetchclientes: cargarClientes,
+    refetchClients,
     addClients,
     deleteClients,
     updateClients,
