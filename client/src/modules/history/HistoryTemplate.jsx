@@ -8,8 +8,7 @@ import useClients from '../clients/hooks/useClients'; // Importamos el hook de c
 export const HistoryTemplate = () => {
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [sugerencias, setSugerencias] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false);  
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
   const { clients } = useClients(); // Traemos los clientes del contexto
@@ -152,12 +151,6 @@ export const HistoryTemplate = () => {
         )}
       </div>
 
-      {/* Tabla de documentos - Componente externo */}
-      <HistoryTableDocument
-        setShowModal={setShowModal}
-        searchTerm={searchTerm}
-      />
-
       {/* Modal reutilizable */}
       <HistoryModals
         isOpen={showModal}
@@ -169,6 +162,13 @@ export const HistoryTemplate = () => {
         <div className="space-y-4"></div>
 
       </HistoryModals>
+
+      {/* Tabla de documentos - Componente externo Dibuja la tabla segun la informacion buscada */}
+      <HistoryTableDocument
+        setShowModal={setShowModal}
+        searchTerm={searchTerm}
+        allClients={clients} // Pasamos todos los clientes al componente
+      />      
     </div>
   );
 };

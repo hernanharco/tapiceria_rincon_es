@@ -1,215 +1,300 @@
-
-import { useState, useEffect } from 'react';
-
- 
-import { DocumentsFooter } from './DocumentsFooter';
-import ProductModal from './modals/DataDocumentsModal';
-import useDataDocuments from '../hooks/useDataDocuments';
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(value);
-};
+import { useEffect, useState } from "react";
+import { formatCurrency } from "../../../utils/formatUtils";
 
 export const TableDocuments = ({
-  numDocument,
-  search = () => { },
+  filteredProducts,
+  setFilteredProducts,
+  onProductsChange,
 }) => {
-
-  // console.log("TableDocuments. numDocument:", numDocument);
-
-  const { datadocuments, addProduct, updateProduct, deleteProduct, refetchdatadocuments, getDocumentsByNum } = useDataDocuments();
-  const [showModal, setShowModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-
-  // Manejador de guardar/editar producto
-  const handleSaveProduct = async (producto) => {
-    // console.log("handleSaveProduct in HistoryTableDocument", producto)
-    try {
-      if (producto.id) {
-        await updateProduct(producto.id, producto);
-      } else {
-        await addProduct(producto);
-      }
-      await refetchdatadocuments(); // Recargar datos
-      setShowModal(false);
-      setEditingProduct(null);
-    } catch (err) {
-      alert(`Error al ${producto.id ? 'actualizar' : 'guardar'} el producto`);
-    }
-  };
-
-  // Manejador de eliminar
-  const handleDeleteProduct = (id) => {
-    if (window.confirm("¿Estás seguro de eliminar este producto?")) {
-      deleteProduct(id).catch(() => {
-        alert("Hubo un error al eliminar");
-      });
-    }
-  };
-
-  const hasItems = Array.isArray(filteredProducts) && filteredProducts.length > 0;
-
-  // Filtrar productos cada vez que cambie numDocument
+  // Inicializar con una lista vacía si no hay productos
   useEffect(() => {
-    // console.log("Numero de Documento en TableDocuments", numDocument);
-    if (!numDocument) {
+    if (!filteredProducts || filteredProducts.length === 0) {
       setFilteredProducts([]);
-      return;
+    }
+  }, []);
+
+  // Notificar al padre cada vez que haya cambios
+  useEffect(() => {
+    if (typeof onProductsChange === "function") {
+      onProductsChange(filteredProducts);
+    }
+  }, [filteredProducts]);
+
+  // Agregar nueva fila vacía
+  const handleAddRow = () => {
+    const newRow = {
+      reference: "",
+      description: "",
+      quantity: 1,
+      price: 0,
+      dto: 0,
+      amount: 0,
+    };
+    setFilteredProducts([...filteredProducts, newRow]);
+  };
+
+  // Actualizar un campo específico
+  const handleChange = (index, field, value) => {
+    const updatedList = [...filteredProducts];
+    updatedList[index][field] = value;
+
+    // Calcular 'amount' basado en otros campos
+    if (
+      field === "price" ||
+      field === "quantity" ||
+      field === "dto" ||
+      field === "amount"
+    ) {
+      const price = parseFloat(updatedList[index].price) || 0;
+      const quantity = parseInt(updatedList[index].quantity) || 0;
+      const dto = parseFloat(updatedList[index].dto) || 0;
+      const amount = parseFloat(updatedList[index].amount) || 0;
+
+      if (field !== "amount") {
+        const subtotal = price * quantity;
+        const discount = subtotal * (dto / 100);
+        updatedList[index].amount = subtotal - discount;
+      } else if (field === "amount" && price > 0 && quantity > 0) {
+        const calculatedDto = 100 - (amount / (price * quantity)) * 100;
+        updatedList[index].dto = isNaN(calculatedDto)
+          ? 0
+          : calculatedDto.toFixed(2);
+      }
     }
 
-    if (numDocument && !isNaN(Number(numDocument))) {
-      const index = parseInt(numDocument, 10);
-      const results = getDocumentsByNum(index); // Asegúrate que esta función exista y funcione bien
-      // console.log("resultado de busqueda por filtro", results);
-      setFilteredProducts(results || []);
-    } else {
-      setFilteredProducts([]);
-    }
-  }, [numDocument, datadocuments]);
+    setFilteredProducts(updatedList);
+  };
+
+  // Eliminar fila
+  const handleDeleteRow = (index) => {
+    const newList = filteredProducts.filter((_, i) => i !== index);
+    setFilteredProducts(newList);
+  };
 
   return (
     <div className="border border-gray-300 rounded-lg bg-white shadow-sm px-4 md:px-6 py-2">
-      {/* Botón Agregar */}
-      <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-700">Productos</h2>
-        <button
-          onClick={() => {
-            setEditingProduct(null);
-            setShowModal(true);
-          }}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-        >
-          ➕ Agregar Producto
-        </button>
-      </div>
-
-      {/* Contenedor de tabla o tarjetas */}
+      {/* Tabla visible en escritorio */}
       <div className="w-full overflow-x-auto">
-        {hasItems ? (
-          <>
-            {/* Tabla - Solo visible en escritorio */}
-            <table className="hidden md:table w-full table-auto border-collapse mb-6">
-              <thead>
-                <tr className="bg-gray-100 text-gray-700 font-semibold">
-                  <th className="border border-gray-300 text-center hidden md:table-cell ">Ref</th>
-                  <th className="border border-gray-300 text-center">Descripción</th>
-                  <th className="border border-gray-300 text-center  hidden md:table-cell ">Cant</th>
-                  <th className="border border-gray-300 text-center ">Precio</th>
-                  <th className="border border-gray-300 text-center hidden md:table-cell ">Dto.</th>
-                  <th className="border border-gray-300 text-center">Importe</th>
-                  <th className="border border-gray-300 text-center">Acci</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors duration-150 ">
-                    <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell ">
-                      {item.referencia || '-'}
-                    </td>
-                    <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300">
-                      {item.descripcion || '-'}
-                    </td>
-                    <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell ">
-                      {item.cantidad || 0}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1 text-sm text-gray-800 text-center border border-gray-300">
-                      {item.precio ? formatCurrency(item.precio) : '€0.00'}
-                    </td>
-                    <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell ">
-                      {item.dto ? `${item.dto}%` : '0%'}
-                    </td>
-                    <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300">
-                      {item.importe ? formatCurrency(item.importe) : '€0.00'}
-                    </td>
-                    <td className="px-2 py-1 text-sm text-center border border-gray-300">
-                      <div className="flex justify-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingProduct(item);
-                            setShowModal(true);
-                          }}
-                          className="text-yellow-500 hover:text-yellow-700 no-print"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProduct(item.id)}
-                          className="text-red-500 hover:text-red-700 no-print"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <table className="hidden md:table w-full table-auto border-collapse mb-6">
+          <thead>
+            <tr className="bg-gray-100 text-gray-700 font-semibold">
+              <th className="border border-gray-300 text-center hidden md:table-cell">
+                Ref
+              </th>
+              <th className="border border-gray-300 text-center w-2/5">
+                Descripción
+              </th>
+              <th className="border border-gray-300 text-center hidden md:table-cell">
+                Cant
+              </th>
+              <th className="border border-gray-300 text-center">Precio</th>
+              <th className="border border-gray-300 text-center hidden md:table-cell">
+                Dto.
+              </th>
+              <th className="border border-gray-300 text-center hidden md:table-cell">
+                Importe
+              </th>
+              <th className="border border-gray-300 text-center">Acci</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProducts.map((item, idx) => (
+              <tr
+                key={idx}
+                className="hover:bg-gray-50 transition-colors duration-150"
+              >
+                <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell">
+                  <input
+                    type="text"
+                    value={item.reference}
+                    onChange={(e) =>
+                      handleChange(idx, "reference", e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded px-2 py-1"
+                  />
+                </td>
+                <td className="px-2 py-1 text-sm text-gray-800 border border-gray-300">
+                  <textarea
+                    className="border border-gray-300 w-full resize-none overflow-hidden rounded p-2"
+                    rows={3}
+                    value={item.description}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onChange={(e) => {
+                      handleChange(idx, "description", e.target.value);
+                      const textarea = e.target;
+                      textarea.style.height = "auto";
+                      textarea.style.height = `${textarea.scrollHeight}px`;
+                    }}
+                    style={{ minHeight: "60px" }}
+                  />
+                </td>
+                <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell">
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      handleChange(idx, "quantity", parseInt(e.target.value))
+                    }
+                    className="w-full border border-gray-300 rounded px-2 py-1"
+                  />
+                </td>
+                <td className="whitespace-nowrap px-2 py-1 text-sm text-gray-800 text-center border border-gray-300">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={item.price}
+                    onChange={(e) =>
+                      handleChange(idx, "price", parseFloat(e.target.value))
+                    }
+                    className="w-full border border-gray-300 rounded px-2 py-1"
+                  />
+                </td>
+                <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={item.dto}
+                    onChange={(e) =>
+                      handleChange(idx, "dto", parseFloat(e.target.value))
+                    }
+                    className="w-full border border-gray-300 rounded px-2 py-1"
+                  />
+                </td>
+                <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={item.amount}
+                    onChange={(e) =>
+                      handleChange(idx, "amount", parseFloat(e.target.value))
+                    }
+                    className="w-full border border-gray-300 rounded px-2 py-1"
+                  />
+                </td>
+                <td className="px-2 py-1 text-sm text-center border border-gray-300">
+                  <button
+                    onClick={() => handleDeleteRow(idx)}
+                    className="text-red-500 hover:text-red-700 no-print"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {/* Botón para agregar nueva fila */}
+            <tr>
+              <td colSpan="7" className="text-center py-2">
+                <button
+                  type="button"
+                  onClick={handleAddRow}
+                  className="text-blue-500 hover:text-blue-700 font-semibold"
+                >
+                  ➕ Agregar Producto
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-            {/* Tarjetas - Solo visibles en móvil */}
-            <div className="space-y-4 md:hidden">
-              {filteredProducts.map((item, idx) => (
-                <div key={idx} className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm">
-                  <h3 className="font-semibold text-gray-700 mb-2">Producto #{idx + 1}</h3>
-                  <p><strong>Descripción:</strong> {item.descripcion || '-'}</p>
-                  <p><strong>Precio:</strong> {item.precio ? formatCurrency(item.precio) : '€0.00'}</p>
-                  <p><strong>Cantidad:</strong> {item.cantidad || 0}</p>
-                  <p><strong>Importe:</strong> {item.importe ? formatCurrency(item.importe) : '€0.00'}</p>
-
-                  <div className="mt-3 flex justify-end space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingProduct(item);
-                        setShowModal(true);
-                      }}
-                      className="text-yellow-500 hover:text-yellow-700 no-print"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteProduct(item.id)}
-                      className="text-red-500 hover:text-red-700 no-print"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              ))}
+        {/* Tarjetas visibles en móvil */}
+        <div className="space-y-4 md:hidden">
+          {filteredProducts.map((item, idx) => (
+            <div
+              key={idx}
+              className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm flex flex-col justify-between"
+            >
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2">
+                  Producto #{idx + 1}
+                </h3>
+                <p>
+                  <strong>Descripción:</strong>
+                  <textarea
+                    className="border border-gray-300 w-full resize-none overflow-hidden rounded p-2"
+                    rows={3}
+                    value={item.description}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onChange={(e) => {
+                      handleChange(idx, "description", e.target.value);
+                      const textarea = e.target;
+                      textarea.style.height = "auto";
+                      textarea.style.height = `${textarea.scrollHeight}px`;
+                    }}
+                    style={{ minHeight: "60px" }}
+                  />
+                </p>
+                <p>
+                  <strong>Precio:</strong>{" "}
+                  <input
+                    className="border border-gray-300 w-full"
+                    type="number"
+                    step="0.01"
+                    value={item.price}
+                    onChange={(e) =>
+                      handleChange(idx, "price", parseFloat(e.target.value))
+                    }
+                  />
+                </p>
+                <p>
+                  <strong>Cantidad:</strong>{" "}
+                  <input
+                    className="border border-gray-300 w-full"
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      handleChange(idx, "quantity", parseInt(e.target.value))
+                    }
+                  />
+                </p>
+                <p>
+                  <strong>Dto:</strong>{" "}
+                  <input
+                    className="border border-gray-300 w-full"
+                    type="number"
+                    value={item.dto}
+                    onChange={(e) =>
+                      handleChange(idx, "dto", parseFloat(e.target.value))
+                    }
+                  />
+                </p>
+                <p>
+                  <strong>Importe:</strong>{" "}
+                  <input
+                    className="border border-gray-300 w-full"
+                    type="number"
+                    value={item.amount}
+                    onChange={(e) =>
+                      handleChange(idx, "amount", parseFloat(e.target.value))
+                    }
+                  />
+                </p>
+              </div>
+              <button
+                onClick={() => handleDeleteRow(idx)}
+                className="text-red-500 hover:text-red-700 no-print mt-2 block mx-auto"
+              >
+                🗑️ Eliminar
+              </button>
             </div>
-
-            {/* Pie de documento fuera de la tabla */}
-            <div className="mt-6">
-              <DocumentsFooter 
-                numDocument={numDocument}
-                filteredProducts={filteredProducts}  
-              />
-            </div>
-          </>
-        ) : (
-          <p className="text-gray-500 text-center py-4">No hay productos disponibles</p>
-        )}
+          ))}
+          <button
+            type="button"
+            onClick={handleAddRow}
+            className="text-blue-500 hover:text-blue-700 font-semibold block mx-auto mt-4"
+          >
+            ➕ Agregar Producto
+          </button>
+        </div>
       </div>
-
-      {/* Modal único para crear o editar */}
-      {showModal && (
-        <ProductModal
-          isOpen={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setEditingProduct(null);
-          }}
-          onSubmit={handleSaveProduct}
-          product={editingProduct}
-          documento={numDocument}
-        />
-      )}
     </div>
   );
 };

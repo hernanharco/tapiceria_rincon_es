@@ -1,24 +1,28 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
 import { DocumentsInfo } from '../documents/components/DocumentsInfo';
 
 export const HistoryModalsSearch = ({ isOpen, onClose, title, children, selectedItem }) => {
 
-    const [search, setSearch] = useState(true)
+    // console.log("HistoryModalsSearch", selectedItem);
+    
+    const [datInfo, setDatInfo] = useState(null);
 
-    // Validación para mostrar información del cliente  
-    // console.log("Informacion desde HistoryModals:", searchTerm);
+    useEffect(() => {
+        // console.log(isOpen)
+        // console.log(selectedItem?.cod_cliente)
+        if (!isOpen && selectedItem?.cod_cliente) {
+            // Simulando carga de datos
+            setDatInfo({
+                numInfo: 'PRE240625',
+                fechaInfo: '2024-06-25',
+                observacionesInfo: 'Prueba inicial'
+            });
+            // console.log("datos ModalsSearch", datInfo)
+        }
+    }, [isOpen, selectedItem?.cod_cliente]);
 
-    // Función para extraer CIF y nombre
-    //   const parseSearchTerm = (value) => {
-    //     const match = value.match(/^\(([^)]+)\)\s*(.*)/);
-    //     return {
-    //       cif: match ? match[1] : '',
-    //       name: match ? match[2] : value,
-    //     };
-    //   };
-
-    //   const { cif, name } = parseSearchTerm(searchTerm); // Desestructuramos los valores  
 
     if (!isOpen) return null;
 
@@ -42,7 +46,7 @@ export const HistoryModalsSearch = ({ isOpen, onClose, title, children, selected
                             aria-label="Cerrar modal"
                         >
                             &times;
-                        </button>                        
+                        </button>
 
                     </div>
 
@@ -57,14 +61,21 @@ export const HistoryModalsSearch = ({ isOpen, onClose, title, children, selected
                     {/* Consultar Informacion de los datos del Documento */}
                     <DocumentsInfo
                         cif={selectedItem.cod_cliente}
-                        numDocument={selectedItem.num_factura}
-                        date={selectedItem.fecha_factura}
-                        observation={selectedItem.observaciones}                  
 
-                        search={search}
+                        setDatInfo={setDatInfo}
+                        datInfo={datInfo}
+
                     />                    
 
                     {/* Botones inferiores */}
+                    <div className="flex justify-end space-x-3 mt-4">
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
                     <div className="flex justify-end space-x-3 mt-4">
                         <button
                             onClick={onClose}

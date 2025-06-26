@@ -85,9 +85,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'db_tapiceria_es',     # Ejemplo: mi_empresa_db
         'USER': 'root',               # Ejemplo: root
-        'PASSWORD': 'admin',           # Contraseña del usuario de la base de datos
+        'PASSWORD': '',           # Contraseña del usuario de la base de datos
         'HOST': 'localhost',   # O la IP si está en otro servidor
-        'PORT': '3329',        # Puerto por defecto de MySQL
+        'PORT': '3306',        # Puerto por defecto de MySQL3329
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",

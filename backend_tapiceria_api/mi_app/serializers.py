@@ -12,7 +12,8 @@ class DataClientSerializer(serializers.ModelSerializer):
         model = DataClient
         fields = '__all__'
 
-class DocumentSerializer(serializers.ModelSerializer):    
+class DocumentSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField()  # 👈 Asegura que aparezca 
     class Meta:
         model = Document
         fields = '__all__'    

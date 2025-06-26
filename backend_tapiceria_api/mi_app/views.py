@@ -1,8 +1,9 @@
 
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 
 from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago
@@ -31,17 +32,33 @@ class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
     queryset = Document.objects.all()
 
-    @action(detail=False, url_path='dataclient/(?P<doc_id>[^/.]+)', methods=['get'])
-    def get_queryset(self):
-        doc = self.request.query_params.get('dataclient')
+    # Esta forma solo sirve para listar informacion
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='dataclient', type=str, location='query', description='CIF del cliente'),
+        ]
+    )
+    @action(detail=False, url_path='dataclient', methods=['get'])
+    def get_dataclient(self, request):
+        doc = request.query_params.get('dataclient')
         if doc:
-            # Asegúrate de usar el campo correcto de DataClient, ej: cif
-            return Document.objects.filter(dataclient__cif=doc)
-        return super().get_queryset()
+            queryset = Document.objects.filter(dataclient__cif=doc)
+        else:
+            queryset = self.get_queryset()
+        # Puedes usar un serializer si lo necesitas
+        return Response({"results": list(queryset.values())})
+    
+    # @action(detail=False, url_path='dataclient/(?P<doc_id>[^/.]+)', methods=['get'])
+    # def get_queryset(self):
+    #     doc = self.request.query_params.get('dataclient')
+    #     if doc:
+    #         # Asegúrate de usar el campo correcto de DataClient, ej: cif
+    #         return Document.objects.filter(dataclient__cif=doc)
+    #     return super().get_queryset()
 
 class DataDocumentViewSet(viewsets.ModelViewSet):
     queryset = DataDocument.objects.all()
-    serializer_class = DataDocumentSerializer
+    serializer_class = DataDocumentSerializer    
 
 class FooterDocumentViewSet(viewsets.ModelViewSet):    
     serializer_class = FooterDocumentSerializer

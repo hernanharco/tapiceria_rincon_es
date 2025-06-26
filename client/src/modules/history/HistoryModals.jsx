@@ -1,32 +1,173 @@
+import { useState, useEffect } from "react";
 
-import { useState } from 'react';
-import { DocumentsInfo } from '../documents/components/DocumentsInfo';
+import { DocumentsInfo } from "../documents/components/DocumentsInfo";
+import { TableDocuments } from "../documents/components/TableDocuments";
+import { DocumentsFooter } from "../documents/components/DocumentsFooter";
 
-export const HistoryModals = ({ isOpen, onClose, title, children, searchTerm }) => {
+// Hooks personalizados
+import useDocuments from "../documents/hooks/useDocuments";
+import useDataDocuments from "../documents/hooks/useDataDocuments";
+import useDataFooter from "../documents/hooks/useFooters";
 
-  const [numDocument, setNumDocument] = useState("");
-  const [date, setDate] = useState("");
-  const [observation, setObservation] = useState("")
+export const HistoryModals = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  searchTerm,
+  selectedItem, // Recibimos el item a editar
+}) => {
+  const { addProduct, updateProduct } = useDocuments(); // Asegúrate de tener `updateProduct`
+  const { addProductTable, getProductsByDocument, updateProductTable } =
+    useDataDocuments(); // Hook para productos
+  const { saveFooter, updateFooter } = useDataFooter(); // Hook para footer
 
-  // Validación para mostrar información del cliente  
-  // console.log("Informacion desde HistoryModals:", searchTerm);
+  // Estado para info del documento
+  const [datInfo, setDatInfo] = useState({
+    dataInfoDocument: "Cargando",
+    dataInfoDate: "",
+    dataInfoObservation: "",
+  });
 
-  // Función para extraer CIF y nombre
+  // Estado para productos de TableDocuments
+  const [filteredProducts, setFilteredProducts] = useState([]);
+
+  const handleTableDataChange = (updatedProducts) => {
+    setFilteredProducts(updatedProducts);
+  };
+
+  // Estado para footer
+  const [datFooter, setDatFooter] = useState({
+    datsubTotal: "",
+    datbaseImponible: "",
+    datIva: "",
+    datTotal: "",
+  });
+
+  // Función para extraer CIF y nombre del cliente
   const parseSearchTerm = (value) => {
     const match = value.match(/^\(([^)]+)\)\s*(.*)/);
     return {
-      cif: match ? match[1] : '',
+      cif: match ? match[1] : "",
       name: match ? match[2] : value,
     };
   };
 
-  const { cif, name } = parseSearchTerm(searchTerm); // Desestructuramos los valores  
+  const { cif, name } = parseSearchTerm(searchTerm);
+
+  // Determina si es edición o nuevo
+  const isEditing = !!selectedItem?.num_factura;
+
+  // Cargar datos cuando sea edición
+  useEffect(() => {
+    if (!isOpen || !isEditing) return;
+
+    // Puedes cargar los datos completos del documento desde el backend aquí
+    const loadDocumentData = async () => {
+      try {
+        const products = await getProductsByDocument(
+          selectedItem.num_presupuesto
+        );
+        setFilteredProducts(products);
+
+        const footer = await updateFooter(selectedItem.num_presupuesto); // O usa otro identificador
+        if (footer) {
+          setDatFooter({
+            datsubTotal: footer.subtotal,
+            datbaseImponible: footer.base_imponible,
+            datIva: footer.iva,
+            datTotal: footer.total,
+          });
+        }
+
+        setDatInfo({
+          dataInfoDocument: selectedItem.num_presupuesto,
+          dataInfoDate: selectedItem.fecha_factura,
+          dataInfoObservation: selectedItem.observaciones,
+        });
+      } catch (error) {
+        console.error("Error al cargar datos del documento:", error);
+      }
+    };
+
+    loadDocumentData();
+  }, [isOpen, isEditing]);
 
   if (!isOpen) return null;
 
-  // Manejador de guardar/editar producto
+  // Manejador principal de guardado
   const handleSaveProduct = async () => {
-    console.log("estoy en guardar informacion");
+    // Datos del documento principal
+    const documentData = {
+      fecha_factura: datInfo.dataInfoDate,
+      observaciones: datInfo.dataInfoObservation,
+      num_presupuesto: datInfo.dataInfoDocument,
+      dataclient: cif,
+    };
+
+    try {
+      let documentId;
+      if (isEditing) {
+        // Si ya tiene ID, actualizamos
+        documentId = selectedItem.id;
+        await updateProduct(documentId, documentData);
+      } else {
+        // Si no, creamos uno nuevo
+        const documentResponse = await addProduct(documentData);
+        documentId = documentResponse.id;
+      }
+
+      // Guardar cada línea de producto
+      for (const item of filteredProducts) {
+        const tabledocuments = {
+          referencai: item.reference,
+          descripcion: item.description,
+          cantidad: item.quantity,
+          precio: item.price,
+          dto: item.dto,
+          importe: item.amount,
+          entrega: null,
+          line: true,
+          documento: documentId,
+        };
+
+        if (item.id) {
+          // Si tiene ID, actualiza
+          await updateProductTable(item.id, tabledocuments);
+        } else {
+          // Si no, crea nuevo
+          await addProductTable(tabledocuments);
+        }
+      }
+
+      // Datos del footer
+      const documentdatFooter = {
+        subtotal: parseFloat(datFooter.datsubTotal),
+        base_imponible: parseFloat(datFooter.datbaseImponible),
+        iva: parseFloat(datFooter.datIva),
+        total: parseFloat(datFooter.datTotal),
+        footer_documento: documentId,
+      };
+
+      if (isEditing) {
+        await updateFooter(documentId, documentdatFooter);
+      } else {
+        await saveFooter(documentdatFooter);
+      }
+
+      // ✅ Cerrar el modal después de guardar todo
+      onClose();
+      alert("Documento guardado correctamente.");
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert("Hubo un error al guardar el documento.");
+    }
+
+    initializeVoid();
+  }; //Fin de handleSaveProduct 
+
+  const handleUpdateProduct = async () => {
+    console.log("estoy en el metodo de actualizar");
   };
 
   return (
@@ -35,7 +176,6 @@ export const HistoryModals = ({ isOpen, onClose, title, children, searchTerm }) 
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         {/* Contenedor del modal con scroll */}
         <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[80vh] overflow-y-auto p-6 relative mx-4">
-
           {/* Botón de cierre (X) */}
           <button
             onClick={onClose}
@@ -49,24 +189,32 @@ export const HistoryModals = ({ isOpen, onClose, title, children, searchTerm }) 
           <h3 className="text-xl font-semibold text-gray-800 mb-4">{title}</h3>
 
           {/* Contenido dinámico */}
-          <div className="mb-6">
-            {children}
-          </div>
+          <div className="mb-6">{children}</div>
 
-          {/* Guardar la Informacion de los datos del Documento */}
+          {/* Información del documento */}
           <DocumentsInfo
             cif={cif}
-            name={name}
-            numDocument={numDocument}
-            date={date}
-            observation={observation}
-
-            setNumDocument={setNumDocument}
-            setDate={setDate}
-            setObservation={setObservation}
+            datInfo={datInfo}
+            setDatInfo={(newData) =>
+              setDatInfo((prev) => ({ ...prev, ...newData }))
+            }
+            onClose={onClose}
           />
-          
-          {/* Aqui estabamos dibujando la tabla antes */}
+
+          {/* Tabla de productos */}
+          <TableDocuments
+            filteredProducts={filteredProducts}
+            setFilteredProducts={setFilteredProducts}
+            onProductsChange={handleTableDataChange}
+          />
+
+          {/* Pie del documento */}
+          <div className="mt-6">
+            <DocumentsFooter
+              filteredProducts={filteredProducts}
+              setDatFooter={setDatFooter}
+            />
+          </div>
 
           {/* Botones inferiores */}
           <div className="flex justify-end space-x-3 mt-4">
@@ -77,10 +225,14 @@ export const HistoryModals = ({ isOpen, onClose, title, children, searchTerm }) 
               Cancelar
             </button>
             <button
-              onClick={onClose}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={isEditing ? handleUpdateProduct : handleSaveProduct}
+              className={`px-4 py-2 text-white rounded hover:opacity-90 ${
+                isEditing
+                  ? "bg-orange-500 hover:bg-orange-600"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
-              Guardar
+              {isEditing ? "Actualizar" : "Guardar"}
             </button>
           </div>
         </div>

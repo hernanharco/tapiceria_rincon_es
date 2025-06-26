@@ -45,6 +45,7 @@ class DataClient(models.Model):
     def __str__(self):
         return f"{self.name} {self.cif} || {self.cod_client}"
    
+    # id = models.AutoField(primary_key=True)
 class Document(models.Model):
     dataclient = models.ForeignKey(
         DataClient,
@@ -56,14 +57,14 @@ class Document(models.Model):
     num_albaran = models.CharField(max_length=13, blank=True, null=True)
     num_factura = models.CharField(max_length=13, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True) 
-    compr_albaran = models.CharField(max_length=100, blank=True, null=True) 
+    compr_albaran = models.CharField(max_length=100, blank=True, null=True)
     
     def __str__(self):
         return f"Cif {self.dataclient} || Presupuesto {self.num_presupuesto} || Albarán {self.num_albaran} || Factura {self.num_factura}"
 
 
 class DataDocument(models.Model):
-    documento = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='lineas')
+    documento = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='doc_client')
     referencia = models.CharField(max_length=20, blank=True, null=True)
     descripcion = models.TextField()
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)
@@ -74,7 +75,7 @@ class DataDocument(models.Model):
     line = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"Referencia {self.referencia} Línea de {self.documento.num_document_rel}"
+        return f"Referencia {self.referencia} Línea de {self.documento}"
 
 
 class FooterDocument(models.Model):
@@ -83,10 +84,10 @@ class FooterDocument(models.Model):
         on_delete=models.CASCADE,
         related_name='footerdocumentos'
     )
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-    base_imponible = models.DecimalField(max_digits=10, decimal_places=2)
-    iva = models.DecimalField(max_digits=5, decimal_places=2)
-    total = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    base_imponible = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    iva = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
 
     def __str__(self):
         return f"Línea de {self.footer_documento}"

@@ -1,17 +1,19 @@
 // src/context/ApiContext.jsx
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
 
 // Configuración global
-const API_URL = 'http://localhost:8000/api/documents/';
+const API_URL = "http://localhost:8000/api/documents/";
 
 const DocumentsContext = createContext();
 
 export const useApiDocumentsContext = () => {
   const context = useContext(DocumentsContext);
   if (!context) {
-    throw new Error('useApiDocumentsContext debe usarse dentro de DocumentsProvider');
+    throw new Error(
+      "useApiDocumentsContext debe usarse dentro de DocumentsProvider"
+    );
   }
   return context;
 };
@@ -34,6 +36,24 @@ export const DocumentsProvider = ({ children }) => {
     }
   };
 
+  // Nueva función: Obtener todos los documentos
+  const getAllDocuments = async () => {
+    try {
+      const response = await axios.get(API_URL); // URL base trae todos los documentos
+
+      if (!Array.isArray(response.data)) {
+        console.error("El backend no devolvió un array");
+        return [];
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener todos los documentos:", error);
+      setError("No se pudieron cargar los documentos");
+      return [];
+    }
+  };
+
   // Insertar nuevo Documento
   const addProduct = async (newProduct) => {
     // console.log('DocumentsProvider. Nuevo numero de documento a agregar:', newProduct);
@@ -43,8 +63,9 @@ export const DocumentsProvider = ({ children }) => {
       return response.data;
     } catch (err) {
       const errorData = err.response?.data || {};
-      const errorMessage = errorData.detail || JSON.stringify(errorData) || err.message;
-      console.error('Error al guardar:', errorMessage);
+      const errorMessage =
+        errorData.detail || JSON.stringify(errorData) || err.message;
+      console.error("Error al guardar:", errorMessage);
       throw new Error(`No se pudo guardar el documento: ${errorMessage}`);
     }
   };
@@ -78,68 +99,67 @@ export const DocumentsProvider = ({ children }) => {
 
   // Función para buscar un cliente por su CIF
   const getDocumentByDoc = async (doc) => {
-    // console.log('DocumentsProvider. Buscando documento por doc:', doc);
+    // console.log("DocumentsProvider. Buscando documento por doc:", doc);
 
-    if (!doc || typeof doc !== 'string' || doc.trim() === '') {
-      console.warn('Valor inválido para doc:', doc);
+    // Validación del CIF
+    if (!doc || typeof doc !== "string" || doc.trim() === "") {
+      console.warn("Valor inválido para doc (CIF):", doc);
       return [];
     }
 
+    const cif = doc.trim(); // Limpiamos espacios en blanco
+
     try {
-      const url = `${API_URL}?dataclient=${doc}`;
-      // console.log('Haciendo GET a:', url);
+      const url = `${API_URL}?dataclient=${encodeURIComponent(cif)}`;
+      // console.log("Haciendo GET a:", url);
 
       const response = await axios.get(url);
-      // console.log('Respuesta completa:', response);
-      // console.log('Datos recibidos:', response.data);
-      // console.log('¿Es un array?:', Array.isArray(response.data));
+      const data = response.data;
 
-      if (!Array.isArray(response.data)) {
-        console.error('El backend no devolvió un array');
+      // console.log("Datos recibidos:", data);
+      // console.log("¿Es un array?:", Array.isArray(data));
+
+      if (!Array.isArray(data)) {
+        console.error("El backend no devolvió un array");
         return [];
       }
 
-      return response.data;
+      // Si el backend ya filtra correctamente, este filtro adicional puede ser redundante
+      // Pero lo dejamos como medida extra:
+      const filtered = data.filter((doc) => doc.dataclient === cif);
 
+      // console.log(
+      //   `Filtrados ${filtered.length} documentos para el CIF: ${cif}`
+      // );
+      return filtered;
     } catch (err) {
-      console.error('Error al obtener documentos:', err);
-      setError('No se pudo encontrar el cliente con CIF: ' + doc);
+      console.error("Error al obtener documentos para el CIF:", cif, err);
+
+      if (err.response) {
+        console.error("Respuesta del servidor:", err.response.data);
+      } else if (err.request) {
+        console.error("No hubo respuesta del servidor.");
+      } else {
+        console.error("Error desconocido:", err.message);
+      }
+
+      setError(`No se pudo encontrar documentos para el CIF: ${cif}`);
       return [];
     }
   };
 
-  // const getNumDocumentId = async (cif) => {
-  //   console.log("DocumentsProvider. Buscando ID del documento para CIF:", cif);
-  //   try {
-  //     const response = await getClientByCif(cif); // Suponiendo que ya tienes esta función
-  //     console.log("DocumentsProvider. Respuesta de getClientByCif:", response);
-  //     if (response.length === 0) {
-  //       console.error("No se encontraron documentos para el cliente.");
-  //       return null;
-  //     }
-  //     return response[response.length - 1].id; // ID del último documento
-  //   } catch (error) {
-  //     console.error("Error al obtener el ID del documento:", error);
-  //     return null;
-  //   }
-  // };
-
-
-  // Nueva función: Buscar documento por num_factura
-  const getDocumentsByNum = (codClient) => {
-    console.log('DocumentsProvider. Buscando documentos por num_factura:', codClient);
-    // Validación inicial
-    if (!codClient) return [];
-
-    // Asegurarnos de tener codClient como string limpio
-    const target = String(codClient).trim().toLowerCase();
-
-    // Filtro seguro: convertimos ambos a string, limpiamos y comparamos    
-    return documents.filter(doc => {
-      // Verifica que doc.cod_cliente exista y sea convertible a string      
-      const docCodCliente = String(doc.num_documents_rel || '').trim().toLowerCase();
-      return docCodCliente === target;
-    });
+  // Nueva función: Buscar documento num_presupuesto seria PRE250626
+  const fetchDocumentByNum = async (num_presupuesto) => {
+    try {
+      const response = await axios.get(API_URL); // Trae todos los documentos
+      const filteredDocuments = response.data.filter(
+        (doc) => doc.num_presupuesto === num_presupuesto
+      );
+      return filteredDocuments;
+    } catch (error) {
+      console.error("Error al buscar documento por num_presupuesto:", error);
+      return [];
+    }
   };
 
   const value = {
@@ -147,10 +167,11 @@ export const DocumentsProvider = ({ children }) => {
     loading,
     error,
     refetch, // permite recargar manualmente
+    getAllDocuments,
     clearDocuments,
     addProduct,
     deleteProduct,
-    getDocumentsByNum,
+    fetchDocumentByNum,
     getDocumentByDoc,
   };
 

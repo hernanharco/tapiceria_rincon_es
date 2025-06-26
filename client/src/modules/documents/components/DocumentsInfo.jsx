@@ -1,165 +1,179 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from "react";
+import useDocuments from "../hooks/useDocuments";
 
-// Importamos los componentes necesarios
-import { TableDocuments } from './TableDocuments';
-import useDocuments from '../hooks/useDocuments'
+export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo }) => {
+  const [localDocument, setLocalDocument] = useState(datInfo?.dataInfoDocument || "");
+  const [localDate, setLocalDate] = useState(datInfo?.dataInfoDate || "");
+  const [localObservation, setLocalObservation] = useState(datInfo?.dataInfoObservation || "");
 
-export const DocumentsInfo = ({
-    isOpen = true,
-    cif = '',
-    numDocument = '', // valor inicial desde props
-    date = '',
-    setDate = () => { },
-    observation = '',
-    setObservation = () => { },
-    search = () => { },
-}) => {
+  const { getAllDocuments } = useDocuments();
 
-    const [localNumDocument, setLocalNumDocument] = useState(numDocument); // ✅ Usamos otro nombre    
-    const { addProduct, getDocumentByDoc } = useDocuments();
-    // const isInitialMount = useRef(true);
-    const userChangedDate = useRef(false);
+  // Genera el siguiente número de presupuesto basado en el último código
+  const generateNextPresupuestoCode = (baseCode, nextCounter) => {
+    const numericSuffix = baseCode.match(/\d+$/);
+    if (!numericSuffix) return baseCode + nextCounter;
 
-    // Este useEffect se ejecuta SOLO UNA VEZ al cargar el componente
-    useEffect(() => {
-        setDate("00/00/0000");
-    }, []); // <-- Arreglo vacío = se ejecuta solo una vez
+    const baseWithoutCounter = baseCode.slice(0, numericSuffix.index);
+    return `${baseWithoutCounter}${nextCounter}`;
+  };
 
-    // 1. Asignar número de documento al cargar documentos
-    useEffect(() => {
-        const fetchClientDocuments = async () => {
-            if (!cif) return;
+  // Formatea la fecha como PREyyMMDD
+  const formatDateForPresupuesto = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) throw new Error("Fecha inválida");
 
-            try {
-                const response = await getDocumentByDoc(cif);
+    const year = date.getFullYear().toString().slice(-2);
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // 06
+    const day = String(date.getDate()).padStart(2, "0");
 
-                // console.log("typeof response:", typeof response);
-                // console.log("response completo:", response);
+    return `PRE${year}${month}${day}`;
+  };
 
-                // Verificar si es un array y tiene datos
-                if (!Array.isArray(response) || response.length === 0) {
-                    // console.log("No hay documentos válidos");
-                    setLocalNumDocument("1");
-                    return;
-                }
+  // Obtiene documentos y genera el nuevo número de presupuesto
+  const fetchClientDocuments = async () => {
+    if (!cif || !localDate) return;
 
-                // Obtener el último documento
-                const lastDocument = response[response.length - 1];
-                const currentNum = parseInt(lastDocument.num_presupuesto, 10);
+    try {
+      const indexDocuments = String(cif).trim();
+      const response = await getAllDocuments();
 
-                if (!isNaN(currentNum)) {
-                    const nextNum = (currentNum + 1).toString();
-                    setLocalNumDocument(nextNum);
-                    return;
-                }
+      // Si no hay documentos, generamos el primero usando la fecha local
+      if (!Array.isArray(response) || response.length === 0) {
+        const formattedCode = formatDateForPresupuesto(localDate);
+        setLocalDocument(formattedCode);
+        return;
+      }
 
-                // Si no hay datos válidos, asignamos "1"
-                // console.log("No se encontró número de presupuesto válido");
-                setLocalNumDocument("1");
+      // Tomamos el último documento para generar el siguiente
+      const lastDocument = response[response.length - 1];
+      const lastCode = lastDocument.num_presupuesto;
 
-            } catch (error) {
-                console.error("Error al obtener documentos del cliente:", error);
-                setLocalNumDocument("1"); // Fallback por seguridad
-            }
-        };
+      // Función para extraer solo los números al final
+      const extractCounter = (code) => {
+        const match = code.match(/(\d+)$/); // Busca uno o más dígitos al final
+        return match ? parseInt(match[1], 10) : NaN;
+      };
 
-        if (isOpen) {
-            fetchClientDocuments(); // Solo ejecutamos cuando el componente está abierto
-        }
+      const currentCounter = extractCounter(lastCode);
 
-    }, [isOpen, cif]);
+      if (!isNaN(currentCounter)) {
+        const nextCounter = currentCounter + 1;
 
-    // 3. Función para guardar documento
-    const saveDocument = () => {
-        
-        const saveToDocuments = {
-            dataclient: cif,
-            fecha_factura: date,
-            observaciones: observation,
-            num_presupuesto: localNumDocument
-        };
-        addProduct(saveToDocuments);
-    };
+        // Separamos la parte fija (sin el número final)
+        const baseCode = lastCode.slice(0, -currentCounter.toString().length);
 
-    // 4. Ejecutar guardarDocumento apenas el componente se monta
-    useEffect(() => {
-        if (userChangedDate.current) {
-            saveDocument();
-            userChangedDate.current = false; // Resetear para próxima interacción
-        }
-    }, [date]);
+        // Aseguramos que el contador tenga siempre 2 dígitos (ej: 1 → '01')
+        const paddedCounter = nextCounter.toString().padStart(2, "0");
 
-    return (
-        <div>
-            <details open={!isOpen} className="p-4 border border-gray-300 rounded bg-gray-50">
-                <summary className="font-semibold text-gray-700 mb-3 cursor-pointer">Información del Cliente</summary>
+        const nextCode = baseCode + paddedCounter;
 
-                {/* Campo Num. Presupuesto */}
-                <div className="mb-3">
-                    <label htmlFor="numPresupuesto" className="block text-sm font-semibold text-gray-700">
-                        Num. Presupuesto.
-                    </label>
-                    <input
-                        id="numPresupuesto"
-                        type="text"
-                        value={localNumDocument || "Cargando..."}
-                        readOnly
-                        className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md"
-                    />
-                </div>
+        setLocalDocument(nextCode);
+      } else {
+        // Si no tiene número al final, iniciamos con la fecha
+        const formattedCode = formatDateForPresupuesto(localDate);
+        setLocalDocument(formattedCode);
+      }
+    } catch (error) {
+      console.error("Error al obtener documentos:", error);
+      setLocalDocument("");
+    }
+  };
 
-                {/* Campo Fecha Presupuesto */}
-                <div className="mb-3">
-                    <label htmlFor="fechaPresupuesto" className="block text-sm font-semibold text-gray-700">
-                        Fecha Presupuesto.
-                    </label>
-                    <input
-                        id="fechaPresupuesto"
-                        type="date"
-                        value={date}
-                        onChange={(e) => {
-                            setDate(e.target.value);
-                            userChangedDate.current = true; // 👈 Indicamos que el usuario cambió la fecha                          
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
+  // Llama a fetchClientDocuments cuando localDate cambian
+  useEffect(() => {
+    if (localDate && cif) {
+      fetchClientDocuments();
+    }
+  }, [localDate]);
 
-                {/* Campo Cod. Cliente */}
-                <div className="mb-3">
-                    <label htmlFor="codCliente" className="block text-sm font-semibold text-gray-700">
-                        Cod. Cliente.
-                    </label>
-                    <input
-                        id="codCliente"
-                        type="text"
-                        value={cif}
-                        readOnly
-                        className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md"
-                    />
-                </div>
+  // Cada vez que cambia algun campo, actualizamos también el estado del padre
+  useEffect(() => {
+    setDatInfo({
+      dataInfoDocument: localDocument,
+      dataInfoDate: localDate,
+      dataInfoObservation: localObservation,
+    });
+  }, [localDocument, localDate, localObservation]);
 
-                {/* Campo Observaciones */}
-                <div className="mb-3">
-                    <label htmlFor="observaciones" className="block text-sm font-semibold text-gray-700">
-                        Observaciones.
-                    </label>
-                    <textarea
-                        id="observaciones"
-                        value={observation}
-                        onChange={(e) => setObservation(e.target.value)}
-                        rows="3"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Escribe aquí tus observaciones..."
-                    />
-                </div>
-            </details>
+  return (
+    <div>
+      <details
+        open={!onClose}
+        className="p-4 border border-gray-300 rounded bg-gray-50"
+      >
+        <summary className="font-semibold text-gray-700 mb-3 cursor-pointer">
+          Información del Cliente
+        </summary>
 
-            {/* Tabla u otros componentes - esta tabla lo que hace es comenzar agregar los productos */}
-            <TableDocuments
-                numDocument={localNumDocument}
-                search={search}
-            />
+        {/* Campo Num. Presupuesto */}
+        <div className="mb-3">
+          <label
+            htmlFor="numPresupuesto"
+            className="block text-sm font-semibold text-gray-700"
+          >
+            Num. Presupuesto.
+          </label>
+          <input
+            id="numPresupuesto"
+            type="text"
+            value={localDocument || "Cargando..."}
+            readOnly
+            className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md"
+          />
         </div>
-    );
+
+        {/* Campo Fecha Presupuesto */}
+        <div className="mb-3">
+          <label
+            htmlFor="fechaPresupuesto"
+            className="block text-sm font-semibold text-gray-700"
+          >
+            Fecha Presupuesto.
+          </label>
+          <input
+            id="fechaPresupuesto"
+            type="date"
+            value={localDate}
+            onChange={(e) => setLocalDate(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        {/* Campo Cod. Cliente */}
+        <div className="mb-3">
+          <label
+            htmlFor="codCliente"
+            className="block text-sm font-semibold text-gray-700"
+          >
+            Cod. Cliente.
+          </label>
+          <input
+            id="codCliente"
+            type="text"
+            value={cif}
+            readOnly
+            className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Campo Observaciones */}
+        <div className="mb-3">
+          <label
+            htmlFor="observaciones"
+            className="block text-sm font-semibold text-gray-700"
+          >
+            Observaciones.
+          </label>
+          <textarea
+            id="observaciones"
+            value={localObservation}
+            onChange={(e) => setLocalObservation(e.target.value)}
+            rows="3"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Escribe aquí tus observaciones..."
+          />
+        </div>
+      </details>
+    </div>
+  );
 };
