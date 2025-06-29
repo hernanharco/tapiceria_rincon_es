@@ -151,7 +151,7 @@ export const HistoryTemplate = () => {
         )}
       </div>
 
-      {/* Modal reutilizable */}
+      {/* Modal reutilizable - Cuando se presiona el Boton de Agregar Nuevo Documento se monta este modals */}
       <HistoryModals
         isOpen={showModal}
         onClose={() => setShowModal(false)}

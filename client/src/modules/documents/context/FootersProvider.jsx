@@ -77,33 +77,80 @@ export const FootersProvider = ({ children }) => {
     }
   };
 
-  // Actualizar un footer existente
-  const updateFooter = async (id, datosActualizados) => {
+  // Nueva función: Buscar por footer_documento
+  const fetchFooterByNum = async (num_presupuesto) => {
+    console.log("fetchFooterByNum", num_presupuesto);
     try {
-      const res = await axios.put(`${API_URL}${id}/`, datosActualizados);
-      setFooters((prev) =>
-        prev.map((footer) => (footer.id === id ? res.data : footer))
+      const response = await axios.get(API_URL); // Trae todos los documentos
+      const filteredDocuments = response.data.filter(
+        (doc) => doc.footer_documento === num_presupuesto
       );
+      return filteredDocuments[0];
+    } catch (error) {
+      console.error("Error al buscar documento por footer_documento:", error);
+      return [];
+    }
+  };
+
+  // Actualizar un footer existente basado en el campo footer_documento
+  const updateFooter = async (footerDocumentoId, datosActualizados) => {
+    console.log(
+      "Datos recibidos en updateFooter",
+      footerDocumentoId,
+      datosActualizados
+    );
+
+    if (!footerDocumentoId) {
+      throw new Error(
+        "El ID del documento es requerido para actualizar el footer"
+      );
+    }
+
+    try {
+      // Buscar el footer usando el ID del documento
+      const footerExistente = await fetchFooterByNum(footerDocumentoId);
+
+      if (!footerExistente) {
+        throw new Error(
+          `No se encontró ningún footer para el documento ID: ${footerDocumentoId}`
+        );
+      }
+
+      // Hacer PATCH al endpoint con el ID del footer
+      const res = await axios.patch(
+        `${API_URL}${footerExistente.id}/`,
+        datosActualizados
+      );
+
+      // Actualizar estado local
+      setFooters((prev) =>
+        prev.map((footer) =>
+          footer.id === footerExistente.id ? res.data : footer
+        )
+      );
+
       return res.data;
     } catch (err) {
-      setError(err);
-      throw err;
+      const errorMsg =
+        err.response?.data?.detail || err.message || "Error desconocido";
+      console.error("Error al actualizar el footer:", errorMsg);
+      setError(errorMsg);
+      throw new Error(`No se pudo actualizar el footer: ${errorMsg}`);
     }
   };
 
   // Nueva función: traer footers donde cliente_id === id
   const getFootersByFieldId = async (id) => {
-    // console.log("Cargando footers por ID:", id);
+    //console.log("Cargando footers por ID:", id);
     try {
-      const res = await axios.get(
-        `http://localhost:8000/api/footers/?footer_documento=${id}`
+      const response = await axios.get(API_URL); // Trae todos los documentos
+      const filteredDocuments = response.data.filter(
+        (doc) => doc.footer_documento === id
       );
-      // console.log("Footers obtenidos por ID:", res.data);
-      setFooters(res.data); // Actualizamos el estado con los resultados
-      return res.data; // Devolvemos los datos para usarlos en componentes
-    } catch (err) {
-      setError(err);
-      throw err;
+      return filteredDocuments[0];
+    } catch (error) {
+      console.error("Error al buscar documento por footer_documento:", error);
+      return [];
     }
   };
 

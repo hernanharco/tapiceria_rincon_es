@@ -67,10 +67,10 @@ class DataDocument(models.Model):
     documento = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='doc_client')
     referencia = models.CharField(max_length=20, blank=True, null=True)
     descripcion = models.TextField()
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad = models.DecimalField(max_digits=12, decimal_places=2)
+    precio = models.DecimalField(max_digits=12, decimal_places=2)
     dto = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    importe = models.DecimalField(max_digits=10, decimal_places=2)
+    importe = models.DecimalField(max_digits=12, decimal_places=2)
     entrega = models.CharField(max_length=100, blank=True, null=True)
     line = models.BooleanField(default=True)
 

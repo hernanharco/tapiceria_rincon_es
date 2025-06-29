@@ -17,8 +17,13 @@ export const HistoryModals = ({
   searchTerm,
   selectedItem, // Recibimos el item a editar
 }) => {
+  // console.log("informacion de selectedItem: ", selectedItem);
+  // Determina si es edición o nuevo
+  const isEditing = !!selectedItem?.num_presupuesto;
+  // console.log("isEditing en HistoryModals: ", isEditing)
+
   const { addProduct, updateProduct } = useDocuments(); // Asegúrate de tener `updateProduct`
-  const { addProductTable, getProductsByDocument, updateProductTable } =
+  const { addProductTable, getDocumentsByNum, updateProductTable } =
     useDataDocuments(); // Hook para productos
   const { saveFooter, updateFooter } = useDataFooter(); // Hook para footer
 
@@ -31,6 +36,13 @@ export const HistoryModals = ({
 
   // Estado para productos de TableDocuments
   const [filteredProducts, setFilteredProducts] = useState([]);
+
+  // Inicializa los productos en vacio
+  useEffect(() => {
+  if (!isEditing) {    
+    setFilteredProducts([]);
+  }
+}, [isEditing, onClose]);
 
   const handleTableDataChange = (updatedProducts) => {
     setFilteredProducts(updatedProducts);
@@ -55,9 +67,6 @@ export const HistoryModals = ({
 
   const { cif, name } = parseSearchTerm(searchTerm);
 
-  // Determina si es edición o nuevo
-  const isEditing = !!selectedItem?.num_factura;
-
   // Cargar datos cuando sea edición
   useEffect(() => {
     if (!isOpen || !isEditing) return;
@@ -65,26 +74,8 @@ export const HistoryModals = ({
     // Puedes cargar los datos completos del documento desde el backend aquí
     const loadDocumentData = async () => {
       try {
-        const products = await getProductsByDocument(
-          selectedItem.num_presupuesto
-        );
+        const products = await getDocumentsByNum(selectedItem.id);
         setFilteredProducts(products);
-
-        const footer = await updateFooter(selectedItem.num_presupuesto); // O usa otro identificador
-        if (footer) {
-          setDatFooter({
-            datsubTotal: footer.subtotal,
-            datbaseImponible: footer.base_imponible,
-            datIva: footer.iva,
-            datTotal: footer.total,
-          });
-        }
-
-        setDatInfo({
-          dataInfoDocument: selectedItem.num_presupuesto,
-          dataInfoDate: selectedItem.fecha_factura,
-          dataInfoObservation: selectedItem.observaciones,
-        });
       } catch (error) {
         console.error("Error al cargar datos del documento:", error);
       }
@@ -96,7 +87,7 @@ export const HistoryModals = ({
   if (!isOpen) return null;
 
   // Manejador principal de guardado
-  const handleSaveProduct = async () => {
+  const handleProduct = async () => {
     // Datos del documento principal
     const documentData = {
       fecha_factura: datInfo.dataInfoDate,
@@ -110,6 +101,7 @@ export const HistoryModals = ({
       if (isEditing) {
         // Si ya tiene ID, actualizamos
         documentId = selectedItem.id;
+        // console.log("documentId en HistoryModals: ", documentId)
         await updateProduct(documentId, documentData);
       } else {
         // Si no, creamos uno nuevo
@@ -120,12 +112,12 @@ export const HistoryModals = ({
       // Guardar cada línea de producto
       for (const item of filteredProducts) {
         const tabledocuments = {
-          referencai: item.reference,
-          descripcion: item.description,
-          cantidad: item.quantity,
-          precio: item.price,
+          referencai: item.referencia,
+          descripcion: item.descripcion,
+          cantidad: item.cantidad,
+          precio: item.precio,
           dto: item.dto,
-          importe: item.amount,
+          importe: item.importe,
           entrega: null,
           line: true,
           documento: documentId,
@@ -157,18 +149,16 @@ export const HistoryModals = ({
 
       // ✅ Cerrar el modal después de guardar todo
       onClose();
-      alert("Documento guardado correctamente.");
+      if (isEditing) {
+        alert("Documento Actualizado.");
+      } else {
+        alert("Documento guardado correctamente.");
+      }
     } catch (error) {
       console.error("Error al guardar:", error);
       alert("Hubo un error al guardar el documento.");
     }
-
-    initializeVoid();
-  }; //Fin de handleSaveProduct 
-
-  const handleUpdateProduct = async () => {
-    console.log("estoy en el metodo de actualizar");
-  };
+  }; //Fin de handleSaveProduct
 
   return (
     <div>
@@ -199,14 +189,19 @@ export const HistoryModals = ({
               setDatInfo((prev) => ({ ...prev, ...newData }))
             }
             onClose={onClose}
+            isEditing={isEditing}
+            selectedItem={selectedItem}
           />
 
           {/* Tabla de productos */}
-          <TableDocuments
-            filteredProducts={filteredProducts}
-            setFilteredProducts={setFilteredProducts}
-            onProductsChange={handleTableDataChange}
-          />
+          <div className="mt-6">
+            <TableDocuments
+              filteredProducts={filteredProducts}
+              setFilteredProducts={setFilteredProducts}
+              onProductsChange={handleTableDataChange}
+              isEditing={isEditing}
+            />
+          </div>
 
           {/* Pie del documento */}
           <div className="mt-6">
@@ -225,7 +220,7 @@ export const HistoryModals = ({
               Cancelar
             </button>
             <button
-              onClick={isEditing ? handleUpdateProduct : handleSaveProduct}
+              onClick={handleProduct}
               className={`px-4 py-2 text-white rounded hover:opacity-90 ${
                 isEditing
                   ? "bg-orange-500 hover:bg-orange-600"
@@ -235,7 +230,7 @@ export const HistoryModals = ({
               {isEditing ? "Actualizar" : "Guardar"}
             </button>
           </div>
-        </div>
+        </div>        
       </div>
     </div>
   );

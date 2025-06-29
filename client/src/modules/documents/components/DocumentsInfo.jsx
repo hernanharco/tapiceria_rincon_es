@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
 import useDocuments from "../hooks/useDocuments";
 
-export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo }) => {
-  const [localDocument, setLocalDocument] = useState(datInfo?.dataInfoDocument || "");
-  const [localDate, setLocalDate] = useState(datInfo?.dataInfoDate || "");
-  const [localObservation, setLocalObservation] = useState(datInfo?.dataInfoObservation || "");
+export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo, isEditing, selectedItem }) => {
+
+  const [localDocument, setLocalDocument] = useState("");
+  const [localDate, setLocalDate] = useState("");
+  const [localObservation, setLocalObservation] = useState("");
 
   const { getAllDocuments } = useDocuments();
+
+  // Vamos a inicializar la informacion con los datos del cliente seleccionado
+  useEffect(() => {
+    // console.log("isEditing en DocumentsInfo: ", isEditing)    
+    if(isEditing){      
+      setLocalDocument(selectedItem.num_presupuesto);
+      setLocalDate(selectedItem.fecha_factura);
+      setLocalObservation(selectedItem.observaciones);
+    }
+      
+  }, [isEditing])
 
   // Genera el siguiente número de presupuesto basado en el último código
   const generateNextPresupuestoCode = (baseCode, nextCounter) => {
@@ -78,10 +90,10 @@ export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo }) => {
       setLocalDocument("");
     }
   };
-
+  
   // Llama a fetchClientDocuments cuando localDate cambian
   useEffect(() => {
-    if (localDate && cif) {
+    if (!isEditing) {
       fetchClientDocuments();
     }
   }, [localDate]);

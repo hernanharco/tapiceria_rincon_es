@@ -1,4 +1,4 @@
-// Esta clase se encarga de dibujar la tabla que se muestra en la parte de abajo segun el cliente buscado
+// Esta clase se encarga de dibujar la tabla que se muestra en la parte de abajo según el cliente buscado
 import { useState, useEffect } from "react";
 import {
   FaEdit,
@@ -18,7 +18,6 @@ dayjs.locale("es"); // Configura el idioma por defecto de la fecha
 // Importamos los hooks necesarios
 import useHistory from "./hooks/useHistory";
 import useDocuments from "../documents/hooks/useDocuments"; // Asegúrate de que la ruta es correcta
-
 // Importamos el componente de búsqueda
 import { HistoryModals } from "./HistoryModals";
 
@@ -33,14 +32,13 @@ export const HistoryTableDocument = ({
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDisabled, setIsDisabled] = useState(true); // Deshabilitado al inicio
-
+  const [isChecked, setIsChecked] = useState(false);
   // Estado para ordenamiento
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "asc",
   });
 
-  // Dentro de tu componente:
   const navigate = useNavigate();
   const { isAdding, displayCurrentDate } = useHistory();
 
@@ -60,10 +58,8 @@ export const HistoryTableDocument = ({
     const fetchDocuments = async () => {
       try {
         let filteredDocs = [];
-
         if (!cif || !searchTerm.trim()) {
           const allDocs = await getAllDocuments();
-
           filteredDocs = allClients.flatMap((client) => {
             const clientDocs = allDocs.filter(
               (doc) => doc.dataclient === client.cif
@@ -86,7 +82,6 @@ export const HistoryTableDocument = ({
         setFilteredProducts([]);
       }
     };
-
     fetchDocuments();
   }, [cif, searchTerm, refetch]);
 
@@ -102,7 +97,6 @@ export const HistoryTableDocument = ({
   // Ordena los productos según el estado actual
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (!sortConfig.key) return 0;
-
     const { key, direction } = sortConfig;
     let valueA = a[key];
     let valueB = b[key];
@@ -124,7 +118,7 @@ export const HistoryTableDocument = ({
     return 0;
   });
 
-  // Para actualizar la informacion
+  // Para actualizar la información
   const handleUpdate = (item) => {
     setSelectedItem(item);
     setShowModalSearch(true);
@@ -160,7 +154,7 @@ export const HistoryTableDocument = ({
   };
 
   const handlePrint = (item) => {
-    navigate(`/imprimir/${item.num_factura}/${cif}`);
+    navigate(`/imprimir/${item.num_presupuesto}/${cif}`);
   };
 
   const sortDocumentsByDate = (documents) => {
@@ -175,13 +169,12 @@ export const HistoryTableDocument = ({
 
   return (
     <div>
-      {/* Tabla de documentos */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-md">
+      {/* Tabla de documentos (visible en escritorio) */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 shadow-md">
         <table className="min-w-full bg-white divide-y divide-gray-200">
           {/* Títulos de la tabla */}
           <thead className="bg-gray-100">
             <tr>
-              {/* Columna Fecha */}
               <th
                 scope="col"
                 className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
@@ -200,8 +193,6 @@ export const HistoryTableDocument = ({
                   )}
                 </div>
               </th>
-
-              {/* Columna Presupuesto */}
               <th
                 scope="col"
                 className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
@@ -220,16 +211,12 @@ export const HistoryTableDocument = ({
                   )}
                 </div>
               </th>
-
-              {/* Columna Acciones */}
               <th
                 scope="col"
                 className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider"
               >
                 Acciones
               </th>
-
-              {/* Columna Albarán */}
               <th
                 scope="col"
                 className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
@@ -248,8 +235,6 @@ export const HistoryTableDocument = ({
                   )}
                 </div>
               </th>
-
-              {/* Columna Factura */}
               <th
                 scope="col"
                 className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
@@ -270,7 +255,6 @@ export const HistoryTableDocument = ({
               </th>
             </tr>
           </thead>
-          {/* Cuerpo de la tabla */}
           <tbody className="divide-y divide-gray-200">
             {/* Botón Agregar Nuevo Documento */}
             <tr key="add-button-row">
@@ -304,69 +288,9 @@ export const HistoryTableDocument = ({
                 </button>
               </td>
             </tr>
-            {/* Filas de documentos */}
-            {sortedProducts.map((item, idx) => (
-              <tr
-                key={idx}
-                className="hover:bg-gray-50 transition-colors duration-150"
-              >
-                {/* Columna Fecha */}
-                <td className="px-6 py-4 text-center text-sm text-gray-800">
-                  {item.fecha_factura
-                    ? dayjs(item.fecha_factura).format(
-                        "dddd, D [de] MMMM [de] YYYY"
-                      )
-                    : dayjs().format("dddd, D [de] MMMM [de] YYYY")}
-                </td>
-                {/* Columna Presupuesto */}
-                <td className="px-6 py-4 text-center text-sm text-gray-800">
-                  {item.num_presupuesto ? item.num_presupuesto : "-"}
-                </td>
-                {/* Columna Acciones */}
-                <td className="px-6 py-4 text-center">
-                  <div className="flex justify-center space-x-2">
-                    {/* Botón Actualizar */}
-                    <button
-                      onClick={() => handleUpdate(item)} // Pasamos el item completo o solo el ID
-                      className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 hover:bg-blue-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      title="Actualizar"
-                    >
-                      <FaEdit size={14} />
-                      <span className="sr-only">Actualizar</span>
-                    </button>
-                    {/* Botón Eliminar */}
-                    <button
-                      onClick={() => handleDelete(item)}
-                      className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                      title="Eliminar"
-                    >
-                      <FaTrashAlt size={14} />
-                      <span className="sr-only">Eliminar</span>
-                    </button>
-                    {/* Botón Imprimir */}
-                    <button
-                      onClick={() => handlePrint(item)}
-                      className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-md bg-green-600 hover:bg-green-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                      title="Imprimir"
-                    >
-                      <FaPrint size={14} />
-                      <span className="sr-only">Imprimir</span>
-                    </button>
-                  </div>
-                </td>
-                {/* Columna Albarán */}
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  {item.num_albaran ? item.num_albaran : "-"}
-                </td>
-                {/* Columna Factura */}
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  {item.num_factura ? item.num_factura : "-"}
-                </td>
-              </tr>
-            ))}
-            {/* Mensaje si no hay documentos */}
-            {sortedProducts.length === 0 && !isAdding && (
-              <tr key="no-documents">
+            {/*Finaliza el boton Agregar Nuevo Documento*/}
+            {sortedProducts.length === 0 ? (
+              <tr>
                 <td
                   colSpan="5"
                   className="py-6 text-center text-gray-500 italic"
@@ -374,9 +298,194 @@ export const HistoryTableDocument = ({
                   No hay documentos registrados.
                 </td>
               </tr>
+            ) : (
+              sortedProducts.map((item, idx) => (
+                <tr
+                  key={idx}
+                  className="hover:bg-gray-50 transition-colors duration-150"
+                >
+                  <td className="px-6 py-4 text-center text-sm text-gray-800">
+                    {item.fecha_factura
+                      ? dayjs(item.fecha_factura).format(
+                          "dddd, D [de] MMMM [de] YYYY"
+                        )
+                      : dayjs().format("dddd, D [de] MMMM [de] YYYY")}
+                  </td>
+                  <td className="px-6 py-4 text-center text-sm text-gray-800">
+                    {item.num_presupuesto ? item.num_presupuesto : "-"}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {/* botones */}
+                    <div className="flex justify-center space-x-3 mt-2">
+                      {/* Botón Actualizar */}
+                      <button
+                        onClick={() => handleUpdate(item)}
+                        className="cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-md hover:shadow-lg"
+                        title="Actualizar"
+                      >
+                        <FaEdit size={16} />
+                        <span className="sr-only">Actualizar</span>
+                      </button>
+
+                      {/* Botón Eliminar */}
+                      <button
+                        onClick={() => handleDelete(item)}
+                        className="cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-md hover:shadow-lg"
+                        title="Eliminar"
+                      >
+                        <FaTrashAlt size={16} />
+                        <span className="sr-only">Eliminar</span>
+                      </button>
+
+                      {/* Botón Imprimir */}
+                      <button
+                        onClick={() => handlePrint(item)}
+                        className="cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-md hover:shadow-lg"
+                        title="Imprimir"
+                      >
+                        <FaPrint size={16} />
+                        <span className="sr-only">Imprimir</span>
+                      </button>
+
+                      {/* Botón Checklist */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault(); // Evita comportamiento no deseado si envuelve formularios
+                          // Aquí puedes llamar a toggleChecklistItem() si usas estado
+                        }}
+                        className="cursor-pointer inline-flex items-center justify-center px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 shadow-md hover:shadow-lg"
+                        title="Marcar como completado"
+                      >
+                        <input
+                          type="checkbox"
+                          className="form-checkbox h-4 w-4 text-yellow-600 rounded transition duration-150 ease-in-out mr-1 focus:ring-yellow-500"
+                          checked={isChecked}
+                          onChange={(e) => setIsChecked(e.target.checked)}
+                        />
+                        <span className="text-xs font-medium whitespace-nowrap">
+                          
+                        </span>
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center text-sm text-gray-600">
+                    {item.num_albaran ? item.num_albaran : "-"}
+                  </td>
+                  <td className="px-6 py-4 text-center text-sm text-gray-600">
+                    {item.num_factura ? item.num_factura : "-"}
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Tarjetas visibles solo en móvil */}
+      <div className="md:hidden grid gap-4 px-4">
+        {/* Botón Agregar Nuevo Documento */}
+        <tr key="add-button-row">
+          <td colSpan="5" className="px-6 py-4 text-center">
+            <button
+              onClick={() => setShowModal(true)}
+              disabled={isDisabled}
+              className={`inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-200 
+                                    ${
+                                      isDisabled
+                                        ? "bg-gray-400 cursor-not-allowed"
+                                        : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                                    } focus:outline-none focus:ring-2 focus:ring-offset-2`}
+              aria-label="Agregar nuevo documento"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5 mr-2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              Agregar Nuevo Documento
+            </button>
+          </td>
+        </tr>
+        {/*Finaliza el boton Agregar Nuevo Documento*/}
+        {sortedProducts.length === 0 ? (
+          <div className="text-center py-4 text-gray-500 italic">
+            No hay documentos registrados.
+          </div>
+        ) : (
+          sortedProducts.map((item, idx) => (
+            <div
+              key={idx}
+              className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
+            >
+              <div className="space-y-2">
+                <div>
+                  <strong className="text-gray-600">Fecha:</strong>{" "}
+                  <span className="text-gray-800">
+                    {item.fecha_factura
+                      ? dayjs(item.fecha_factura).format(
+                          "dddd, D [de] MMMM [de] YYYY"
+                        )
+                      : dayjs().format("dddd, D [de] MMMM [de] YYYY")}
+                  </span>
+                </div>
+                <div>
+                  <strong className="text-gray-600">Presupuesto:</strong>{" "}
+                  <span className="text-gray-800">
+                    {item.num_presupuesto ? item.num_presupuesto : "-"}
+                  </span>
+                </div>
+                <div>
+                  <strong className="text-gray-600">Albarán:</strong>{" "}
+                  <span className="text-gray-800">
+                    {item.num_albaran ? item.num_albaran : "-"}
+                  </span>
+                </div>
+                <div>
+                  <strong className="text-gray-600">Factura:</strong>{" "}
+                  <span className="text-gray-800">
+                    {item.num_factura ? item.num_factura : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-2 mt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => handleUpdate(item)}
+                    className="text-blue-600 hover:text-blue-800 flex items-center"
+                  >
+                    <FaEdit className="mr-1" /> Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    className="text-red-600 hover:text-red-800 flex items-center"
+                  >
+                    <FaTrashAlt className="mr-1" /> Eliminar
+                  </button>
+                  <button
+                    onClick={() => handlePrint(item)}
+                    className="text-green-600 hover:text-green-800 flex items-center"
+                  >
+                    <FaPrint className="mr-1" /> Imprimir
+                  </button>
+                  {/* //boton */}
+                  <button
+                    onClick={() => handlePrint(item)}
+                    className="text-green-600 hover:text-green-800 flex items-center"
+                  >
+                    <FaPrint className="mr-1" /> OTRO
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Modal reutilizable */}

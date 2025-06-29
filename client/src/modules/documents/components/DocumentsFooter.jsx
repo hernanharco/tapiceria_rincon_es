@@ -3,15 +3,16 @@ import { formatCurrency } from "../../../utils/formatUtils";
 
 export const DocumentsFooter = ({ filteredProducts = [], setDatFooter }) => {
   // Calcular totales
+  // console.log("filteredProducts DocumentsFooter: ", filteredProducts)
   const subtotal = filteredProducts.reduce(
     (sum, item) =>
-      sum + (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1),
+      sum + (parseFloat(item.precio) || 0) * (parseInt(item.cantidad) || 1),
     0
   );
 
   const totalDescuento = filteredProducts.reduce((sum, item) => {
-    const price = parseFloat(item.price) || 0;
-    const quantity = parseInt(item.quantity) || 1;
+    const price = parseFloat(item.precio) || 0;
+    const quantity = parseInt(item.cantidad) || 1;
     const dto = parseFloat(item.dto) || 0;
 
     return sum + price * quantity * (dto / 100);

@@ -148,17 +148,60 @@ export const DocumentsProvider = ({ children }) => {
     }
   };
 
-  // Nueva función: Buscar documento num_presupuesto seria PRE250626
+  // Nueva función: Buscar documento num_presupuesto seria PRE250626 valioso para buscar
   const fetchDocumentByNum = async (num_presupuesto) => {
     try {
       const response = await axios.get(API_URL); // Trae todos los documentos
       const filteredDocuments = response.data.filter(
         (doc) => doc.num_presupuesto === num_presupuesto
       );
-      return filteredDocuments;
+      return filteredDocuments[0];
     } catch (error) {
       console.error("Error al buscar documento por num_presupuesto:", error);
       return [];
+    }
+  };
+
+  // Buscar documento por ID
+  const fetchDocumentById = async (id) => {
+    try {
+      const response = await axios.get(`${API_URL}${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error("Error al buscar documento por ID:", error);
+      return null;
+    }
+  };
+
+  // ✨ NUEVA FUNCIÓN: Actualizar documento por número de presupuesto
+  const updateProduct = async (numid, updatedFields) => {
+    // console.log("updateProduct DocumentsProvider: ", numid, " datos actualizar:", updatedFields);
+    try {
+      // Buscar el documento completo por su número
+      const existingDoc = await fetchDocumentById(numid);
+      // console.log("existingDoc", existingDoc);
+      if (!existingDoc) {
+        throw new Error(`Documento con numid "${numid}" no encontrado.`);
+      }
+
+      // Hacer PATCH solo con los campos modificados
+      // console.log("URL: ", `${API_URL}${existingDoc.id}/`, updatedFields);
+      const response = await axios.patch(
+        `${API_URL}${existingDoc.id}/`,
+        updatedFields
+      );
+
+      // Actualizar en el estado local
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          doc.id === existingDoc.id ? { ...doc, ...response.data } : doc
+        )
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error al actualizar documento:", error);
+      throw error;
     }
   };
 
@@ -173,6 +216,7 @@ export const DocumentsProvider = ({ children }) => {
     deleteProduct,
     fetchDocumentByNum,
     getDocumentByDoc,
+    updateProduct,
   };
 
   return (

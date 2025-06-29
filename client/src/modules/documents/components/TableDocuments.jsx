@@ -5,13 +5,8 @@ export const TableDocuments = ({
   filteredProducts,
   setFilteredProducts,
   onProductsChange,
-}) => {
-  // Inicializar con una lista vacía si no hay productos
-  useEffect(() => {
-    if (!filteredProducts || filteredProducts.length === 0) {
-      setFilteredProducts([]);
-    }
-  }, []);
+  isEditing,
+}) => { 
 
   // Notificar al padre cada vez que haya cambios
   useEffect(() => {
@@ -23,12 +18,12 @@ export const TableDocuments = ({
   // Agregar nueva fila vacía
   const handleAddRow = () => {
     const newRow = {
-      reference: "",
-      description: "",
-      quantity: 1,
-      price: 0,
+      referencia: "",
+      descripcion: "",
+      cantidad: 1,
+      precio: 0,
       dto: 0,
-      amount: 0,
+      importe: 0,
     };
     setFilteredProducts([...filteredProducts, newRow]);
   };
@@ -38,24 +33,23 @@ export const TableDocuments = ({
     const updatedList = [...filteredProducts];
     updatedList[index][field] = value;
 
-    // Calcular 'amount' basado en otros campos
+    // Calcular 'importe' basado en otros campos
     if (
-      field === "price" ||
-      field === "quantity" ||
+      field === "precio" ||
+      field === "cantidad" ||
       field === "dto" ||
-      field === "amount"
+      field === "importe"
     ) {
-      const price = parseFloat(updatedList[index].price) || 0;
-      const quantity = parseInt(updatedList[index].quantity) || 0;
+      const precio = parseFloat(updatedList[index].precio) || 0;
+      const cantidad = parseInt(updatedList[index].cantidad) || 0;
       const dto = parseFloat(updatedList[index].dto) || 0;
-      const amount = parseFloat(updatedList[index].amount) || 0;
 
-      if (field !== "amount") {
-        const subtotal = price * quantity;
+      if (field !== "importe") {
+        const subtotal = precio * cantidad;
         const discount = subtotal * (dto / 100);
-        updatedList[index].amount = subtotal - discount;
-      } else if (field === "amount" && price > 0 && quantity > 0) {
-        const calculatedDto = 100 - (amount / (price * quantity)) * 100;
+        updatedList[index].importe = subtotal - discount;
+      } else if (field === "importe" && precio > 0 && cantidad > 0) {
+        const calculatedDto = 100 - (value / (precio * cantidad)) * 100;
         updatedList[index].dto = isNaN(calculatedDto)
           ? 0
           : calculatedDto.toFixed(2);
@@ -106,9 +100,9 @@ export const TableDocuments = ({
                 <td className="px-2 py-1 text-sm text-gray-800 text-center border border-gray-300 hidden md:table-cell">
                   <input
                     type="text"
-                    value={item.reference}
+                    value={item.referencia || ""}
                     onChange={(e) =>
-                      handleChange(idx, "reference", e.target.value)
+                      handleChange(idx, "referencia", e.target.value)
                     }
                     className="w-full border border-gray-300 rounded px-2 py-1"
                   />
@@ -117,14 +111,14 @@ export const TableDocuments = ({
                   <textarea
                     className="border border-gray-300 w-full resize-none overflow-hidden rounded p-2"
                     rows={3}
-                    value={item.description}
+                    value={item.descripcion}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                       }
                     }}
                     onChange={(e) => {
-                      handleChange(idx, "description", e.target.value);
+                      handleChange(idx, "descripcion", e.target.value);
                       const textarea = e.target;
                       textarea.style.height = "auto";
                       textarea.style.height = `${textarea.scrollHeight}px`;
@@ -136,9 +130,9 @@ export const TableDocuments = ({
                   <input
                     type="number"
                     min="1"
-                    value={item.quantity}
+                    value={item.cantidad}
                     onChange={(e) =>
-                      handleChange(idx, "quantity", parseInt(e.target.value))
+                      handleChange(idx, "cantidad", parseInt(e.target.value))
                     }
                     className="w-full border border-gray-300 rounded px-2 py-1"
                   />
@@ -147,9 +141,9 @@ export const TableDocuments = ({
                   <input
                     type="number"
                     step="0.01"
-                    value={item.price}
+                    value={item.precio}
                     onChange={(e) =>
-                      handleChange(idx, "price", parseFloat(e.target.value))
+                      handleChange(idx, "precio", parseFloat(e.target.value))
                     }
                     className="w-full border border-gray-300 rounded px-2 py-1"
                   />
@@ -169,9 +163,9 @@ export const TableDocuments = ({
                   <input
                     type="number"
                     step="0.01"
-                    value={item.amount}
+                    value={item.importe}
                     onChange={(e) =>
-                      handleChange(idx, "amount", parseFloat(e.target.value))
+                      handleChange(idx, "importe", parseFloat(e.target.value))
                     }
                     className="w-full border border-gray-300 rounded px-2 py-1"
                   />
@@ -186,7 +180,6 @@ export const TableDocuments = ({
                 </td>
               </tr>
             ))}
-            {/* Botón para agregar nueva fila */}
             <tr>
               <td colSpan="7" className="text-center py-2">
                 <button
@@ -217,14 +210,14 @@ export const TableDocuments = ({
                   <textarea
                     className="border border-gray-300 w-full resize-none overflow-hidden rounded p-2"
                     rows={3}
-                    value={item.description}
+                    value={item.descripcion}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                       }
                     }}
                     onChange={(e) => {
-                      handleChange(idx, "description", e.target.value);
+                      handleChange(idx, "descripcion", e.target.value);
                       const textarea = e.target;
                       textarea.style.height = "auto";
                       textarea.style.height = `${textarea.scrollHeight}px`;
@@ -238,9 +231,9 @@ export const TableDocuments = ({
                     className="border border-gray-300 w-full"
                     type="number"
                     step="0.01"
-                    value={item.price}
+                    value={item.precio}
                     onChange={(e) =>
-                      handleChange(idx, "price", parseFloat(e.target.value))
+                      handleChange(idx, "precio", parseFloat(e.target.value))
                     }
                   />
                 </p>
@@ -249,9 +242,9 @@ export const TableDocuments = ({
                   <input
                     className="border border-gray-300 w-full"
                     type="number"
-                    value={item.quantity}
+                    value={item.cantidad}
                     onChange={(e) =>
-                      handleChange(idx, "quantity", parseInt(e.target.value))
+                      handleChange(idx, "cantidad", parseInt(e.target.value))
                     }
                   />
                 </p>
@@ -271,9 +264,9 @@ export const TableDocuments = ({
                   <input
                     className="border border-gray-300 w-full"
                     type="number"
-                    value={item.amount}
+                    value={item.importe}
                     onChange={(e) =>
-                      handleChange(idx, "amount", parseFloat(e.target.value))
+                      handleChange(idx, "importe", parseFloat(e.target.value))
                     }
                   />
                 </p>
@@ -294,7 +287,7 @@ export const TableDocuments = ({
             ➕ Agregar Producto
           </button>
         </div>
-      </div>
+      </div> {/*Donde Finaliza el escritorio*/}
     </div>
   );
 };

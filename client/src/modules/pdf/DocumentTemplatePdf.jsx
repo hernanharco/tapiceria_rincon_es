@@ -1,4 +1,4 @@
-import React from 'react';
+
 import {
   Document,
   Page,
@@ -18,7 +18,7 @@ import { PagosPDF } from '../documents/pdf/PagosPDF';
 // Define tus estilos al inicio del archivo
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 20,
     fontFamily: 'Helvetica'
   },
   header: {
@@ -87,7 +87,7 @@ export const DocumentTemplatePdf = ({ company, client, document, filteredProduct
         <View style={styles.row}>
           {/* DocumentsInfoPDF */}
           <View style={styles.column}>
-            {document && <DocumentInfoPDF document={document} />}
+            {document && <DocumentInfoPDF document={document} client={client.cod_client}  />}
           </View>
           <View style={{ width: 10 }} /> {/* Espacio entre bloques */}
           {/* ClientsPDF */}

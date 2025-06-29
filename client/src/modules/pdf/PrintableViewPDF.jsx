@@ -15,12 +15,12 @@ import usePagos from '../documents/hooks/usePagos';
 export const PrintableViewPDF = () => {
   const { empresas } = useCompany();
   const { getClientByCif } = useClients();
-  const { getDocumentByNum } = useDocument();
+  const { fetchDocumentByNum } = useDocument();
   const { getDocumentsByNum } = useDataDocuments();
   const { getFootersByFieldId } = useFooters();
   const { getPagosByClienteId } = usePagos();
   // 🎯 Recibimos el id desde la URL
-  const { numfactura, cif } = useParams();
+  const { num_presupuesto, cif } = useParams();
 
   // Manejamos los estados del pdf a mostrar
   const [client, setClient] = useState(null)
@@ -29,79 +29,112 @@ export const PrintableViewPDF = () => {
   const [cashPDF, setCashPDF] = useState(null)
   const [filteredProducts, setFilteredProducts] = useState([]);
 
-  const company = empresas?.[0];
+  // Carga los datos de la Empresa
+  const company = empresas?.[0];  
 
-  // useEffect para cargar el cliente 
+  /// Cargar cliente
   useEffect(() => {
     const fetchClient = async () => {
-      const foundClient = await getClientByCif(cif);
-      setClient(foundClient);
-
-      // if (foundClient) {
-      //   console.log('Cliente encontrado:', foundClient);
-      //   // Aquí puedes hacer lo que necesites con los datos del cliente
-      // } else {
-      //   console.log('Cliente no encontrado');
-      // }
+      if (!cif) return;
+      try {
+        const foundClient = await getClientByCif(cif);
+        setClient(foundClient);
+      } catch (err) {
+        console.error("Error al cargar cliente:", err);
+      }
     };
-
     fetchClient();
-  }, []); // Añade `cif` como dependencia si puede cambiar
+  }, [cif]);
 
-  // use effect para cargar el documento
+  // Cargar documento
   useEffect(() => {
     const fetchDocument = async () => {
-      const foundDocument = await getDocumentByNum(numfactura);
-      setDocument(foundDocument);
+      if (!num_presupuesto) return;
+      try {
+        const foundDocument = await fetchDocumentByNum(num_presupuesto);
+        setDocument(foundDocument);
+      } catch (err) {
+        console.error("Error al cargar documento:", err);
+      }
     };
-
     fetchDocument();
-  }, []); // añade `numfactura` como dependencia si puede cambiar
+  }, [num_presupuesto]);
 
-  // use effect para cargar los totales del footer del documento
+  // Cargar productos del documento
+  useEffect(() => {
+    const loadProducts = async () => {
+      // console.log("document.id", document[0].id)
+      if (!document || !document.id) return;
+      try {
+        const results = await getDocumentsByNum(document.id);
+        setFilteredProducts(results || []);
+      } catch (err) {
+        console.error("Error al cargar productos:", err);
+      }
+    };
+    loadProducts();
+  }, [document]);
+
+  // Cargar footer
   useEffect(() => {
     const fetchFooter = async () => {
-      const foundFooter = await getFootersByFieldId(numfactura);
-      // console.log('Datos del footer:', foundFooter[0]);
-      setFooters(foundFooter[0] || null);
+      if (!document || !document.id) return;
+      try {
+        const foundFooter = await getFootersByFieldId(document.id);
+        setFooters(foundFooter || null);
+      } catch (err) {
+        console.error("Error al cargar footer:", err);
+      }
     };
-
     fetchFooter();
-  }, []); // añade `numfactura` como dependencia si puede cambiar
+  }, [document]);
 
-  // use effect para cargar los Pagos segun la empresa
+  // Cargar pagos
   useEffect(() => {
     const fetchCash = async () => {
-      const foundCash = await getPagosByClienteId(cif);
-      // console.log('Datos del foundCash:', foundCash[0]);
-      setCashPDF(foundCash[0] || null);
+      if (!cif) return;
+      try {
+        const foundCash = await getPagosByClienteId(cif);
+        setCashPDF(foundCash[0] || null);
+      } catch (err) {
+        console.error("Error al cargar pagos:", err);
+      }
+    };
+    fetchCash();
+  }, [cif]);
+
+  // Comprobar si todos los datos están cargados
+  useEffect(() => {
+    const checkDataReady = () => {
+      const isReady =
+        company &&
+        client &&
+        document &&
+        Array.isArray(filteredProducts) &&
+        footers !== null &&
+        cashPDF !== null;
     };
 
-    fetchCash();
-  }, []); // añade `numfactura` como dependencia si puede cambiar
+    checkDataReady();
+  }, [company, client, document, filteredProducts, footers, cashPDF]);
+  
 
-  // useEffect(() => {
-  //   console.log('💰 Estado cash actualizado:', cashPDF);
-  // }, [cashPDF]);
+  // console.log("company en PrintableViewPDF: ", company)
+  // console.log("client en PrintableViewPDF: ", client)
+  // console.log("document en PrintableViewPDF: ", document)
+  // console.log("filteredProducts en PrintableViewPDF: ", filteredProducts)
+  // console.log("footers en PrintableViewPDF: ", footers)
+  // console.log("cashPDF en PrintableViewPDF: ", cashPDF)
 
-  // Filtrar productos cada vez que cambie numDocument
-  useEffect(() => {
-    if (!document) return;
+  const isDataReady =
+    company &&
+    client &&
+    document &&
+    Array.isArray(filteredProducts) &&
+    footers &&
+    cashPDF;
 
-    if (!document.num_factura) {
-      setFilteredProducts([]);
-      return;
-    }
-
-    if (!isNaN(Number(document.num_factura))) {
-      const index = parseInt(document.num_factura, 10);
-      const results = getDocumentsByNum(index);
-      setFilteredProducts(results || []);
-    } else {
-      setFilteredProducts([]);
-    }
-  }, [document]); // Añade `document` como dependencia
-
+  
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Generar PDF Presupuesto</h1>
