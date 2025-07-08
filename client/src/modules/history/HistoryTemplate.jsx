@@ -105,7 +105,7 @@ export const HistoryTemplate = () => {
     if (searchTerm.trim()) {
       setShowSuggestions(true);
     } else {
-      setShowSuggestions(true); // Mostrar siempre sugerencias si hay clientes
+      setShowSuggestions(false); // Mostrar siempre sugerencias si hay clientes
     }
   }, [searchTerm, clients]);
 

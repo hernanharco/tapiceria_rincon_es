@@ -101,7 +101,7 @@ export const Sidebar = () => {
 
           {/* Footer */}
           <div className={`p-4 text-xs text-gray-400 ${!isOpen && 'text-center'}`}>
-            {isOpen ? 'Versión 1.0.0' : 'v1'}
+            {isOpen ? 'Versión 1.0.0 - hernan.harco' : 'v1'}
           </div>
         </aside>
 

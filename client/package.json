@@ -13,6 +13,7 @@
     "@react-pdf/renderer": "^4.3.0",
     "@tailwindcss/vite": "^4.1.7",
     "axios": "^1.8.4",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "dayjs-es": "^1.0.0",
     "html2canvas": "^1.4.1",

@@ -11,7 +11,7 @@ export const CreateClientView = () => {
 
   const { clients, addClients, deleteClients, updateClients, refetchClients } = useClients();
   const { empresas } = useCompany();
-  console.log("codigo de la empresa: ", empresas[0]);
+  // console.log("codigo de la empresa: ", empresas[0]);
 
   // Manejador de guardar/editar cliente
   const handleSaveClient = async (cliente) => {

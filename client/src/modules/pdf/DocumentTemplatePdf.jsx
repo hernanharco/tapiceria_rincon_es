@@ -1,69 +1,111 @@
-
-import {
-  Document,
-  Page,
-  View,
-  Text,
-  StyleSheet
-} from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
 // Componentes personalizados para el PDF
-import { CompanyPDF } from '../company/pdf/CompanyPDF';
-import { ClientsPDF } from '../clients/pdf/ClientsPDF';
-import { DocumentInfoPDF } from '../documents/pdf/DocumentsInfoPDF';
-import { TableDocumentsPDF } from '../documents/pdf/TableDocumentsPDF';
-import { DocumentsFooterPDF } from '../documents/pdf/DocumentsFooterPDF';
-import { PagosPDF } from '../documents/pdf/PagosPDF';
+import { CompanyPDF } from "../company/pdf/CompanyPDF";
+import { ClientsPDF } from "../clients/pdf/ClientsPDF";
+import { DocumentInfoPDF } from "../documents/pdf/DocumentsInfoPDF";
+import { TableDocumentsPDF } from "../documents/pdf/TableDocumentsPDF";
+import { DocumentsFooterPDF } from "../documents/pdf/DocumentsFooterPDF";
+import { PagosPDF } from "../documents/pdf/PagosPDF";
 
 // Define tus estilos al inicio del archivo
 const styles = StyleSheet.create({
   page: {
-    padding: 20,
-    fontFamily: 'Helvetica'
+    padding: 30, // 👈 Añade márgenes internos
+    fontFamily: "Helvetica",
   },
   header: {
     fontSize: 24,
-    textAlign: 'center',
-    marginBottom: 20,
-    fontWeight: 'bold'
+    textAlign: "center",
+    marginBottom: 10,
+    fontWeight: "bold",
   },
   section: {
-    marginBottom: 10
+    marginBottom: 5,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 10,
-    alignItems: 'stretch', // ⭐ Esto hace que ambos hijos se estiren verticalmente
+    alignItems: "stretch", // ⭐ Esto hace que ambos hijos se estiren verticalmente
   },
   column: {
     flex: 1,
     paddingRight: 5,
     paddingLeft: 5,
-    display: 'flex',
-    flexDirection: 'column'
+    display: "flex",
+    flexDirection: "column",
   },
   label: {
     fontSize: 10,
-    color: '#555'
+    color: "#555",
   },
   value: {
     fontSize: 10,
     marginBottom: 4,
-    color: '#333'
-  }
+    color: "#333",
+  },
+  container: {
+    border: "1px solid #cccccc",
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 10,
+    flexDirection: "row", // Alineamos imagen y texto horizontalmente
+    alignItems: "center", // Centramos verticalmente
+  },
+  observation: {
+    fontSize: 9,
+    marginBottom: 2,
+    color: "#555",
+  },
 });
 
-// Función de formato de moneda
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(value);
+// Función para mostrar el Titulo del Documento
+const findTitle = (prinTitle) => {
+  // console.log("prinTitle: ", prinTitle)
+  let print = "";
+
+  if (prinTitle.title === "undefined") {
+    print = "PRESUPUESTO";
+  } else {
+    if (prinTitle.title === "ALBARAN") {
+      print = "ALBARAN";
+    } else {
+      print = "FACTURA";
+    }
+  }
+
+  return print;
 };
 
-export const DocumentTemplatePdf = ({ company, client, document, filteredProducts, footers, cashPDF }) => {
-  console.log('🚀 Datos completos recibidos en PDF:', {
+//Encontrar que fecha debe Imprimir
+const dateShow = (printTitle, document) => {
+  console.log("prinTitle: ", printTitle, " datos document:", document);
+  let printDate = "";
+
+  if (printTitle.title === "undefined") {
+    printDate = document.fecha_factura;
+  } if(printTitle.title === "PRESUPUESTO"){
+    printDate = document.fecha_factalb;
+  }else {
+    printDate = document.datefactura;
+  }
+
+  // console.log("fecha a mostrar", printDate);
+  return printDate;
+};
+
+export const DocumentTemplatePdf = ({
+  company,
+  client,
+  document,
+  filteredProducts,
+  footers,
+  cashPDF,
+  prinTitle,
+}) => {
+  console.log("🚀 Datos completos recibidos en PDF:", {
+    prinTitle,
     company,
     client,
     document,
@@ -71,12 +113,12 @@ export const DocumentTemplatePdf = ({ company, client, document, filteredProduct
     footers,
     cashPDF,
   });
-  
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Título */}
-        <Text style={styles.header}>ALBARÁN</Text>
+        <Text style={styles.header}>{findTitle(prinTitle)}</Text>
 
         {/* Datos de la Empresa */}
         <View style={styles.section}>
@@ -87,7 +129,13 @@ export const DocumentTemplatePdf = ({ company, client, document, filteredProduct
         <View style={styles.row}>
           {/* DocumentsInfoPDF */}
           <View style={styles.column}>
-            {document && <DocumentInfoPDF document={document} client={client.cod_client}  />}
+            {document && (
+              <DocumentInfoPDF
+                document={document}
+                client={client.cod_client}
+                dateShow={dateShow(prinTitle, document)}
+              />
+            )}
           </View>
           <View style={{ width: 10 }} /> {/* Espacio entre bloques */}
           {/* ClientsPDF */}
@@ -96,20 +144,47 @@ export const DocumentTemplatePdf = ({ company, client, document, filteredProduct
           </View>
         </View>
 
+        {/* Muestra un mensaje que dice con qué documento se relaciona */}
+        {prinTitle?.title?.toUpperCase() === "ALBARAN" && (
+          <View>
+            <Text style={styles.observation}>PRESUPUESTO {document.num_presupuesto}</Text>
+          </View>
+        )}
+
+        {prinTitle?.title?.toUpperCase() === "FACTURA" && (
+          <View>
+            <Text style={styles.observation}>ALBARAN {document.num_albaran}</Text>
+          </View>
+        )}
+
         {/* Información de los datos documento se construye la tabla */}
         <View style={styles.section}>
-          {filteredProducts && <TableDocumentsPDF filteredProducts={filteredProducts} />}
+          {filteredProducts && (
+            <TableDocumentsPDF filteredProducts={filteredProducts} />
+          )}
         </View>
 
-        {/* Informacion donde se muestra el total de los productos */}
-        <View style={styles.section}>
-          {footers && <DocumentsFooterPDF footers={footers} />}
-        </View>
+        {prinTitle.title === "undefined" ? (
+          // Mostrar título adicional si NO es PRESUPUESTO
+          <View style={styles.container}>
+            <View>
+              <Text style={styles.observation}>
+                "Observaciones: Impuestos no Incluidos"
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <>
+            {/* Footer + Forma de pago */}
+            <View style={styles.section}>
+              {footers && <DocumentsFooterPDF footers={footers} />}
+            </View>
 
-        {/* Forma de pago */}
-        <View style={styles.section}>
-          {cashPDF && <PagosPDF cashPDF={cashPDF} />}
-        </View>
+            <View style={styles.section}>
+              {cashPDF && <PagosPDF cashPDF={cashPDF} />}
+            </View>
+          </>
+        )}
       </Page>
     </Document>
   );

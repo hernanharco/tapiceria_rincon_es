@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     }
 });
 
-export const DocumentInfoPDF = ({ document, client }) => (
+export const DocumentInfoPDF = ({ document, client, dateShow }) => (
     <View style={styles.container}>            
 
         {/* Número de presupuesto */}
@@ -44,7 +44,7 @@ export const DocumentInfoPDF = ({ document, client }) => (
         {/* Fecha */}
         <View style={styles.row}>
             <Text style={styles.label}>Fecha:</Text>
-            <Text style={styles.value}>{document.fecha_factura || '-'}</Text>
+            <Text style={styles.value}>{dateShow || '-'}</Text>
         </View>
 
         {/* Codigo del Cliente */}

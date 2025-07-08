@@ -79,7 +79,7 @@ export const FootersProvider = ({ children }) => {
 
   // Nueva función: Buscar por footer_documento
   const fetchFooterByNum = async (num_presupuesto) => {
-    console.log("fetchFooterByNum", num_presupuesto);
+    // console.log("fetchFooterByNum", num_presupuesto);
     try {
       const response = await axios.get(API_URL); // Trae todos los documentos
       const filteredDocuments = response.data.filter(
@@ -94,11 +94,11 @@ export const FootersProvider = ({ children }) => {
 
   // Actualizar un footer existente basado en el campo footer_documento
   const updateFooter = async (footerDocumentoId, datosActualizados) => {
-    console.log(
-      "Datos recibidos en updateFooter",
-      footerDocumentoId,
-      datosActualizados
-    );
+    // console.log(
+    //   "Datos recibidos en updateFooter",
+    //   footerDocumentoId,
+    //   datosActualizados
+    // );
 
     if (!footerDocumentoId) {
       throw new Error(

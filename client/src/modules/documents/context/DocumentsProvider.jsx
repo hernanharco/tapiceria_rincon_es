@@ -70,6 +70,28 @@ export const DocumentsProvider = ({ children }) => {
     }
   };
 
+  // Actualizar los datos a partir del Id
+  const updateDocumentFieldsId = async (id, updatedFields) => {
+    if (id === undefined) return;
+
+    try {
+      const response = await axios.patch(`${API_URL}${id}/`, updatedFields);
+      setDocuments((prev) =>
+        prev.map((doc) => (doc.id === id ? response.data : doc))
+      );
+      return response.data;
+    } catch (err) {
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        err.message ||
+        "Error desconocido";
+
+      console.error(`Error al actualizar documento ${id}:`, message);
+      throw new Error(message);
+    }
+  };
+
   // Eliminar un documento por su ID
   const deleteProduct = async (numFactura) => {
     // console.log('DocumentsProvider. Eliminando documento con numFactura:', numFactura);
@@ -164,6 +186,7 @@ export const DocumentsProvider = ({ children }) => {
 
   // Buscar documento por ID
   const fetchDocumentById = async (id) => {
+    // console.log("fetchDocumentById", id)
     try {
       const response = await axios.get(`${API_URL}${id}/`);
       return response.data;
@@ -217,6 +240,8 @@ export const DocumentsProvider = ({ children }) => {
     fetchDocumentByNum,
     getDocumentByDoc,
     updateProduct,
+    updateDocumentFieldsId,
+    fetchDocumentById,
   };
 
   return (

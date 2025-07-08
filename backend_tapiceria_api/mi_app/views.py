@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 
-from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago
+from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago, titleDescripcion
 
 from .serializers import (
     DataCompanySerializer,
@@ -15,6 +15,7 @@ from .serializers import (
     DataDocumentSerializer,
     FooterDocumentSerializer,
     PagoSerializer,
+    titleDescripcionSerializer,
     
 )
 
@@ -55,6 +56,40 @@ class DocumentViewSet(viewsets.ModelViewSet):
     #         # Asegúrate de usar el campo correcto de DataClient, ej: cif
     #         return Document.objects.filter(dataclient__cif=doc)
     #     return super().get_queryset()
+
+class titleDescripcionViewSet(viewsets.ModelViewSet):
+    serializer_class = titleDescripcionSerializer
+    queryset = titleDescripcion.objects.all()
+
+    # Esta forma solo sirve para listar informacion
+    @extend_schema(
+        description="Filtra registros de 'titleDescripcion' cuyo campo 'titledoc' coincida con el ID del Document dado.",
+        parameters=[
+            OpenApiParameter(
+                name='get_titleDocuments', 
+                type=str, 
+                location='query', 
+                description='titledoc del documento para filtrar las descripciones asociadas'
+            )
+        ]
+    )
+   
+    @action(detail=False, url_path='title', methods=['get'])
+    def get_titleDocuments(self, request):
+        doc_id = request.query_params.get('titledocument')
+
+        if doc_id:
+            try:
+                # Filtramos los titleDescripcion cuyo "titledoc" sea igual al Document con id=doc_id
+                queryset = self.queryset.filter(titledoc__id=doc_id)
+            except ValueError:
+                return Response({"error": "El valor proporcionado no es un ID válido."}, status=400)
+        else:
+            queryset = self.get_queryset()
+
+        # Serializamos los resultados
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"results": serializer.data})
 
 class DataDocumentViewSet(viewsets.ModelViewSet):
     queryset = DataDocument.objects.all()

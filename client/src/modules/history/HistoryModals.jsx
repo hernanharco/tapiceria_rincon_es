@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 
 import { DocumentsInfo } from "../documents/components/DocumentsInfo";
-import { TableDocuments } from "../documents/components/TableDocuments";
+import { TableDocuments } from "../documents/components/compTableDocuments.jsx/TableDocuments";
 import { DocumentsFooter } from "../documents/components/DocumentsFooter";
 
 // Hooks personalizados
 import useDocuments from "../documents/hooks/useDocuments";
+import useTitleTableDocuments from "../documents/hooks/useTitleTableDocuments";
 import useDataDocuments from "../documents/hooks/useDataDocuments";
 import useDataFooter from "../documents/hooks/useFooters";
 
@@ -23,8 +24,21 @@ export const HistoryModals = ({
   // console.log("isEditing en HistoryModals: ", isEditing)
 
   const { addProduct, updateProduct } = useDocuments(); // Asegúrate de tener `updateProduct`
-  const { addProductTable, getDocumentsByNum, updateProductTable } =
-    useDataDocuments(); // Hook para productos
+
+  const {
+    addProductTitle,
+    getDocumentsByNumTitle,
+    updateDocumentFieldsIdTitle,
+    deleteProductTitle,
+  } = useTitleTableDocuments(); // Asegúrate de tener `updateProduct`
+
+  const {
+    addProductTable,
+    getDocumentsByNum,
+    updateProductTable,
+    deleteProduct,
+  } = useDataDocuments(); // Hook para productos
+
   const { saveFooter, updateFooter } = useDataFooter(); // Hook para footer
 
   // Estado para info del documento
@@ -39,10 +53,10 @@ export const HistoryModals = ({
 
   // Inicializa los productos en vacio
   useEffect(() => {
-  if (!isEditing) {    
-    setFilteredProducts([]);
-  }
-}, [isEditing, onClose]);
+    if (!isEditing) {
+      setFilteredProducts([]);
+    }
+  }, [isEditing, onClose]);
 
   const handleTableDataChange = (updatedProducts) => {
     setFilteredProducts(updatedProducts);
@@ -71,11 +85,41 @@ export const HistoryModals = ({
   useEffect(() => {
     if (!isOpen || !isEditing) return;
 
-    // Puedes cargar los datos completos del documento desde el backend aquí
     const loadDocumentData = async () => {
       try {
-        const products = await getDocumentsByNum(selectedItem.id);
-        setFilteredProducts(products);
+        const [titleResponse, productsResponse] = await Promise.all([
+          getDocumentsByNumTitle(selectedItem.id),
+          getDocumentsByNum(selectedItem.id),
+        ]);
+
+        // console.log("title", titleResponse);
+        // console.log("products", productsResponse);
+
+        // Combinar datos: 1 título + 3 productos, repetido
+        const combinedData = [];
+
+        for (let i = 0; i < titleResponse.length; i++) {
+          // Convertir título en objeto con campo 'descripcion'
+          const { titdescripcion, ...rest } = titleResponse[i];
+
+          const titleItem = {
+            ...rest,
+            descripcion: titdescripcion,
+          };
+
+          // Tomar grupo de 2 productos consecutivos
+          const productGroup = productsResponse.slice(i * 2, (i + 1) * 2);
+
+          // Si no hay productos para este título, omitimos
+          if (productGroup.length === 0) continue;
+
+          // Añadimos el título + sus productos
+          combinedData.push(titleItem, ...productGroup);
+          // console.log("combinedData.push", combinedData);
+        }
+
+        // Actualizar estado
+        setFilteredProducts(combinedData);
       } catch (error) {
         console.error("Error al cargar datos del documento:", error);
       }
@@ -110,25 +154,42 @@ export const HistoryModals = ({
       }
 
       // Guardar cada línea de producto
+      // console.log("filteredProducts", filteredProducts);
       for (const item of filteredProducts) {
-        const tabledocuments = {
-          referencai: item.referencia,
-          descripcion: item.descripcion,
-          cantidad: item.cantidad,
-          precio: item.precio,
-          dto: item.dto,
-          importe: item.importe,
-          entrega: null,
-          line: true,
-          documento: documentId,
-        };
-
-        if (item.id) {
-          // Si tiene ID, actualiza
-          await updateProductTable(item.id, tabledocuments);
+        if (
+          item.descripcion !== "Materiales" &&
+          item.descripcion !== "Mano de Obra"
+        ) {
+          const titleDescription = {
+            titdescripcion: item.descripcion,
+            titledoc: documentId,
+          };
+          if (item.id) {
+            // console.log("actualizarTitle", item.id, titleDescription)
+            await updateDocumentFieldsIdTitle(item.id, titleDescription);
+          } else {
+            await addProductTitle(titleDescription);
+          }
         } else {
-          // Si no, crea nuevo
-          await addProductTable(tabledocuments);
+          const tabledocuments = {
+            referencai: item.referencia,
+            descripcion: item.descripcion,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            dto: item.dto,
+            importe: item.importe,
+            entrega: null,
+            line: true,
+            documento: documentId,
+          };
+
+          if (item.id) {
+            // Si tiene ID, actualiza
+            await updateProductTable(item.id, tabledocuments);
+          } else {
+            // Si no, crea nuevo
+            await addProductTable(tabledocuments);
+          }
         }
       }
 
@@ -159,6 +220,49 @@ export const HistoryModals = ({
       alert("Hubo un error al guardar el documento.");
     }
   }; //Fin de handleSaveProduct
+
+  const handleDeleteRow = async (newFilteredProducts, index) => {
+    // Encontrar el índice inicial del grupo de 3
+    let startIndex = index;
+
+    // Retroceder hasta encontrar el inicio del grupo (múltiplo de 3)
+    while (startIndex > 0 && startIndex % 3 !== 0) {
+      startIndex--;
+    }
+
+    // Eliminar 3 filas desde el inicio del grupo
+    const valueDelete = newFilteredProducts.splice(startIndex, 3);
+    newFilteredProducts.splice(startIndex, 3);
+
+    // Confirmación antes de borrar
+    if (isEditing) {
+      const confirmDelete = window.confirm(
+        "¿Estás seguro de que deseas eliminar este grupo de filas?"
+      );
+
+      if (!confirmDelete) return;
+
+      console.log("confirmDelete", valueDelete);
+      //Borramos el Titulo del Producto
+
+      //Borramos Mano de Obra y Materiales
+      for (const item of valueDelete) {
+        if (
+          item?.descripcion === "Materiales" ||
+          item?.descripcion === "Mano de Obra"
+        ) {
+          console.log("item.id", item.id);
+          await deleteProduct(item.id);
+        } else {
+          await deleteProductTitle(valueDelete[0].id);
+        }
+      }
+
+      setFilteredProducts(newFilteredProducts);
+    } else {
+      setFilteredProducts(newFilteredProducts);
+    }
+  };
 
   return (
     <div>
@@ -199,7 +303,7 @@ export const HistoryModals = ({
               filteredProducts={filteredProducts}
               setFilteredProducts={setFilteredProducts}
               onProductsChange={handleTableDataChange}
-              isEditing={isEditing}
+              onDeleteRow={handleDeleteRow} // 👈 Aquí pasas la función
             />
           </div>
 
@@ -230,7 +334,7 @@ export const HistoryModals = ({
               {isEditing ? "Actualizar" : "Guardar"}
             </button>
           </div>
-        </div>        
+        </div>
       </div>
     </div>
   );

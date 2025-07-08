@@ -18,21 +18,26 @@ dayjs.locale("es"); // Configura el idioma por defecto de la fecha
 // Importamos los hooks necesarios
 import useHistory from "./hooks/useHistory";
 import useDocuments from "../documents/hooks/useDocuments"; // Asegúrate de que la ruta es correcta
+import useHistoryTableDocument from "./hooks/useHistoryTableDocument";
 // Importamos el componente de búsqueda
 import { HistoryModals } from "./HistoryModals";
+import DateModal from "../../utils/dateModal";
 
 export const HistoryTableDocument = ({
   setShowModal,
   searchTerm,
   allClients,
 }) => {
+  const { toggleChecklistItemProvider, toggleChecklistItemFalse } =
+    useHistoryTableDocument();
   const { getDocumentByDoc, deleteProduct, getAllDocuments, refetch } =
     useDocuments();
+
   const [showModalSearch, setShowModalSearch] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDisabled, setIsDisabled] = useState(true); // Deshabilitado al inicio
-  const [isChecked, setIsChecked] = useState(false);
+  const [completedItems, setCompletedItems] = useState(new Set());
   // Estado para ordenamiento
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -40,7 +45,10 @@ export const HistoryTableDocument = ({
   });
 
   const navigate = useNavigate();
-  const { isAdding, displayCurrentDate } = useHistory();
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpenFact, setIsModalOpenFact] = useState(false);
+  const [documentDate, setDocumentDate] = useState("");
 
   // Función para extraer CIF y nombre
   const parseSearchTerm = (value) => {
@@ -153,8 +161,8 @@ export const HistoryTableDocument = ({
     }
   };
 
-  const handlePrint = (item) => {
-    navigate(`/imprimir/${item.num_presupuesto}/${cif}`);
+  const handlePrint = (item, title) => {
+    navigate(`/imprimir/${item.num_presupuesto}/${title}/${cif}`);
   };
 
   const sortDocumentsByDate = (documents) => {
@@ -167,6 +175,40 @@ export const HistoryTableDocument = ({
     });
   };
 
+  //Funcion para el manejo de boton de seleccionar ALBARAN
+  const [itemIdToCheck, setItemIdToCheck] = useState(null);
+  const [opcItem, setOpcItem] = useState()
+
+  const toggleChecklistItem = (itemId, opc) => {
+    setItemIdToCheck(itemId); // Guardamos el itemId
+    setIsModalOpen(true); // Abrimos el modal
+    setOpcItem(opc)    
+  };
+
+  const handleSaveDate = (date, opc) => {
+    console.log("Fecha guardada:", date);
+    setDocumentDate(date);
+
+    if (itemIdToCheck && date) {
+      setCompletedItems((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(itemIdToCheck)) {
+          newSet.delete(itemIdToCheck);
+          console.log("Desmarcado:", itemIdToCheck);
+          toggleChecklistItemFalse(itemIdToCheck, opcItem);
+        } else {
+          newSet.add(itemIdToCheck);
+          console.log("Marcado:", itemIdToCheck);
+          toggleChecklistItemProvider(itemIdToCheck, date, opcItem);
+        }
+        return newSet;
+      });
+
+      // Opcional: resetear el itemId después de usarlo
+      setItemIdToCheck(null);
+    }
+  };
+
   return (
     <div>
       {/* Tabla de documentos (visible en escritorio) */}
@@ -175,24 +217,6 @@ export const HistoryTableDocument = ({
           {/* Títulos de la tabla */}
           <thead className="bg-gray-100">
             <tr>
-              <th
-                scope="col"
-                className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
-                onClick={() => requestSort("fecha_factura")}
-              >
-                <div className="flex items-center justify-center space-x-1">
-                  <span>Fecha</span>
-                  {sortConfig.key === "fecha_factura" ? (
-                    sortConfig.direction === "asc" ? (
-                      <FaSortUp />
-                    ) : (
-                      <FaSortDown />
-                    )
-                  ) : (
-                    <FaSort />
-                  )}
-                </div>
-              </th>
               <th
                 scope="col"
                 className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
@@ -210,12 +234,6 @@ export const HistoryTableDocument = ({
                     <FaSort />
                   )}
                 </div>
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider"
-              >
-                Acciones
               </th>
               <th
                 scope="col"
@@ -256,7 +274,6 @@ export const HistoryTableDocument = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {/* Botón Agregar Nuevo Documento */}
             <tr key="add-button-row">
               <td colSpan="5" className="px-6 py-4 text-center">
                 <button
@@ -304,79 +321,151 @@ export const HistoryTableDocument = ({
                   key={idx}
                   className="hover:bg-gray-50 transition-colors duration-150"
                 >
-                  <td className="px-6 py-4 text-center text-sm text-gray-800">
-                    {item.fecha_factura
-                      ? dayjs(item.fecha_factura).format(
-                          "dddd, D [de] MMMM [de] YYYY"
-                        )
-                      : dayjs().format("dddd, D [de] MMMM [de] YYYY")}
-                  </td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-800">
-                    {item.num_presupuesto ? item.num_presupuesto : "-"}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {/* botones */}
-                    <div className="flex justify-center space-x-3 mt-2">
+                  {/* Accion para el imprimir presupuesto */}
+                  <td
+                    onClick={() => handlePrint(item)}
+                    className="cursor-pointer px-6 py-4 text-center align-top text-sm group"
+                  >
+                    {/* Título del documento */}
+                    <div className="font-semibold text-gray-800">
+                      {item.num_presupuesto ? item.num_presupuesto : "-"}
+                    </div>
+
+                    {/* Fecha del documento opcionalmente */}
+                    <div className="text-xs text-gray-500 mt-1">
+                      {item.fecha_factura
+                        ? dayjs(item.fecha_factura).format(
+                            "dddd, D [de] MMMM [de] YYYY"
+                          )
+                        : dayjs().format("dddd, D [de] MMMM [de] YYYY")}
+                    </div>
+
+                    {/* Botones debajo del título */}
+                    <div className="mt-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       {/* Botón Actualizar */}
                       <button
-                        onClick={() => handleUpdate(item)}
-                        className="cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-md hover:shadow-lg"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Evita que se dispare el onClick del td
+                          handleUpdate(item);
+                        }}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 focus:outline-none shadow-md"
                         title="Actualizar"
                       >
-                        <FaEdit size={16} />
+                        <FaEdit size={12} />
                         <span className="sr-only">Actualizar</span>
-                      </button>
-
-                      {/* Botón Eliminar */}
-                      <button
-                        onClick={() => handleDelete(item)}
-                        className="cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-md hover:shadow-lg"
-                        title="Eliminar"
-                      >
-                        <FaTrashAlt size={16} />
-                        <span className="sr-only">Eliminar</span>
-                      </button>
-
-                      {/* Botón Imprimir */}
-                      <button
-                        onClick={() => handlePrint(item)}
-                        className="cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-md hover:shadow-lg"
-                        title="Imprimir"
-                      >
-                        <FaPrint size={16} />
-                        <span className="sr-only">Imprimir</span>
                       </button>
 
                       {/* Botón Checklist */}
                       <button
                         onClick={(e) => {
-                          e.preventDefault(); // Evita comportamiento no deseado si envuelve formularios
-                          // Aquí puedes llamar a toggleChecklistItem() si usas estado
+                          e.stopPropagation(); // Evita que se dispare el onClick del td
+                          toggleChecklistItem(item.id, "1");
                         }}
-                        className="cursor-pointer inline-flex items-center justify-center px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 shadow-md hover:shadow-lg"
+                        disabled={!!item.num_factura}
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded transition-all duration-200 focus:outline-none shadow-md ${
+                          !!item.num_factura
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-yellow-500 hover:bg-yellow-600"
+                        }`}
                         title="Marcar como completado"
                       >
                         <input
                           type="checkbox"
-                          className="form-checkbox h-4 w-4 text-yellow-600 rounded transition duration-150 ease-in-out mr-1 focus:ring-yellow-500"
-                          checked={isChecked}
-                          onChange={(e) => setIsChecked(e.target.checked)}
+                          disabled={!!item.num_factura}
+                          checked={!!item.num_factura}
+                          onChange={() => {}}
+                          className="form-checkbox h-3 w-3 text-yellow-600 rounded mr-0 focus:ring-yellow-500"
                         />
-                        <span className="text-xs font-medium whitespace-nowrap">
-                          
-                        </span>
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">
-                    {item.num_albaran ? item.num_albaran : "-"}
+
+                  {/* Accion para imprimir Albaran */}
+                  <td
+                    onClick={() => handlePrint(item, "ALBARAN")}
+                    className="cursor-pointer px-6 py-4 text-center align-top text-sm group"
+                  >
+                    {/* Título del documento */}
+                    <div className="font-semibold text-gray-800">
+                      {item.num_albaran ? item.num_albaran : "-"}
+                    </div>
+
+                    {/* Fecha del documento opcionalmente */}
+                    <div className="text-xs text-gray-500 mt-1">
+                      {item.fecha_factalb
+                        ? dayjs(item.fecha_factalb).format(
+                            "dddd, D [de] MMMM [de] YYYY"
+                          )
+                        : ""}
+                    </div>
+
+                    {/* Botones debajo del título */}
+                    <div className="mt-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">                     
+                      {/* Botón Checklist */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Evita que se dispare el onClick del td
+                          toggleChecklistItem(item.id, "2");
+                        }}
+                        disabled={!!item.num_factura}
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded transition-all duration-200 focus:outline-none shadow-md ${
+                          !!item.num_factura
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-yellow-500 hover:bg-yellow-600"
+                        }`}
+                        title="Marcar como completado"
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={!!item.num_factura}
+                          checked={!!item.num_factura}
+                          onChange={() => {}}
+                          className="form-checkbox h-3 w-3 text-yellow-600 rounded mr-0 focus:ring-yellow-500"
+                        />
+                      </button>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">
-                    {item.num_factura ? item.num_factura : "-"}
+
+                  {/* Acción para imprimir Factura */}
+                  <td
+                    onClick={() => handlePrint(item, "FACTURA")}
+                    className="cursor-pointer px-6 py-4 text-center align-top text-sm group"
+                  >
+                    {/* Título del documento */}
+                    <div className="font-semibold text-gray-800">
+                      {item.num_factura ? item.num_factura : "-"}
+                    </div>
+
+                    {/* Fecha del documento opcionalmente */}
+                    <div className="text-xs text-gray-500 mt-1">
+                      {item.datefactura
+                        ? dayjs(item.datefactura).format(
+                            "dddd, D [de] MMMM [de] YYYY"
+                          )
+                        : ""}
+                    </div>
+
+                    {/* Botones debajo del título */}
+                    <div className="mt-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">                    
+
+                      {/* Botón Eliminar */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Evita que se dispare el onClick del td
+                          handleDelete(item);
+                        }}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded bg-red-600 hover:bg-red-700 text-white transition-all duration-200 focus:outline-none shadow-md"
+                        title="Eliminar"
+                      >
+                        <FaTrashAlt size={12} />
+                        <span className="sr-only">Eliminar</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
             )}
+            {/*Finaliza la tabla de Historial*/}
           </tbody>
         </table>
       </div>
@@ -384,37 +473,33 @@ export const HistoryTableDocument = ({
       {/* Tarjetas visibles solo en móvil */}
       <div className="md:hidden grid gap-4 px-4">
         {/* Botón Agregar Nuevo Documento */}
-        <tr key="add-button-row">
-          <td colSpan="5" className="px-6 py-4 text-center">
-            <button
-              onClick={() => setShowModal(true)}
-              disabled={isDisabled}
-              className={`inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-200 
+        <button
+          onClick={() => setShowModal(true)}
+          disabled={isDisabled}
+          className={`inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-200 
                                     ${
                                       isDisabled
                                         ? "bg-gray-400 cursor-not-allowed"
                                         : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
                                     } focus:outline-none focus:ring-2 focus:ring-offset-2`}
-              aria-label="Agregar nuevo documento"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-5 h-5 mr-2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 4.5v15m7.5-7.5h-15"
-                />
-              </svg>
-              Agregar Nuevo Documento
-            </button>
-          </td>
-        </tr>
+          aria-label="Agregar nuevo documento"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-5 h-5 mr-2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+          Agregar Nuevo Documento
+        </button>
         {/*Finaliza el boton Agregar Nuevo Documento*/}
         {sortedProducts.length === 0 ? (
           <div className="text-center py-4 text-gray-500 italic">
@@ -437,19 +522,28 @@ export const HistoryTableDocument = ({
                       : dayjs().format("dddd, D [de] MMMM [de] YYYY")}
                   </span>
                 </div>
-                <div>
+                <div
+                  onClick={() => handlePrint(item)}
+                  className="cursor-pointer"
+                >
                   <strong className="text-gray-600">Presupuesto:</strong>{" "}
                   <span className="text-gray-800">
                     {item.num_presupuesto ? item.num_presupuesto : "-"}
                   </span>
                 </div>
-                <div>
+                <div
+                  onClick={() => handlePrint(item, "ALBARAN")}
+                  className="cursor-pointer"
+                >
                   <strong className="text-gray-600">Albarán:</strong>{" "}
                   <span className="text-gray-800">
                     {item.num_albaran ? item.num_albaran : "-"}
                   </span>
                 </div>
-                <div>
+                <div
+                  onClick={() => handlePrint(item, "FACTURA")}
+                  className="cursor-pointer"
+                >
                   <strong className="text-gray-600">Factura:</strong>{" "}
                   <span className="text-gray-800">
                     {item.num_factura ? item.num_factura : "-"}
@@ -468,18 +562,27 @@ export const HistoryTableDocument = ({
                   >
                     <FaTrashAlt className="mr-1" /> Eliminar
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => handlePrint(item)}
                     className="text-green-600 hover:text-green-800 flex items-center"
                   >
                     <FaPrint className="mr-1" /> Imprimir
-                  </button>
-                  {/* //boton */}
+                  </button> */}
+                  {/* Botón Checklist */}
                   <button
-                    onClick={() => handlePrint(item)}
-                    className="text-green-600 hover:text-green-800 flex items-center"
+                    onClick={() => toggleChecklistItem()}
+                    disabled={!!item.num_factura}
+                    className="cursor-pointer inline-flex items-center justify-center px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 shadow-md hover:shadow-lg"
+                    title="Marcar como completado"
                   >
-                    <FaPrint className="mr-1" /> OTRO
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-4 w-4 text-yellow-600 rounded transition duration-150 ease-in-out mr-1 focus:ring-yellow-500"
+                      disabled={!!item.num_factura}
+                      checked={!!item.num_factura}
+                      onChange={() => toggleChecklistItem(item.id)}
+                    />
+                    <span className="text-xs font-medium whitespace-nowrap"></span>
                   </button>
                 </div>
               </div>
@@ -495,6 +598,13 @@ export const HistoryTableDocument = ({
         title="Logo TableDocument"
         selectedItem={selectedItem}
         searchTerm={searchTerm}
+      />
+
+      <DateModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveDate}
+        initialDate={documentDate}
       />
     </div>
   );

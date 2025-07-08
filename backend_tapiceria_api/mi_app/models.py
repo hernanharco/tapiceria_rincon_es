@@ -54,14 +54,19 @@ class Document(models.Model):
     )
     fecha_factura = models.DateField()
     num_presupuesto = models.CharField(max_length=13)
+    fecha_factalb = models.DateField(blank=True, null=True)
     num_albaran = models.CharField(max_length=13, blank=True, null=True)
     num_factura = models.CharField(max_length=13, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True) 
     compr_albaran = models.CharField(max_length=100, blank=True, null=True)
+    datefactura = models.DateField(blank=True, null=True)
     
     def __str__(self):
         return f"Cif {self.dataclient} || Presupuesto {self.num_presupuesto} || Albarán {self.num_albaran} || Factura {self.num_factura}"
 
+class titleDescripcion(models.Model):
+    titledoc = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='titledocu')
+    titdescripcion = models.TextField()
 
 class DataDocument(models.Model):
     documento = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='doc_client')

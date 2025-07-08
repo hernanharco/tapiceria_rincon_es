@@ -1,96 +1,12 @@
-import { useEffect, useState } from "react";
-import { formatCurrency } from "../../../utils/formatUtils";
 
-export const TableDocuments = ({
-  filteredProducts,
-  setFilteredProducts,
-  onProductsChange,
-  isEditing,
-}) => { 
+import React from 'react'
 
-  // Notificar al padre cada vez que haya cambios
-  useEffect(() => {
-    if (typeof onProductsChange === "function") {
-      onProductsChange(filteredProducts);
-    }
-  }, [filteredProducts]);
-
-  // Agregar nueva fila vacía
-  const handleAddRow = () => {
-    const newRow = {
-      referencia: "",
-      descripcion: "",
-      cantidad: 1,
-      precio: 0,
-      dto: 0,
-      importe: 0,
-    };
-    setFilteredProducts([...filteredProducts, newRow]);
-  };
-
-  // Actualizar un campo específico
-  const handleChange = (index, field, value) => {
-    const updatedList = [...filteredProducts];
-    updatedList[index][field] = value;
-
-    // Calcular 'importe' basado en otros campos
-    if (
-      field === "precio" ||
-      field === "cantidad" ||
-      field === "dto" ||
-      field === "importe"
-    ) {
-      const precio = parseFloat(updatedList[index].precio) || 0;
-      const cantidad = parseInt(updatedList[index].cantidad) || 0;
-      const dto = parseFloat(updatedList[index].dto) || 0;
-
-      if (field !== "importe") {
-        const subtotal = precio * cantidad;
-        const discount = subtotal * (dto / 100);
-        updatedList[index].importe = subtotal - discount;
-      } else if (field === "importe" && precio > 0 && cantidad > 0) {
-        const calculatedDto = 100 - (value / (precio * cantidad)) * 100;
-        updatedList[index].dto = isNaN(calculatedDto)
-          ? 0
-          : calculatedDto.toFixed(2);
-      }
-    }
-
-    setFilteredProducts(updatedList);
-  };
-
-  // Eliminar fila
-  const handleDeleteRow = (index) => {
-    const newList = filteredProducts.filter((_, i) => i !== index);
-    setFilteredProducts(newList);
-  };
-
+export const tableDocumenttitle = (filteredProducts, handleChange, handleDeleteRow) => {
   return (
     <div className="border border-gray-300 rounded-lg bg-white shadow-sm px-4 md:px-6 py-2">
       {/* Tabla visible en escritorio */}
       <div className="w-full overflow-x-auto">
-        <table className="hidden md:table w-full table-auto border-collapse mb-6">
-          <thead>
-            <tr className="bg-gray-100 text-gray-700 font-semibold">
-              <th className="border border-gray-300 text-center hidden md:table-cell">
-                Ref
-              </th>
-              <th className="border border-gray-300 text-center w-2/5">
-                Descripción
-              </th>
-              <th className="border border-gray-300 text-center hidden md:table-cell">
-                Cant
-              </th>
-              <th className="border border-gray-300 text-center">Precio</th>
-              <th className="border border-gray-300 text-center hidden md:table-cell">
-                Dto.
-              </th>
-              <th className="border border-gray-300 text-center hidden md:table-cell">
-                Importe
-              </th>
-              <th className="border border-gray-300 text-center">Acci</th>
-            </tr>
-          </thead>
+        <table className="hidden md:table w-full table-auto border-collapse mb-6">          
           <tbody>
             {filteredProducts.map((item, idx) => (
               <tr
@@ -107,14 +23,14 @@ export const TableDocuments = ({
                     className="w-full border border-gray-300 rounded px-2 py-1"
                   />
                 </td>
-                <td className="px-2 py-1 text-sm text-gray-800 border border-gray-300">
+                <td className="px-2 py-1 text-sm text-gray-800 border border-gray-300">                  
                   <textarea
                     className="border border-gray-300 w-full resize-none overflow-hidden rounded p-2"
                     rows={3}
                     value={item.descripcion}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
+                      if (e.key === "Enter"  && !e.shiftKey) {
+                        
                       }
                     }}
                     onChange={(e) => {
@@ -191,7 +107,7 @@ export const TableDocuments = ({
                 </button>
               </td>
             </tr>
-          </tbody>
+          </tbody> {/* Fin del tbody */}
         </table>
 
         {/* Tarjetas visibles en móvil */}
@@ -290,4 +206,4 @@ export const TableDocuments = ({
       </div> {/*Donde Finaliza el escritorio*/}
     </div>
   );
-};
+}

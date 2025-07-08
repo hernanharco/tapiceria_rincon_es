@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import useDocuments from "../hooks/useDocuments";
+import {formatDateFor} from '../../../utils/formatUtils'
 
 export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo, isEditing, selectedItem }) => {
 
@@ -27,19 +28,7 @@ export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo, isEditing, se
 
     const baseWithoutCounter = baseCode.slice(0, numericSuffix.index);
     return `${baseWithoutCounter}${nextCounter}`;
-  };
-
-  // Formatea la fecha como PREyyMMDD
-  const formatDateForPresupuesto = (dateString) => {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) throw new Error("Fecha inválida");
-
-    const year = date.getFullYear().toString().slice(-2);
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // 06
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `PRE${year}${month}${day}`;
-  };
+  };  
 
   // Obtiene documentos y genera el nuevo número de presupuesto
   const fetchClientDocuments = async () => {
@@ -51,7 +40,7 @@ export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo, isEditing, se
 
       // Si no hay documentos, generamos el primero usando la fecha local
       if (!Array.isArray(response) || response.length === 0) {
-        const formattedCode = formatDateForPresupuesto(localDate);
+        const formattedCode = formatDateFor("PRE", localDate);
         setLocalDocument(formattedCode);
         return;
       }
@@ -82,7 +71,7 @@ export const DocumentsInfo = ({ onClose, cif, datInfo, setDatInfo, isEditing, se
         setLocalDocument(nextCode);
       } else {
         // Si no tiene número al final, iniciamos con la fecha
-        const formattedCode = formatDateForPresupuesto(localDate);
+        const formattedCode = formatDateFor("PRE", localDate);
         setLocalDocument(formattedCode);
       }
     } catch (error) {

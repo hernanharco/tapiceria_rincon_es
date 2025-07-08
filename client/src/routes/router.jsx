@@ -27,7 +27,7 @@ export const router = createBrowserRouter([
         element: <PrintableViewPDF />,
       },
       {
-        path: '/imprimir/:num_presupuesto/:cif',
+        path: '/imprimir/:num_presupuesto/:title/:cif',
         element: <PrintableViewPDF />,
       },
       {
