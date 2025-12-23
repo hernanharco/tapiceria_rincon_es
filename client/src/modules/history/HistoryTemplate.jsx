@@ -1,77 +1,113 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { HistoryTableDocument } from './HistoryTableDocument';
-import { HistoryModals } from './HistoryModals';
+import { useState, useMemo, useRef, useEffect } from "react";
+import { HistoryTableDocument } from "./HistoryTableDocument";
+import { HistoryModals } from "./HistoryModals";
 
-import useKeys from '../documents/hooks/useKeys';
-import useClients from '../clients/hooks/useClients'; // Importamos el hook de clientes
+import useClients from "../clients/hooks/useClients";
+import { usePersistedState } from "../../utils/usePersistedState";
+import useTitleTableDocuments from "../documents/hooks/useTitleTableDocuments";
 
 export const HistoryTemplate = () => {
+  /* =========================
+     Estados locales del componente
+     ========================= */
+
+  // Controla la apertura/cierre del modal
   const [showModal, setShowModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);  
+
+  // Texto del buscador (persistido en localStorage)
+  const [searchTerm, setSearchTerm] = usePersistedState(
+    "historySearchTerm",
+    ""
+  );
+
+  // Controla si el dropdown de sugerencias está visible
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Índice de la sugerencia activa (para navegación con teclado)
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
-  const { clients } = useClients(); // Traemos los clientes del contexto
+  /* =========================
+     Datos desde hooks
+     ========================= */
 
+  // Lista de clientes
+  const { clients } = useClients();
+
+  // Documentos + función para forzar recarga
+  const { documents, refetch } = useTitleTableDocuments();
+
+  /* =========================
+     Referencias al DOM
+     ========================= */
+
+  // Referencia al input de búsqueda (para focus con F8)
   const inputRef = useRef(null);
+
+  // Referencia al contenedor del dropdown
   const dropdownRef = useRef(null);
 
-  // Filtro por nombre usando el término de búsqueda
-  const filteredDocuments = useMemo(() => {
-    if (!searchTerm.trim()) return clients;
+  /* =========================
+     Sugerencias del buscador
+     ========================= */
 
-    const lowerCaseTerm = searchTerm.toLowerCase();
-    return clients.filter(doc =>
-      doc.name.toLowerCase().includes(lowerCaseTerm)
-    );
-  }, [clients, searchTerm]);
-
-  // Es una expresión condicional (ternaria) que decide si mostrar sugerencias o no, basándose en si el usuario ha escrito algo en el buscador.
+  // Calcula las sugerencias en base al texto buscado
   const suggestions = useMemo(() => {
+    // Si el dropdown no está visible, no calculamos nada
     if (!showSuggestions) return [];
 
-    // Si no hay término de búsqueda, mostramos todos los clientes
-    if (!searchTerm.trim()) {
-      return clients.length > 0 ? clients.slice(0, 5) : []
+    const term = searchTerm.trim().toLowerCase();
+
+    // Si no hay texto, mostramos los primeros 5 clientes
+    if (!term) {
+      return clients.slice(0, 5);
     }
 
-    // Si hay término de búsqueda, filtramos como antes
-    const lowerCaseTerm = searchTerm.toLowerCase();
-    return clients.filter(client =>
-      client.name.toLowerCase().includes(lowerCaseTerm) ||
-      client.cif.toLowerCase().includes(lowerCaseTerm)
-    ).slice(0, 5);
+    // Filtramos clientes por nombre o CIF
+    const clientsMatchingDirectly = clients.filter(
+      (client) =>
+        client.name.toLowerCase().includes(term) ||
+        client.cif.toLowerCase().includes(term)
+    );
+
+    // Limitamos a 5 resultados
+    return clientsMatchingDirectly.slice(0, 5);
   }, [clients, searchTerm, showSuggestions]);
 
-  // Manejo de teclas
+  /* =========================
+     Manejo de teclado (dropdown)
+     ========================= */
+
+  // Permite navegar las sugerencias con ↑ ↓ Enter Esc
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!showSuggestions || suggestions.length === 0) return;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
-          setActiveSuggestionIndex(prev =>
+          setActiveSuggestionIndex((prev) =>
             prev < suggestions.length - 1 ? prev + 1 : prev
           );
           break;
 
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
-          setActiveSuggestionIndex(prev => (prev > 0 ? prev - 1 : -1));
+          setActiveSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
           break;
 
-        case 'Enter':
+        case "Enter":
           e.preventDefault();
           if (activeSuggestionIndex >= 0) {
             const selected = suggestions[activeSuggestionIndex];
-            setSearchTerm(`(${selected.cif}) ${selected.name}`); // ✅ Guardamos ambos campos
+            // Al seleccionar, guardamos CIF + nombre
+            setSearchTerm(`(${selected.cif}) ${selected.name}`);
             setShowSuggestions(false);
             setActiveSuggestionIndex(-1);
           }
           break;
 
-        case 'Escape':
+        case "Escape":
+          // Cierra el dropdown
           setShowSuggestions(false);
           setActiveSuggestionIndex(-1);
           break;
@@ -81,94 +117,116 @@ export const HistoryTemplate = () => {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showSuggestions, suggestions, activeSuggestionIndex, setSearchTerm]);
 
-  }, [showSuggestions, suggestions, activeSuggestionIndex]);
+  /* =========================
+     Atajo de teclado global (F8)
+     ========================= */
 
-  // Con este efecto hacemos que cuando presionemos f8 no coloca en el buscado
+  // Al presionar F8 se enfoca el input de búsqueda
   useEffect(() => {
     const handleKeyDownGlobal = (e) => {
       if (e.keyCode === 119) {
         e.preventDefault();
-        inputRef.current?.focus(); // Enfoca el input de búsqueda
+        inputRef.current?.focus();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDownGlobal);
-    return () => document.removeEventListener('keydown', handleKeyDownGlobal);
+    document.addEventListener("keydown", handleKeyDownGlobal);
+    return () => document.removeEventListener("keydown", handleKeyDownGlobal);
   }, []);
 
+  /* =========================
+     Carga defensiva de documentos
+     ========================= */
+
+  // Si no hay documentos, forzamos el refetch
   useEffect(() => {
-    if (!clients || clients.length === 0) return;
-
-    if (searchTerm.trim()) {
-      setShowSuggestions(true);
-    } else {
-      setShowSuggestions(false); // Mostrar siempre sugerencias si hay clientes
+    if (!documents || documents.length === 0) {
+      refetch();
     }
-  }, [searchTerm, clients]);
+  }, [documents, refetch]);
 
-  //   useEffect(() => {
-  //   setActiveSuggestionIndex(-1);
-  // }, [searchTerm]);
+  /* =========================
+     Filtrado de documentos por texto
+     ========================= */
 
-  // Limpiar selección al cerrar el dropdown
-  useEffect(() => {
-    if (!showSuggestions) {
-      setActiveSuggestionIndex(-1);
-    }
-  }, [showSuggestions]);
+  // Filtra documentos cuando la búsqueda NO es cliente ni "todos"
+  const filteredText = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+
+    const term = searchTerm.trim().toLowerCase();
+
+    // Si es "todos" o es un cliente seleccionado, no filtramos aquí
+    if (term === "todos" || term.startsWith("(")) return [];
+
+    // Filtrado por descripción
+    return documents.filter(
+      (doc) =>
+        doc.titdescripcion?.toLowerCase().includes(term) && doc.titledoc
+    );
+  }, [searchTerm, documents]);
+
+  /* =========================
+     Render
+     ========================= */
 
   return (
     <div className="space-y-6">
-      {/* Barra de búsqueda */}
+      {/* Buscador con sugerencias */}
       <div className="relative" ref={dropdownRef}>
         <input
           type="text"
-          placeholder="Buscar cliente..."
+          placeholder="Buscar cliente... 'Todos' muestra todo"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
           ref={inputRef}
         />
 
         {/* Dropdown de sugerencias */}
         {showSuggestions && (
-          <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+          <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
             {suggestions.map((client, index) => (
-              <li key={client.cif} onClick={() => {
-                setSearchTerm(`(${client.cif}) ${client.name}`);
-                setShowSuggestions(false);
-              }} className={`px-4 py-2 cursor-pointer text-sm ${activeSuggestionIndex === index ? 'bg-blue-100' : 'hover:bg-gray-100'
-                }`}>
-                {client.name} <span className="text-gray-500">({client.cif})</span>
+              <li
+                key={client.cif}
+                onClick={() => {
+                  setSearchTerm(`(${client.cif}) ${client.name}`);
+                  setShowSuggestions(false);
+                }}
+                className={`px-4 py-2 cursor-pointer text-sm ${
+                  activeSuggestionIndex === index
+                    ? "bg-blue-100"
+                    : "hover:bg-gray-100"
+                }`}
+              >
+                {client.name}{" "}
+                <span className="text-gray-500">({client.cif})</span>
               </li>
-            ))}            
+            ))}
           </ul>
         )}
       </div>
 
-      {/* Modal reutilizable - Cuando se presiona el Boton de Agregar Nuevo Documento se monta este modals */}
+      {/* Modal de creación / edición */}
       <HistoryModals
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title="Logo"
         searchTerm={searchTerm}
-      >
-        <p className="text-gray-600 mb-4">Rellena los datos del nuevo documento:</p>
-        <div className="space-y-4"></div>
+      />
 
-      </HistoryModals>
-
-      {/* Tabla de documentos - Componente externo Dibuja la tabla segun la informacion buscada */}
+      {/* Tabla de documentos filtrados */}
       <HistoryTableDocument
         setShowModal={setShowModal}
+        documents={filteredText}
         searchTerm={searchTerm}
-        allClients={clients} // Pasamos todos los clientes al componente
-      />      
+        allClients={clients}
+      />
     </div>
   );
 };

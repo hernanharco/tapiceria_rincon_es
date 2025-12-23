@@ -18,8 +18,9 @@ class DataClient(models.Model):
     cif = models.CharField(max_length=20, primary_key=True)
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
-    zip_code = models.CharField(max_length=10)
+    zip_code = models.CharField(max_length=10)    
     city = models.CharField(max_length=100)
+    province = models.CharField(max_length=100)
     number = models.CharField(max_length=20)
     cod_client = models.CharField(max_length=20, unique=True, editable=False)
     company = models.ForeignKey(

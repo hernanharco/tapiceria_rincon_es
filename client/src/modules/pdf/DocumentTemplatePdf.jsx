@@ -1,6 +1,8 @@
+
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
 // Componentes personalizados para el PDF
+import { formatDate } from "../../utils/formatUtils"
 import { CompanyPDF } from "../company/pdf/CompanyPDF";
 import { ClientsPDF } from "../clients/pdf/ClientsPDF";
 import { DocumentInfoPDF } from "../documents/pdf/DocumentsInfoPDF";
@@ -62,37 +64,47 @@ const styles = StyleSheet.create({
 
 // Función para mostrar el Titulo del Documento
 const findTitle = (prinTitle) => {
-  // console.log("prinTitle: ", prinTitle)
-  let print = "";
+  const title = prinTitle?.title;
 
-  if (prinTitle.title === "undefined") {
-    print = "PRESUPUESTO";
-  } else {
-    if (prinTitle.title === "ALBARAN") {
-      print = "ALBARAN";
-    } else {
-      print = "FACTURA";
-    }
-  }
-
-  return print;
+  if (!title || title === "undefined") return "PRESUPUESTO";
+  if (title === "ALBARAN") return "ALBARAN";
+  return "FACTURA";
 };
 
 //Encontrar que fecha debe Imprimir
 const dateShow = (printTitle, document) => {
-  console.log("prinTitle: ", printTitle, " datos document:", document);
+  const title = printTitle?.title;
+
   let printDate = "";
 
-  if (printTitle.title === "undefined") {
+  if (!title || title === "undefined") {
     printDate = document.fecha_factura;
-  } if(printTitle.title === "PRESUPUESTO"){
+  } else if (title === "ALBARAN") {
     printDate = document.fecha_factalb;
-  }else {
+  } else if (title === "FACTURA") {
     printDate = document.datefactura;
   }
 
   // console.log("fecha a mostrar", printDate);
-  return printDate;
+  return formatDate(printDate);
+};
+
+//Encontrar que Codigo debe Imprimir
+const codShow = (printTitle, document) => {
+  const title = printTitle?.title;
+
+  let printNumber = "";
+
+  if (!title || title === "undefined") {
+    printNumber = document.num_presupuesto;
+  } else if (title === "ALBARAN") {
+    printNumber = document.num_albaran;
+  } else if (title === "FACTURA") {
+    printNumber = document.num_factura;
+  }
+
+  // console.log("código a mostrar", printNumber);
+  return printNumber;
 };
 
 export const DocumentTemplatePdf = ({
@@ -131,9 +143,11 @@ export const DocumentTemplatePdf = ({
           <View style={styles.column}>
             {document && (
               <DocumentInfoPDF
+                prinTitle={findTitle(prinTitle)}
                 document={document}
                 client={client.cod_client}
                 dateShow={dateShow(prinTitle, document)}
+                codShow={codShow(prinTitle, document)}
               />
             )}
           </View>
@@ -153,7 +167,7 @@ export const DocumentTemplatePdf = ({
 
         {prinTitle?.title?.toUpperCase() === "FACTURA" && (
           <View>
-            <Text style={styles.observation}>ALBARAN {document.num_albaran}</Text>
+            <Text style={styles.observation}>ALBARAN {document.num_albaran} - FECHA {document.fecha_factalb}</Text>
           </View>
         )}
 

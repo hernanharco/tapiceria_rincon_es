@@ -1,4 +1,7 @@
-@import "tailwindcss";
+/* frontend/src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @media print {
   body {
@@ -13,6 +16,11 @@
   .no-print {
     display: none !important;
   }
+}
+
+/* Scroll suave en toda la app */
+html {
+  scroll-behavior: smooth;
 }
 
 /* modo oscuro para la tabla */

@@ -1,5 +1,5 @@
 // Esta clase se encarga de dibujar la tabla que se muestra en la parte de abajo según el cliente buscado
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   FaEdit,
   FaTrashAlt,
@@ -25,30 +25,46 @@ import DateModal from "../../utils/dateModal";
 
 export const HistoryTableDocument = ({
   setShowModal,
+  documents,
   searchTerm,
   allClients,
 }) => {
+  // 👇 Aquí imprimimos los props recibidos
+  // console.log({
+  //   setShowModal,
+  //   documents,
+  //   searchTerm,
+  //   allClients,
+  // });
+
   const { toggleChecklistItemProvider, toggleChecklistItemFalse } =
     useHistoryTableDocument();
-  const { getDocumentByDoc, deleteProduct, getAllDocuments, refetch } =
-    useDocuments();
+  const {
+    getDocumentByDoc,
+    deleteProduct,
+    getAllDocuments,
+    refetch,
+    fetchDocumentById,
+  } = useDocuments();
 
   const [showModalSearch, setShowModalSearch] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDisabled, setIsDisabled] = useState(true); // Deshabilitado al inicio
-  const [completedItems, setCompletedItems] = useState(new Set());
-  // Estado para ordenamiento
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: "asc",
-  });
 
   const navigate = useNavigate();
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenFact, setIsModalOpenFact] = useState(false);
   const [documentDate, setDocumentDate] = useState("");
+
+  //Todos los clientes
+  const shouldShowAll = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return term === "todos" || term === "%";
+  }, [searchTerm]);
+
+  //Para mostrar aquellos clientes que tenga un producto relacionado con lo que se escribio en el buscador
 
   // Función para extraer CIF y nombre
   const parseSearchTerm = (value) => {
@@ -66,32 +82,54 @@ export const HistoryTableDocument = ({
     const fetchDocuments = async () => {
       try {
         let filteredDocs = [];
-        if (!cif || !searchTerm.trim()) {
+
+        if (shouldShowAll) {
+          // ✅ Caso especial: mostrar todos los documentos de todos los clientes
           const allDocs = await getAllDocuments();
-          filteredDocs = allClients.flatMap((client) => {
-            const clientDocs = allDocs.filter(
-              (doc) => doc.dataclient === client.cif
-            );
-            return clientDocs.map((doc) => ({
+          // Opcional: enriquecer con nombre del cliente
+          filteredDocs = allDocs.map((doc) => {
+            const client = allClients.find((c) => c.cif === doc.dataclient);
+            return {
               ...doc,
-              clienteNombre: client.name,
-            }));
+              clienteNombre: client ? client.name : "Cliente desconocido",
+            };
           });
+        } else if (cif) {
+          // ✅ Caso normal: filtrar por CIF
+          filteredDocs = await getDocumentByDoc(String(cif).trim());
+        } else if (documents && documents.length > 0) {
+          // ✅ Caso Especial: Filtramos cualquier letra relacionada con algun producto
+          const titledocs = documents.map((doc) => doc.titledoc);
+          // console.log("Buscando por titledocs:", titledocs);
+
+          // Hacemos una llamada por cada titledoc
+          const promises = titledocs.map((id) =>
+            fetchDocumentById(String(id).trim())
+          );
+
+          // Esperamos todas las respuestas
+          const docs = await Promise.all(promises);
+
+          // Filtramos solo los documentos válidos (no null)
+          filteredDocs = docs.filter((doc) => doc !== null);
+
+          // console.log("Documentos obtenidos:", filteredDocs);
         } else {
-          const indexDocuments = String(cif).trim();
-          filteredDocs = await getDocumentByDoc(indexDocuments);
+          // ✅ Sin búsqueda: no mostrar nada (o podrías mostrar todos si prefieres)
+          filteredDocs = [];
         }
 
         const sortedDocs = sortDocumentsByDate(filteredDocs || []);
         setFilteredProducts(sortedDocs);
-        setIsDisabled(!cif && !searchTerm.trim());
+        setIsDisabled(!cif && !shouldShowAll); // Habilitar botón si hay CIF o si se muestra todo
       } catch (error) {
         console.error("Error al obtener documentos:", error);
         setFilteredProducts([]);
       }
     };
+
     fetchDocuments();
-  }, [cif, searchTerm, refetch]);
+  }, [cif, searchTerm, shouldShowAll, allClients, refetch]);
 
   // Función para ordenar
   const requestSort = (key) => {
@@ -103,6 +141,12 @@ export const HistoryTableDocument = ({
   };
 
   // Ordena los productos según el estado actual
+  // Estado para ordenamiento
+  const [sortConfig, setSortConfig] = useState({
+    key: "num_presupuesto",
+    direction: "desc",
+  });
+
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (!sortConfig.key) return 0;
     const { key, direction } = sortConfig;
@@ -175,37 +219,41 @@ export const HistoryTableDocument = ({
     });
   };
 
-  //Funcion para el manejo de boton de seleccionar ALBARAN
+  //Funcion para el manejo de boton de seleccionar ALBARAN manejo de CheckList
+  const [completedItems, setCompletedItems] = useState(new Set());
   const [itemIdToCheck, setItemIdToCheck] = useState(null);
-  const [opcItem, setOpcItem] = useState()
+  const [opcItem, setOpcItem] = useState();
 
   const toggleChecklistItem = (itemId, opc) => {
     setItemIdToCheck(itemId); // Guardamos el itemId
     setIsModalOpen(true); // Abrimos el modal
-    setOpcItem(opc)    
+    setOpcItem(opc);
   };
 
-  const handleSaveDate = (date, opc) => {
-    console.log("Fecha guardada:", date);
+  //Despues de abrir el modal y de seleccionar la fecha y darle guardar se activa esta funcion para generar la informacion siguiente
+  const handleSaveDate = (date) => {
+    // console.log("Fecha guardada:", date);
     setDocumentDate(date);
 
     if (itemIdToCheck && date) {
+      const key = `${itemIdToCheck}-${opcItem}`; // clave única por item + tipo
       setCompletedItems((prev) => {
         const newSet = new Set(prev);
-        if (newSet.has(itemIdToCheck)) {
-          newSet.delete(itemIdToCheck);
-          console.log("Desmarcado:", itemIdToCheck);
+        if (newSet.has(key)) {
+          newSet.delete(key);
+          // console.log("Desmarcado:", key);
           toggleChecklistItemFalse(itemIdToCheck, opcItem);
         } else {
-          newSet.add(itemIdToCheck);
-          console.log("Marcado:", itemIdToCheck);
+          newSet.add(key);
+          // console.log("Marcado:", key);
           toggleChecklistItemProvider(itemIdToCheck, date, opcItem);
         }
         return newSet;
       });
 
-      // Opcional: resetear el itemId después de usarlo
+      // resetear
       setItemIdToCheck(null);
+      setOpcItem(null);
     }
   };
 
@@ -361,9 +409,9 @@ export const HistoryTableDocument = ({
                           e.stopPropagation(); // Evita que se dispare el onClick del td
                           toggleChecklistItem(item.id, "1");
                         }}
-                        disabled={!!item.num_factura}
+                        disabled={!!item.num_albaran}
                         className={`inline-flex items-center justify-center w-8 h-8 rounded transition-all duration-200 focus:outline-none shadow-md ${
-                          !!item.num_factura
+                          !!item.num_albaran
                             ? "bg-gray-400 cursor-not-allowed"
                             : "bg-yellow-500 hover:bg-yellow-600"
                         }`}
@@ -371,8 +419,8 @@ export const HistoryTableDocument = ({
                       >
                         <input
                           type="checkbox"
-                          disabled={!!item.num_factura}
-                          checked={!!item.num_factura}
+                          disabled={!!item.num_albaran}
+                          checked={!!item.num_albaran}
                           onChange={() => {}}
                           className="form-checkbox h-3 w-3 text-yellow-600 rounded mr-0 focus:ring-yellow-500"
                         />
@@ -400,7 +448,7 @@ export const HistoryTableDocument = ({
                     </div>
 
                     {/* Botones debajo del título */}
-                    <div className="mt-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">                     
+                    <div className="mt-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       {/* Botón Checklist */}
                       <button
                         onClick={(e) => {
@@ -446,10 +494,9 @@ export const HistoryTableDocument = ({
                     </div>
 
                     {/* Botones debajo del título */}
-                    <div className="mt-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">                    
-
+                    <div className="mt-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       {/* Botón Eliminar */}
-                      <button
+                      {/* <button
                         onClick={(e) => {
                           e.stopPropagation(); // Evita que se dispare el onClick del td
                           handleDelete(item);
@@ -459,7 +506,7 @@ export const HistoryTableDocument = ({
                       >
                         <FaTrashAlt size={12} />
                         <span className="sr-only">Eliminar</span>
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>
@@ -470,119 +517,116 @@ export const HistoryTableDocument = ({
         </table>
       </div>
 
-      {/* Tarjetas visibles solo en móvil */}
-      <div className="md:hidden grid gap-4 px-4">
-        {/* Botón Agregar Nuevo Documento */}
-        <button
-          onClick={() => setShowModal(true)}
-          disabled={isDisabled}
-          className={`inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-200 
-                                    ${
-                                      isDisabled
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
-                                    } focus:outline-none focus:ring-2 focus:ring-offset-2`}
-          aria-label="Agregar nuevo documento"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-5 h-5 mr-2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
-          Agregar Nuevo Documento
-        </button>
-        {/*Finaliza el boton Agregar Nuevo Documento*/}
+      {/* Vista móvil: tarjetas */}
+      <div className="block md:hidden space-y-4">
         {sortedProducts.length === 0 ? (
-          <div className="text-center py-4 text-gray-500 italic">
+          <div className="py-6 text-center text-gray-500 italic">
             No hay documentos registrados.
           </div>
         ) : (
           sortedProducts.map((item, idx) => (
             <div
               key={idx}
-              className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
+              className="bg-white rounded-lg shadow p-4 border border-gray-200"
             >
-              <div className="space-y-2">
-                <div>
-                  <strong className="text-gray-600">Fecha:</strong>{" "}
-                  <span className="text-gray-800">
-                    {item.fecha_factura
-                      ? dayjs(item.fecha_factura).format(
-                          "dddd, D [de] MMMM [de] YYYY"
-                        )
-                      : dayjs().format("dddd, D [de] MMMM [de] YYYY")}
-                  </span>
-                </div>
-                <div
+              {/* Presupuesto */}
+              <div className="mb-3">
+                <p className="text-xs text-gray-500">Presupuesto</p>
+                <p
                   onClick={() => handlePrint(item)}
-                  className="cursor-pointer"
+                  className="font-semibold text-gray-800 cursor-pointer"
                 >
-                  <strong className="text-gray-600">Presupuesto:</strong>{" "}
-                  <span className="text-gray-800">
-                    {item.num_presupuesto ? item.num_presupuesto : "-"}
-                  </span>
-                </div>
-                <div
-                  onClick={() => handlePrint(item, "ALBARAN")}
-                  className="cursor-pointer"
-                >
-                  <strong className="text-gray-600">Albarán:</strong>{" "}
-                  <span className="text-gray-800">
-                    {item.num_albaran ? item.num_albaran : "-"}
-                  </span>
-                </div>
-                <div
-                  onClick={() => handlePrint(item, "FACTURA")}
-                  className="cursor-pointer"
-                >
-                  <strong className="text-gray-600">Factura:</strong>{" "}
-                  <span className="text-gray-800">
-                    {item.num_factura ? item.num_factura : "-"}
-                  </span>
-                </div>
-                <div className="flex justify-between pt-2 mt-2 border-t border-gray-200">
+                  {item.num_presupuesto || "-"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {item.fecha_factura
+                    ? dayjs(item.fecha_factura).format("DD/MM/YYYY")
+                    : ""}
+                </p>
+
+                {/* Botón Editar */}
+                <div className="mt-2">
                   <button
                     onClick={() => handleUpdate(item)}
-                    className="text-blue-600 hover:text-blue-800 flex items-center"
+                    className="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
                   >
-                    <FaEdit className="mr-1" /> Editar
+                    Editar
                   </button>
+                </div>
+              </div>
+
+              {/* Albarán */}
+              <div className="mb-3">
+                <p className="text-xs text-gray-500">Albarán</p>
+                <p
+                  onClick={() => handlePrint(item, "ALBARAN")}
+                  className="font-semibold text-gray-800 cursor-pointer"
+                >
+                  {item.num_albaran || "-"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {item.fecha_factalb
+                    ? dayjs(item.fecha_factalb).format("DD/MM/YYYY")
+                    : ""}
+                </p>
+
+                {/* Checklist Albarán */}
+                <div className="mt-2">
                   <button
-                    onClick={() => handleDelete(item)}
-                    className="text-red-600 hover:text-red-800 flex items-center"
-                  >
-                    <FaTrashAlt className="mr-1" /> Eliminar
-                  </button>
-                  {/* <button
-                    onClick={() => handlePrint(item)}
-                    className="text-green-600 hover:text-green-800 flex items-center"
-                  >
-                    <FaPrint className="mr-1" /> Imprimir
-                  </button> */}
-                  {/* Botón Checklist */}
-                  <button
-                    onClick={() => toggleChecklistItem()}
-                    disabled={!!item.num_factura}
-                    className="cursor-pointer inline-flex items-center justify-center px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 shadow-md hover:shadow-lg"
-                    title="Marcar como completado"
+                    onClick={() => toggleChecklistItem(item.id, "1")}
+                    disabled={!!item.num_albaran}
+                    className={`inline-flex items-center space-x-2 px-3 py-1 text-xs rounded ${
+                      !!item.num_albaran
+                        ? "bg-gray-400 cursor-not-allowed text-white"
+                        : "bg-yellow-500 hover:bg-yellow-600 text-white"
+                    }`}
                   >
                     <input
                       type="checkbox"
-                      className="form-checkbox h-4 w-4 text-yellow-600 rounded transition duration-150 ease-in-out mr-1 focus:ring-yellow-500"
+                      disabled={!!item.num_albaran}
+                      checked={!!item.num_albaran}
+                      onChange={() => {}}
+                      className="form-checkbox h-3 w-3 text-yellow-600 rounded"
+                    />
+                    <span>Checklist</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Factura */}
+              <div>
+                <p className="text-xs text-gray-500">Factura</p>
+                <p
+                  onClick={() => handlePrint(item, "FACTURA")}
+                  className="font-semibold text-gray-800 cursor-pointer"
+                >
+                  {item.num_factura || "-"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {item.datefactura
+                    ? dayjs(item.datefactura).format("DD/MM/YYYY")
+                    : ""}
+                </p>
+
+                {/* Checklist Factura */}
+                <div className="mt-2">
+                  <button
+                    onClick={() => toggleChecklistItem(item.id, "2")}
+                    disabled={!!item.num_factura}
+                    className={`inline-flex items-center space-x-2 px-3 py-1 text-xs rounded ${
+                      !!item.num_factura
+                        ? "bg-gray-400 cursor-not-allowed text-white"
+                        : "bg-yellow-500 hover:bg-yellow-600 text-white"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
                       disabled={!!item.num_factura}
                       checked={!!item.num_factura}
-                      onChange={() => toggleChecklistItem(item.id)}
+                      onChange={() => {}}
+                      className="form-checkbox h-3 w-3 text-yellow-600 rounded"
                     />
-                    <span className="text-xs font-medium whitespace-nowrap"></span>
+                    <span>Checklist</span>
                   </button>
                 </div>
               </div>

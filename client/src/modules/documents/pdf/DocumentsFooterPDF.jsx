@@ -67,7 +67,7 @@ export const DocumentsFooterPDF = ({ footers }) => {
         <View style={styles.tableRow}>
           <Text style={[styles.tableHeader, { flex: 1 }]}>Subtotal</Text>
           <Text style={[styles.tableHeader, { flex: 1 }]}>Base Imponible</Text>
-          <Text style={[styles.tableHeader, { flex: 1 }]}>IVA</Text>
+          <Text style={[styles.tableHeader, { flex: 1 }]}>IVA 21%</Text>
           <Text style={[styles.tableHeader, { flex: 1 }]}>Total</Text>
         </View>
 
@@ -75,7 +75,7 @@ export const DocumentsFooterPDF = ({ footers }) => {
         <View style={styles.tableRow}>
           <Text style={[styles.tableCell, { flex: 1 }]}>{footers.subtotal}</Text>
           <Text style={[styles.tableCell, { flex: 1 }]}>{footers.base_imponible}</Text>
-          <Text style={[styles.tableCell, { flex: 1 }]}>{footers.iva}%</Text>
+          <Text style={[styles.tableCell, { flex: 1 }]}>{footers.iva}</Text>
           <Text style={[styles.tableCell, styles.totalCell, { flex: 1 }, styles.lastTableCell]}>
             {footers.total}
           </Text>

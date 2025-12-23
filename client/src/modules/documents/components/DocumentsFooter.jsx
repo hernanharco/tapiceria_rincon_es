@@ -20,16 +20,17 @@ export const DocumentsFooter = ({ filteredProducts = [], setDatFooter }) => {
 
   const baseImponible = subtotal - totalDescuento;
   const iva = 21; // Puedes hacerlo dinámico si lo necesitas
-  const total = baseImponible * (1 + iva / 100);
+  const totiva = (baseImponible * iva)/100;
+  const total = baseImponible + totiva
 
   // Enviar datos al padre
   useEffect(() => {
     if (typeof setDatFooter === "function") {
       setDatFooter({
-        datsubTotal: formatCurrency(subtotal),
-        datbaseImponible: formatCurrency(baseImponible),
-        datIva: `${iva}%`,
-        datTotal: formatCurrency(total),
+        datsubTotal: subtotal,
+        datbaseImponible: baseImponible,
+        datIva: totiva,
+        datTotal: total,
       });
     }
   }, [baseImponible, iva, total]);
@@ -48,7 +49,7 @@ export const DocumentsFooter = ({ filteredProducts = [], setDatFooter }) => {
                 Base Imponible
               </th>
               <th className="text-center border-r border-gray-300 py-2 px-4">
-                IVA
+                IVA { iva}%
               </th>
               <th className="text-center py-2 px-4">Total</th>
             </tr>
@@ -62,7 +63,7 @@ export const DocumentsFooter = ({ filteredProducts = [], setDatFooter }) => {
                 {formatCurrency(baseImponible)}
               </td>
               <td className="text-center border border-gray-300 py-2 px-4">
-                {iva}%
+                {formatCurrency(totiva)}
               </td>
               <td className="text-center border border-gray-300 py-2 px-4 font-bold">
                 {formatCurrency(total)}
@@ -91,7 +92,7 @@ export const DocumentsFooter = ({ filteredProducts = [], setDatFooter }) => {
 
           <div className="text-gray-600">IVA ({iva}%):</div>
           <div className="text-right">
-            {formatCurrency(baseImponible * (iva / 100))}
+            {formatCurrency(totiva)}
           </div>
 
           <div className="font-bold text-gray-800">Total:</div>

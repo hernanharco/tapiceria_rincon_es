@@ -83,9 +83,10 @@ export const PrintableViewPDF = () => {
   //   loadProducts();
   // }, [document]);
 
-  // Cargar datos cuando sea edición
+  // Cargar datos de los productos a mostrar  
   useEffect(() => {
     const loadDocumentData = async () => {
+      console.log("document.id", document.id)
       try {
         const [titleResponse, productsResponse] = await Promise.all([
           fetchDocumentsByTitleDoc(document.id),
@@ -214,8 +215,7 @@ export const PrintableViewPDF = () => {
   // console.log("document en PrintableViewPDF: ", document)
   // console.log("filteredProducts en PrintableViewPDF: ", filteredProducts)
   // console.log("footers en PrintableViewPDF: ", footers)
-  // console.log("cashPDF en PrintableViewPDF: ", cashPDF)
-  // console.log("getAllDocumentsTitle: ", getAllDocumentsTitle)
+  // console.log("cashPDF en PrintableViewPDF: ", cashPDF)  
 
   const isDataReady =
     company &&

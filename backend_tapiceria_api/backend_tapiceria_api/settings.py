@@ -86,7 +86,7 @@ DATABASES = {
         'NAME': 'db_tapiceria_es',     # Ejemplo: mi_empresa_db
         'USER': 'root',               # Ejemplo: root
         'PASSWORD': '',           # Contraseña del usuario de la base de datos
-        'HOST': 'localhost',   # O la IP si está en otro servidor
+        'HOST': '127.0.0.1',   # O la IP si está en otro servidor
         'PORT': '3306',        # Puerto por defecto de MySQL3329
         'OPTIONS': {
             'charset': 'utf8mb4',

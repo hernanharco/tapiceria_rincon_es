@@ -130,7 +130,8 @@ export const HistoryModals = ({
 
   if (!isOpen) return null;
 
-  // Manejador principal de guardado
+  // Manejador principal de guardado - Maneja el boton de guardar informacion y de Actualizar lo que se hace con esta funcion
+  /*es colocar todo los datos necesarios para construir la factura y se guarda a la base de datos*/
   const handleProduct = async () => {
     // Datos del documento principal
     const documentData = {
@@ -195,12 +196,14 @@ export const HistoryModals = ({
 
       // Datos del footer
       const documentdatFooter = {
-        subtotal: parseFloat(datFooter.datsubTotal),
-        base_imponible: parseFloat(datFooter.datbaseImponible),
-        iva: parseFloat(datFooter.datIva),
-        total: parseFloat(datFooter.datTotal),
+        subtotal: parseFloat(datFooter.datsubTotal).toFixed(2),
+        base_imponible: parseFloat(datFooter.datbaseImponible).toFixed(2),
+        iva: parseFloat(datFooter.datIva).toFixed(2),
+        total: parseFloat(datFooter.datTotal).toFixed(2),
         footer_documento: documentId,
       };
+
+      // console.log("Estoy en HistoryModals.jsx", documentdatFooter);
 
       if (isEditing) {
         await updateFooter(documentId, documentdatFooter);

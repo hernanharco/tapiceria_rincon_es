@@ -16,7 +16,7 @@ export const useHistoryTableDocument = () => {
   const toggleChecklistItemProvider = async (itemId, documentDate, opc) => {
     if (!itemId || !documentDate) return;
 
-    console.log("opcion: ", opc);
+    // console.log("estoy en useHistoryTableDocument.jsx: ", "itemId",itemId, "documentDate",documentDate, "opc",opc);
 
     try {
       const doc = await fetchDocumentById(itemId);
@@ -38,14 +38,14 @@ export const useHistoryTableDocument = () => {
           namecod: "FAC",
           getAllDocuments,
         });
-        console.log("datFactura: ", datFactura);
+        // console.log("datFactura: ", datFactura);
         await updateDocumentFieldsId(itemId, {
           datefactura: documentDate,
           num_factura: datFactura,
         });
       }
 
-      console.log("Documento actualizado:", itemId);
+      // console.log("Documento actualizado:", itemId);
       return doc;
     } catch (error) {
       console.error("Error al actualizar documento:", error);
@@ -72,7 +72,7 @@ export const useHistoryTableDocument = () => {
         });
       }
 
-      console.log("Documento desmarcado:", itemId);
+      // console.log("Documento desmarcado:", itemId);
     } catch (error) {
       console.error("Error al limpiar documento:", error);
     }

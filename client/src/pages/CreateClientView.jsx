@@ -41,7 +41,7 @@ export const CreateClientView = () => {
         await deleteClients(cif); // Elimina por CIF
         await refetchClients(); // Recarga inmediatamente
       } catch (err) {
-        alert("No se pudo eliminar el cliente.");
+        alert("No se pudo eliminar el cliente.", err);
       }
     }
   };
@@ -74,6 +74,7 @@ export const CreateClientView = () => {
               <th className="px-2 py-2 border border-gray-300 text-center">Dirección</th>
               <th className="px-2 py-2 border border-gray-300 text-center">Cod. Postal</th>
               <th className="px-2 py-2 border border-gray-300 text-center">Ciudad</th>
+              <th className="px-2 py-2 border border-gray-300 text-center">Provincia / Comunidad</th>
               <th className="px-2 py-2 border border-gray-300 text-center">Teléfono</th>
               <th className="px-2 py-2 border border-gray-300 text-center">Acciones</th>
             </tr>
@@ -88,6 +89,7 @@ export const CreateClientView = () => {
                   <td className="px-2 py-2 border border-gray-300">{client.address}</td>
                   <td className="px-2 py-2 border border-gray-300 text-center">{client.zip_code}</td>
                   <td className="px-2 py-2 border border-gray-300">{client.city}</td>
+                  <td className="px-2 py-2 border border-gray-300">{client.province}</td>
                   <td className="px-2 py-2 border border-gray-300 text-center">{client.number}</td>
                   <td className="px-2 py-2 text-center border border-gray-300">
                     <div className="flex justify-center space-x-3">

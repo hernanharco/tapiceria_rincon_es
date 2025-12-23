@@ -65,13 +65,13 @@ export const Sidebar = () => {
           {/* Menú */}
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             <ul>
-              {/* Inicio */}
+              {/* Inicio
               <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
                 <Link to="/imprimir" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
                   <span><FaHome /></span>
                   {isOpen && <span className="ml-3">Inicio</span>}
                 </Link>
-              </li>
+              </li> */}
 
               {/* Historial */}
               <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
@@ -91,7 +91,7 @@ export const Sidebar = () => {
 
               {/* Ajustes */}
               <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
-                <Link to="/ajustes" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
+                <Link to="/settings" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
                   <span><FaCog /></span>
                   {isOpen && <span className="ml-3">Ajustes</span>}
                 </Link>

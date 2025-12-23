@@ -1,6 +1,12 @@
 // src/utils/fetchClientDocuments.js
-
 import { format } from "date-fns";
+
+// Función auxiliar para formatear con fecha (si se necesita como fallback)
+const formatDateFor = (prefix, date = new Date()) => {
+  const year = date.getFullYear().toString().slice(-2); // Últimos 2 dígitos del año
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${prefix}${year}${month}01`; // Ej: ALB250401
+};
 
 /**
  * Obtiene el siguiente número consecutivo para un tipo de documento
@@ -9,52 +15,60 @@ import { format } from "date-fns";
  */
 export const codegenerator = async ({ namecod, getAllDocuments }) => {
   try {
-    const response = await getAllDocuments(); // Ejecutamos getAllDocuments como función
-    const today = new Date();
-    const formattedDate = format(today, "yyMMd"); // Ejemplo: 240705
+    const documents = await getAllDocuments();
 
-    if (!Array.isArray(response) || response.length === 0) {
-      // Si no hay documentos, generamos uno nuevo basado en la fecha
-      return `${namecod}${formattedDate}01`;
+    if (!Array.isArray(documents) || documents.length === 0) {
+      return formatDateFor(namecod);
     }
 
-    // Buscar el último documento por orden descendente
-    const sortedDocs = [...response].sort((a, b) => {
-      const dateA = new Date(a.fecha_factalb).getTime() || 0;
-      const dateB = new Date(b.fecha_factalb).getTime() || 0;
-      return dateB - dateA;
+    // Filtrar documentos que tengan un código que empiece con namecod
+    const relevantDocs = documents.filter((doc) => {
+      let code = "";
+      if (namecod === "ALB") {
+        code = doc.num_albaran || "";
+      } else if (namecod === "FAC") {
+        code = doc.num_factura || "";
+      } else {
+        // Si usas otros prefijos, ajusta aquí
+        code = doc.num_factura || doc.num_albaran || "";
+      }
+      return code.startsWith(namecod) && /\d/.test(code); // debe tener al menos un dígito
     });
 
-    const lastDoc = sortedDocs[0];
-    let lastCode;
+    if (relevantDocs.length === 0) {
+      return formatDateFor(namecod);
+    }
 
-    if (namecod === "ALB") {
-      lastCode = lastDoc.num_albaran;
+    // Extraer el número más alto
+    let maxNumber = 0;
+    let basePrefix = namecod;
+
+    relevantDocs.forEach((doc) => {
+      const code = namecod === "ALB" ? doc.num_albaran : doc.num_factura;
+      if (!code) return;
+
+      // Extraer solo los dígitos al final
+      const match = code.match(new RegExp(`${namecod}(\\d+)$`));
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) {
+          maxNumber = num;
+          // Opcional: guardar el prefijo exacto si varía (pero asumimos que es fijo)
+        }
+      }
+    });
+
+    if (maxNumber > 0) {
+      const nextNumber = maxNumber + 1;
+      // Aseguramos el mismo número de dígitos que el original (ej: 250008 → 6 dígitos)
+      const numDigits = maxNumber.toString().length;
+      const paddedNext = nextNumber.toString().padStart(numDigits, "0");
+      return `${namecod}${paddedNext}`;
     } else {
-      lastCode = lastDoc.num_factura;
+      return formatDateFor(namecod);
     }
-
-    if (!lastCode) {
-      return `${namecod}${formattedDate}01`;
-    }
-
-    // Extraer solo los dígitos finales para incrementar
-    const match = lastCode.match(/(\d+)$/);
-    if (!match) {
-      return `${namecod}${formattedDate}01`;
-    }
-
-    const currentNumber = parseInt(match[1], 10);
-    const nextNumber = currentNumber + 1;
-    const paddedNextNumber = nextNumber.toString().padStart(2, "0");
-
-    // Mantener la parte fija del código
-    const baseCode = lastCode.slice(0, -match[1].length);
-
-    return `${baseCode}${paddedNextNumber}`;
   } catch (error) {
-    console.error("Error al obtener documentos:", error);
-    const formattedDate = format(new Date(), "yyMMd");
-    return `${namecod}${formattedDate}01`;
+    console.error("Error en codegenerator:", error);
+    return "";
   }
 };
