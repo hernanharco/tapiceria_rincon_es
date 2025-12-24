@@ -1,127 +1,171 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Outlet } from 'react-router-dom';
-
-// Iconos
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import {
-  FaHome,
-  FaFileInvoice,
   FaHistory,
   FaUserFriends,
   FaCog,
   FaBars,
   FaTimes,
-} from 'react-icons/fa';
+} from "react-icons/fa";
 
 export const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(true); // true = abierto por defecto
+  const [isOpen, setIsOpen] = useState(true);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
+  const toggleSidebar = () => setIsOpen(!isOpen);
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  // Bloquear scroll del body en móvil cuando el menú esté abierto
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [isMobileMenuOpen]);
+
+  // Variables para swipe (opcional)
+  let touchStartX = 0;
+
+  const handleTouchStart = (e) => {
+    touchStartX = e.touches[0].clientX;
   };
 
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
+  const handleTouchMove = (e) => {
+    const touchEndX = e.touches[0].clientX;
+    if (touchStartX - touchEndX > 50) {
+      closeMobileMenu();
+    }
   };
 
   return (
     <>
-      {/* Botón hamburguesa - solo en móvil */}
+      {/* Botón hamburguesa móvil */}
       <button
         onClick={() => setMobileMenuOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 text-blue-600 bg-white p-2 rounded shadow-md no-print"
+        className="md:hidden fixed top-4 left-4 z-50 text-white bg-orange-600 p-2 rounded-lg shadow-md"
         aria-label="Abrir menú lateral"
       >
         <FaBars size={20} />
       </button>
 
-      {/* Layout principal */}
-      <div className="flex h-screen w-full">
+      <div className="flex h-screen w-full bg-gray-100">
         {/* Sidebar */}
         <aside
-          className={`fixed md:relative flex flex-col h-full z-40 transition-all duration-300 ease-in-out ${
-            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-          } md:translate-x-0 transform ${
-            isOpen ? 'w-64' : 'w-16'
-          } bg-gray-800 text-white`}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          className={`fixed top-0 left-0 flex flex-col h-screen z-40
+          transition-transform duration-300 ease-in-out
+          ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${isOpen ? "w-64" : "w-20"} bg-[#8B5E3C] text-white shadow-lg`}
         >
-          {/* Logo / Título */}
+          {/* Logo / título */}
           <div
             className={`flex items-center p-4 ${
-              isOpen ? 'justify-between' : 'justify-center'
-            } border-b border-gray-700`}
+              isOpen ? "justify-between" : "justify-center"
+            } border-b border-[#7A4E2C]`}
           >
-            {isOpen && <h2 className="font-semibold hidden md:block">Tapicería</h2>}
+            {isOpen && (
+              <h2 className="font-bold text-xl tracking-wide hidden md:block">
+                Tapicería Rincon
+              </h2>
+            )}
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded hover:bg-gray-700"
-              aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+              className="p-2 rounded-lg hover:bg-[#7A4E2C] transition-colors"
+              aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
             >
-              {isOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
+              {isOpen ? (
+                <FaTimes size={18} className="text-orange-400" />
+              ) : (
+                <FaBars size={18} className="text-orange-400" />
+              )}
             </button>
           </div>
 
           {/* Menú */}
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-3 overflow-y-auto">
             <ul>
-              {/* Inicio
-              <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
-                <Link to="/imprimir" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
-                  <span><FaHome /></span>
-                  {isOpen && <span className="ml-3">Inicio</span>}
-                </Link>
-              </li> */}
-
-              {/* Historial */}
-              <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
-                <Link to="/historial" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
-                  <span><FaHistory /></span>
-                  {isOpen && <span className="ml-3">Historial</span>}
-                </Link>
-              </li>
-
-              {/* Clientes */}
-              <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
-                <Link to="/clientes" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
-                  <span><FaUserFriends /></span>
-                  {isOpen && <span className="ml-3">Clientes</span>}
+              <li
+                className={`p-2 rounded-lg transition-colors hover:bg-[#A6784F] ${
+                  !isOpen && "text-center"
+                }`}
+              >
+                <Link
+                  to="/historial"
+                  className={`flex items-center gap-3 ${
+                    !isOpen && "justify-center"
+                  }`}
+                  onClick={closeMobileMenu}
+                >
+                  <FaHistory size={20} className="text-red-400" />
+                  {isOpen && (
+                    <span className="text-md font-medium">Historial</span>
+                  )}
                 </Link>
               </li>
-
-              {/* Ajustes */}
-              <li className={`p-2 rounded ${isOpen ? 'hover:bg-gray-700' : 'text-center'}`}>
-                <Link to="/settings" className={`flex items-center ${!isOpen ? 'justify-center' : ''}`} onClick={closeMobileMenu}>
-                  <span><FaCog /></span>
-                  {isOpen && <span className="ml-3">Ajustes</span>}
+              <li
+                className={`p-2 rounded-lg transition-colors hover:bg-[#A6784F] ${
+                  !isOpen && "text-center"
+                }`}
+              >
+                <Link
+                  to="/clientes"
+                  className={`flex items-center gap-3 ${
+                    !isOpen && "justify-center"
+                  }`}
+                  onClick={closeMobileMenu}
+                >
+                  <FaUserFriends size={20} className="text-green-400" />
+                  {isOpen && (
+                    <span className="text-md font-medium">Clientes</span>
+                  )}
+                </Link>
+              </li>
+              <li
+                className={`p-2 rounded-lg transition-colors hover:bg-[#A6784F] ${
+                  !isOpen && "text-center"
+                }`}
+              >
+                <Link
+                  to="/settings"
+                  className={`flex items-center gap-3 ${
+                    !isOpen && "justify-center"
+                  }`}
+                  onClick={closeMobileMenu}
+                >
+                  <FaCog size={20} className="text-blue-400" />
+                  {isOpen && (
+                    <span className="text-md font-medium">Ajustes</span>
+                  )}
                 </Link>
               </li>
             </ul>
           </nav>
 
           {/* Footer */}
-          <div className={`p-4 text-xs text-gray-400 ${!isOpen && 'text-center'}`}>
-            {isOpen ? 'Versión 1.0.0 - hernan.harco' : 'v1'}
+          <div
+            className={`p-4 text-xs text-gray-200 ${!isOpen && "text-center"}`}
+          >
+            {isOpen ? "v1.0.0 - hernan.harco" : "v1"}
           </div>
         </aside>
 
         {/* Overlay para móvil */}
         {isMobileMenuOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+            className="fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden"
             onClick={closeMobileMenu}
           ></div>
         )}
 
-        {/* Contenido principal - Bien centrado */}
+        {/* Contenido principal */}
         <main
-          className={`${
-            isOpen ? 'max-w-full mx-auto' : 'max-w-full mx-auto'
-          } w-full min-h-screen bg-gray-100 p-4 md:p-6 overflow-x-hidden transition-all duration-300 relative`}
+          className={`flex-1 w-full min-h-screen p-4 md:p-6 transition-all duration-300 relative
+                        ${isOpen ? "md:ml-64" : "md:ml-20"}`}
         >
-          <div className="max-w-full mx-auto">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </>

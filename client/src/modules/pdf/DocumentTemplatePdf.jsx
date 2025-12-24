@@ -2,13 +2,13 @@
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
 // Componentes personalizados para el PDF
-import { formatDate } from "../../utils/formatUtils"
-import { CompanyPDF } from "../company/pdf/CompanyPDF";
-import { ClientsPDF } from "../clients/pdf/ClientsPDF";
-import { DocumentInfoPDF } from "../documents/pdf/DocumentsInfoPDF";
-import { TableDocumentsPDF } from "../documents/pdf/TableDocumentsPDF";
-import { DocumentsFooterPDF } from "../documents/pdf/DocumentsFooterPDF";
-import { PagosPDF } from "../documents/pdf/PagosPDF";
+import { formatDate } from "@/utils/formatUtils";
+import { CompanyPDF } from "@/modules/company/pdf/CompanyPDF";
+import { ClientsPDF } from "@/modules/clients/pdf/ClientsPDF";
+import { DocumentInfoPDF } from "@/modules/documents/pdf/DocumentsInfoPDF";
+import { TableDocumentsPDF } from "@/modules/documents/pdf/TableDocumentsPDF";
+import { DocumentsFooterPDF } from "@/modules/documents/pdf/DocumentsFooterPDF";
+import { PagosPDF } from "@/modules/documents/pdf/PagosPDF";
 
 // Define tus estilos al inicio del archivo
 const styles = StyleSheet.create({
@@ -116,15 +116,15 @@ export const DocumentTemplatePdf = ({
   cashPDF,
   prinTitle,
 }) => {
-  console.log("🚀 Datos completos recibidos en PDF:", {
-    prinTitle,
-    company,
-    client,
-    document,
-    filteredProducts,
-    footers,
-    cashPDF,
-  });
+  // console.log("🚀 Datos completos recibidos en PDF:", {
+  //   prinTitle,
+  //   company,
+  //   client,
+  //   document,
+  //   filteredProducts,
+  //   footers,
+  //   cashPDF,
+  // });
 
   return (
     <Document>

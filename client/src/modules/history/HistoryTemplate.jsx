@@ -1,10 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { HistoryTableDocument } from "./HistoryTableDocument";
 import { HistoryModals } from "./HistoryModals";
+import { HistoryModalLogic } from "@/modules/history/components/modal/HistoryModalLogic";
 
 import useClients from "../clients/hooks/useClients";
 import { usePersistedState } from "../../utils/usePersistedState";
 import useTitleTableDocuments from "../documents/hooks/useTitleTableDocuments";
+import { HistoryTableDocumentLogic } from "./components/table/HistoryTableDocumentLogic";
+import { HistoryTableDocument } from "./HistoryTableDocument";
 
 export const HistoryTemplate = () => {
   /* =========================
@@ -57,9 +59,9 @@ export const HistoryTemplate = () => {
 
     const term = searchTerm.trim().toLowerCase();
 
-    // Si no hay texto, mostramos los primeros 5 clientes
+    // Si no hay texto, mostramos los primeros 10 clientes
     if (!term) {
-      return clients.slice(0, 5);
+      return clients.slice(0, 10);
     }
 
     // Filtramos clientes por nombre o CIF
@@ -221,7 +223,7 @@ export const HistoryTemplate = () => {
       />
 
       {/* Tabla de documentos filtrados */}
-      <HistoryTableDocument
+      <HistoryTableDocumentLogic
         setShowModal={setShowModal}
         documents={filteredText}
         searchTerm={searchTerm}
