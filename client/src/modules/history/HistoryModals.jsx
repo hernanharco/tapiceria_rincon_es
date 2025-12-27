@@ -17,6 +17,12 @@ export const HistoryModals = ({
   searchTerm,
   selectedItem,
 }) => {
+  //Valor recibidos
+  console.log(
+    "datos recibidos en HistoryModals: " + "\n searchTerm: ",
+    searchTerm
+  );
+
   /* ===========================
      Estados principales
   ============================ */
@@ -64,13 +70,21 @@ export const HistoryModals = ({
   ============================ */
 
   const parseSearchTerm = (value) => {
-    const match = value?.match(/^\(([^)]+)\)\s*(.*)/);
-    return {
-      cif: match ? match[1] : "",
-    };
+    console.log("estoy en parseSearchTerm: ", value);
+
+    // Primero intentamos con paréntesis
+    let match = value?.match(/^\(([^)]+)\)\s*(.*)/);
+
+    if (match) {
+      return { cif: match[1] };
+    }
+
+    // Si no tiene paréntesis, asumimos que todo es CIF
+    return { cif: value ?? "" };
   };
 
   const { cif } = parseSearchTerm(searchTerm);
+  console.log("valro en cif: ", cif);
 
   /* ===========================
      Inicialización SEGURA en edición
@@ -120,7 +134,13 @@ export const HistoryModals = ({
     };
 
     loadData();
-  }, [isOpen, isEditing, selectedItem, getDocumentsByNum, getDocumentsByNumTitle]);
+  }, [
+    isOpen,
+    isEditing,
+    selectedItem,
+    getDocumentsByNum,
+    getDocumentsByNumTitle,
+  ]);
 
   if (!isOpen) return null;
 
@@ -210,8 +230,14 @@ export const HistoryModals = ({
       }
 
       for (const item of filteredProducts) {
-        if (item.descripcion !== "Materiales" && item.descripcion !== "Mano de Obra") {
-          const payload = { titdescripcion: item.descripcion, titledoc: documentId };
+        if (
+          item.descripcion !== "Materiales" &&
+          item.descripcion !== "Mano de Obra"
+        ) {
+          const payload = {
+            titdescripcion: item.descripcion,
+            titledoc: documentId,
+          };
           item.id
             ? await updateDocumentFieldsIdTitle(item.id, payload)
             : await addProductTitle(payload);
@@ -258,7 +284,6 @@ export const HistoryModals = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl p-6 relative">
-
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-2xl font-bold text-gray-500"

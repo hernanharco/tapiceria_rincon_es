@@ -1,4 +1,3 @@
-
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
 // Componentes personalizados para el PDF
@@ -9,6 +8,7 @@ import { DocumentInfoPDF } from "@/modules/documents/pdf/DocumentsInfoPDF";
 import { TableDocumentsPDF } from "@/modules/documents/pdf/TableDocumentsPDF";
 import { DocumentsFooterPDF } from "@/modules/documents/pdf/DocumentsFooterPDF";
 import { PagosPDF } from "@/modules/documents/pdf/PagosPDF";
+//import { textAlign } from "html2canvas/dist/types/css/property-descriptors/text-align";
 
 // Define tus estilos al inicio del archivo
 const styles = StyleSheet.create({
@@ -48,7 +48,8 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   container: {
-    border: "1px solid #cccccc",
+    borderWidth: 1,
+    borderColor: "#cccccc",    
     borderRadius: 4,
     padding: 8,
     marginBottom: 10,
@@ -116,15 +117,15 @@ export const DocumentTemplatePdf = ({
   cashPDF,
   prinTitle,
 }) => {
-  // console.log("🚀 Datos completos recibidos en PDF:", {
-  //   prinTitle,
-  //   company,
-  //   client,
-  //   document,
-  //   filteredProducts,
-  //   footers,
-  //   cashPDF,
-  // });
+  console.log("🚀 Datos completos recibidos en PDF:", {
+    prinTitle,
+    company,
+    client,
+    document,
+    filteredProducts,
+    footers,
+    cashPDF,
+  });
 
   return (
     <Document>
@@ -161,13 +162,17 @@ export const DocumentTemplatePdf = ({
         {/* Muestra un mensaje que dice con qué documento se relaciona */}
         {prinTitle?.title?.toUpperCase() === "ALBARAN" && (
           <View>
-            <Text style={styles.observation}>PRESUPUESTO {document.num_presupuesto}</Text>
+            <Text style={styles.observation}>
+              PRESUPUESTO {document.num_presupuesto}
+            </Text>
           </View>
         )}
 
         {prinTitle?.title?.toUpperCase() === "FACTURA" && (
           <View>
-            <Text style={styles.observation}>ALBARAN {document.num_albaran} - FECHA {document.fecha_factalb}</Text>
+            <Text style={styles.observation}>
+              ALBARAN {document.num_albaran} - FECHA {document.fecha_factalb}
+            </Text>
           </View>
         )}
 
@@ -178,12 +183,18 @@ export const DocumentTemplatePdf = ({
           )}
         </View>
 
+        {/* Si el dato se toma como presupuesto se muestra la primera informacion sino la segunda */}
         {prinTitle.title === "undefined" ? (
-          // Mostrar título adicional si NO es PRESUPUESTO
-          <View style={styles.container}>
+          <View>
             <View>
+              <Text style={[styles.observation, {textAlign: "right"}]}>
+                Total: {footers.base_imponible}
+              </Text>
+            </View>
+
+            <View style={styles.container}>
               <Text style={styles.observation}>
-                "Observaciones: Impuestos no Incluidos"
+                Observaciones: Impuestos no Incluidos
               </Text>
             </View>
           </View>
