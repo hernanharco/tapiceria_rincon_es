@@ -1,14 +1,19 @@
 // src/context/ApiContext.jsx
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
+
+// Configuración global
+const API_URL = "http://localhost:8000/api/documents/";
 
 const DocumentsContext = createContext();
 
 export const useApiDocumentsContext = () => {
   const context = useContext(DocumentsContext);
   if (!context) {
-    throw new Error('useApiDocumentsContext debe usarse dentro de DocumentsProvider');
+    throw new Error(
+      "useApiDocumentsContext debe usarse dentro de DocumentsProvider"
+    );
   }
   return context;
 };
@@ -21,94 +26,132 @@ export const DocumentsProvider = ({ children }) => {
   // Cargar documentos desde la API
   const refetch = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/documents/');
+      const res = await axios.get(API_URL);
       setDocuments(res.data);
-    } catch (err) {
-      setError(err);
+    } catch {
+      setError("No se pudieron cargar los documentos");
     } finally {
       setLoading(false);
     }
   };
 
-  // Insertar nuevo Documento
-  const addProduct = async (newProduct) => {
-    // console.log('DocumentsProvider. Nuevo numero de documento a agregar:', newProduct); mnhu5t6y 6y78
+  // Obtener todos los documentos
+  const getAllDocuments = async () => {
     try {
-      const response = await axios.post('http://localhost:8000/api/documents/', newProduct);
-      setDocuments((prev) => [...prev, response.data]); // Agrega respuesta del servidor
+      const response = await axios.get(API_URL);
+      if (!Array.isArray(response.data)) return [];
       return response.data;
-    } catch (err) {
-      setError(err);
-      throw err;
+    } catch {
+      setError("No se pudieron cargar los documentos");
+      return [];
     }
   };
 
-  // Eliminar un documento por su ID
+  // Insertar nuevo documento
+  const addProduct = async (newProduct) => {
+    const response = await axios.post(API_URL, newProduct);
+    setDocuments((prev) => [...prev, response.data]);
+    return response.data;
+  };
+
+  // Actualizar documento por ID
+  const updateDocumentFieldsId = async (id, updatedFields) => {
+    if (id === undefined) return;
+    const response = await axios.patch(`${API_URL}${id}/`, updatedFields);
+    setDocuments((prev) =>
+      prev.map((doc) => (doc.id === id ? response.data : doc))
+    );
+    return response.data;
+  };
+
+  // Eliminar un documento por su num_factura
   const deleteProduct = async (numFactura) => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:8000/api/documents/${numFactura}/`
-      );
-
-      // Eliminar del estado local solo si la petición fue exitosa
-      setDocuments((prev) =>
-        prev.filter((doc) => doc.num_factura !== numFactura)
-      );
-
-      return response.data; // Opcional, útil si devuelves algo del servidor
-    } catch (err) {
-      throw err;
-    }
+    await axios.delete(`${API_URL}${numFactura}/`);
+    setDocuments((prev) =>
+      prev.filter((doc) => doc.num_factura !== numFactura)
+    );
   };
 
   // Limpiar documentos
-  const clearDocuments = () => {
-    setDocuments([]);
+  const clearDocuments = () => setDocuments([]);
+
+  // Buscar documentos por CIF
+  const getDocumentByDoc = async (doc) => {
+    if (!doc || typeof doc !== "string" || doc.trim() === "") return [];
+    const cif = doc.trim();
+    const url = `${API_URL}?dataclient=${encodeURIComponent(cif)}`;
+    const response = await axios.get(url);
+    if (!Array.isArray(response.data)) return [];
+    return response.data.filter((d) => d.dataclient === cif);
   };
 
-  // Cargar datos al inicio
-  useEffect(() => {
-    refetch();
-  }, []);
+  // Buscar documento por número de presupuesto
+  const fetchDocumentByNum = async (num_presupuesto) => {
+    const response = await axios.get(API_URL);
+    return response.data.find((doc) => doc.num_presupuesto === num_presupuesto) || null;
+  };
 
-  // Función para buscar un cliente por su CIF
-  const getDocumentByNum = async (num) => {
+  // Buscar documento por ID
+  const fetchDocumentById = async (id) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/documents/${num}/`);
-
-      // Retorna los datos del cliente encontrado
+      const response = await axios.get(`${API_URL}${id}/`);
       return response.data;
-
-    } catch (err) {
-      console.error('Error al buscar el cliente:', err);
-      setError('No se pudo encontrar el cliente con CIF: ' + cif);
-      return null; // Retorna null si hay error
+    } catch {
+      return null;
     }
   };
 
-
-  // Nueva función: Buscar documento por num_factura
-  const getDocumentsByNum = (codClient) => {
-    // Para debugging: muestra el primer documento y sus tipos    
-    if (!codClient) return null;
-    const ejemplo = documents[0];
-    // console.log("Primer documento:", ejemplo);
-    // console.log("Tipo de num_document:", typeof codClient, " - ", codClient);
-    // console.log("Tipo de documento.documento:", typeof ejemplo.cod_cliente, " - ", ejemplo.cod_cliente);
-    // Filtro seguro: convierte ambos a string y limpia espacios
-    return documents.filter(doc => String(doc.cod_cliente).trim().toLowerCase() === String(codClient).trim().toLowerCase());
+  // Actualizar documento por número de presupuesto
+  const updateProduct = async (numid, updatedFields) => {
+    const existingDoc = await fetchDocumentById(numid);
+    if (!existingDoc) throw new Error(`Documento con numid "${numid}" no encontrado.`);
+    const response = await axios.patch(`${API_URL}${existingDoc.id}/`, updatedFields);
+    setDocuments((prev) =>
+      prev.map((doc) => (doc.id === existingDoc.id ? { ...doc, ...response.data } : doc))
+    );
+    return response.data;
   };
+
+  // Buscar documentos por contenido de observaciones
+const getDocumentsByObservaciones = async (searchText) => {
+  if (!searchText || typeof searchText !== "string") return [];
+
+  const text = searchText.trim().toLowerCase();
+
+  try {
+    const response = await axios.get(API_URL); // traemos todos los documentos
+    const filtered = response.data.filter(
+      (doc) =>
+        doc.observaciones &&
+        doc.observaciones.toLowerCase().includes(text)
+    );
+    return filtered;
+  } catch {
+    return [];
+  }
+};
+
+
+  // Cargar documentos al iniciar
+  useEffect(() => {
+    refetch();
+  }, []);
 
   const value = {
     documents,
     loading,
     error,
-    refetch, // permite recargar manualmente
+    refetch,
+    getAllDocuments,
     clearDocuments,
     addProduct,
     deleteProduct,
-    getDocumentsByNum,
-    getDocumentByNum,
+    fetchDocumentByNum,
+    getDocumentByDoc,
+    updateProduct,
+    updateDocumentFieldsId,
+    fetchDocumentById,
+    getDocumentsByObservaciones,
   };
 
   return (

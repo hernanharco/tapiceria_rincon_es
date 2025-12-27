@@ -33,6 +33,7 @@ export const PagosProvider = ({ children }) => {
   const getPagosByClienteId = async (clienteId) => {
     try {
       const res = await axios.get(`http://localhost:8000/api/pagos/?cliente=${clienteId}`);
+      // console.log("res pagos: ", res)
       setPagos(res.data); // Actualizamos el estado local con los resultados
       return res.data; // Devolvemos los datos para usarlos en componentes
     } catch (err) {

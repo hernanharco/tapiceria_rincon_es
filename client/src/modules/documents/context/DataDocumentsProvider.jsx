@@ -1,7 +1,10 @@
 // src/context/ApiContext.jsx
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
+
+// Configuración global
+const API_URL = "http://localhost:8000/api/datadocuments/";
 
 // 1. Creamos el Contexto
 const DataDocumentsContext = createContext();
@@ -10,7 +13,9 @@ const DataDocumentsContext = createContext();
 export const useApiDataDocumentsContext = () => {
   const context = useContext(DataDocumentsContext);
   if (!context) {
-    throw new Error('useApiDataDataDocumentsContext debe usarse dentro de DataDocumentsProvider');
+    throw new Error(
+      "useApiDataDataDocumentsContext debe usarse dentro de DataDocumentsProvider"
+    );
   }
   return context;
 };
@@ -24,7 +29,7 @@ export const DataDocumentsProvider = ({ children }) => {
   // Cargar datadocuments desde la API
   const cargarDatadocuments = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/datadocuments/');
+      const res = await axios.get(API_URL);
       setDatadocuments(res.data);
     } catch (err) {
       console.error("Error al cargar documentos:", err); // 👈 Muestra detalles del error
@@ -33,10 +38,10 @@ export const DataDocumentsProvider = ({ children }) => {
   };
 
   // Insertar nuevo producto
-  const addProduct = async (newProduct) => {
+  const addProductTable = async (newProduct) => {
     // console.log('DataDocumentsProvider. Nuevo producto a agregar:', newProduct);
     try {
-      const response = await axios.post('http://localhost:8000/api/datadocuments/', newProduct);
+      const response = await axios.post(API_URL, newProduct);
       setDatadocuments((prev) => [...prev, response.data]); // Agrega respuesta del servidor
       return response.data;
     } catch (err) {
@@ -48,8 +53,8 @@ export const DataDocumentsProvider = ({ children }) => {
   // Para borrar un producto
   const deleteProduct = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/api/datadocuments/${id}/`);
-      setDatadocuments((prev) => prev.filter(producto => producto.id !== id));
+      await axios.delete(`${API_URL}${id}/`);
+      setDatadocuments((prev) => prev.filter((producto) => producto.id !== id));
     } catch (err) {
       setError(err);
       throw err;
@@ -57,10 +62,10 @@ export const DataDocumentsProvider = ({ children }) => {
   };
 
   // Para actualizar un producto
-  const updateProduct = async (id, updatedProduct) => {
+  const updateProductTable = async (id, updatedProduct) => {
     try {
-      console.log('DataDocumentsProvider. Actualizando producto con ID:', id, 'Datos:', updatedProduct);
-      const res = await axios.put(`http://localhost:8000/api/datadocuments/${id}/`, updatedProduct);
+      // console.log("DataDocumentsProvider. Actualizando producto con ID:", id, "Datos:", updatedProduct);
+      const res = await axios.put(`${API_URL}${id}/`, updatedProduct);
       setDatadocuments((prev) =>
         prev.map((prod) => (prod.id === id ? res.data : prod))
       );
@@ -71,17 +76,36 @@ export const DataDocumentsProvider = ({ children }) => {
     }
   };
 
-  // Nueva función: Buscar documento por num_factura
-  const getDocumentsByNum = (num_document) => {
-    // Para debugging: muestra el primer documento y sus tipos    
-    if (!num_document) return null;
-    // const ejemplo = datadocuments[0];
-    // console.log("Primer documento:", ejemplo);
-    // console.log("Tipo de num_document:", typeof num_document);
-    // console.log("Tipo de documento.documento:", typeof ejemplo.documento);
-    // Filtro seguro: convierte ambos a string y limpia espacios
-    return datadocuments.filter(doc => String(doc.documento).trim().toLowerCase() === String(num_document).trim().toLowerCase());
+  // Buscar documento por id de document (string) valioso para buscar 
+  const getDocumentsByNum = async (num_document) => {
+    // console.log("getDocumentsByNum", num_document);  
+    
+    try {
+      const response = await axios.get(API_URL); // Trae todos los documentos
+      const filteredDocuments = response.data.filter(
+        (doc) => doc.documento === num_document
+      );
+      return filteredDocuments;
+    } catch (error) {
+      console.error("Error al buscar documento por num_presupuesto:", error);
+      return [];
+    }
+    
   };
+
+  // Buscar documento por ID (entero o string)
+  const getDocumentByIdFromAPI = async (id) => {
+    // console.log("getDocumentByIdFromAPI", id)
+    if (!id) return null;
+    try {
+      const response = await axios.get(`${API_URL}${id}/`);
+      console.log("response id: ", response)
+      return response.data; // Devuelve el documento encontrado
+    } catch (err) {
+      console.error("Error al obtener documento por ID desde la API:", err);
+      return null;
+    }
+  };  
 
   // Cargar datos al inicio
   useEffect(() => {
@@ -95,10 +119,11 @@ export const DataDocumentsProvider = ({ children }) => {
     loading,
     error,
     refetchdatadocuments: cargarDatadocuments,
-    addProduct, // ✅ Exponemos esta función para usarla en el modal
+    addProductTable, // ✅ Exponemos esta función para usarla en el modal
     deleteProduct, // Exponemos la función para borrar productos
-    updateProduct, // Exponemos la función para actualizar productos
+    updateProductTable, // Exponemos la función para actualizar productos
     getDocumentsByNum,
+    getDocumentByIdFromAPI,    
   };
 
   return (

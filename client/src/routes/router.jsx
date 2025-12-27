@@ -9,6 +9,7 @@ import {AppProvider} from '../modules/context/AppProvider';
 import {PrintableViewPDF} from '../modules/pdf/PrintableViewPDF';
 import {HistoryDocumentsView} from '../pages/HistoryDocumentsView';
 import {CreateClientView} from '../pages/CreateClientView';
+import {SettingView} from '../pages/SettingView'
 
 export const router = createBrowserRouter([
   {
@@ -20,23 +21,27 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HistoryDocumentsView />,
+        element: <HistoryDocumentsView />, // Por esta parte tenemos el boton + agregar Nuevo Documento
       },     
       {
         path: '/imprimir',
         element: <PrintableViewPDF />,
       },
       {
-        path: '/imprimir/:numfactura/:cif',
+        path: '/imprimir/:num_presupuesto/:title/:cif',
         element: <PrintableViewPDF />,
-      },
+      },      
       {
         path: '/historial',
-        element: <HistoryDocumentsView />,
+        element: <HistoryDocumentsView />, 
       },
       {
         path: '/clientes',
         element: <CreateClientView />,
+      },
+      {
+        path: '/settings',
+        element: <SettingView />,
       },
     ],
   },

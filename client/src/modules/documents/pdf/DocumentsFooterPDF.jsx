@@ -2,11 +2,10 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer';
 
 // Estilos mejorados
 const styles = StyleSheet.create({
-  footerContainer: {
-    marginTop: 20,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#000',
+  footerContainer: {    
+    paddingTop: 5,
+    borderTopWidth: 1,            // <-- Ancho del borde superior
+  borderTopColor: '#000',       // <-- Color del borde (negro)
     width: '100%',
   },
   table: {
@@ -14,8 +13,7 @@ const styles = StyleSheet.create({
     borderStyle: 'solid',
     borderWidth: 1,
     borderColor: '#000',
-    borderRadius: 5,
-    marginBottom: 10,
+    borderRadius: 5,    
   },
   tableRow: {
     flexDirection: 'row',
@@ -69,7 +67,7 @@ export const DocumentsFooterPDF = ({ footers }) => {
         <View style={styles.tableRow}>
           <Text style={[styles.tableHeader, { flex: 1 }]}>Subtotal</Text>
           <Text style={[styles.tableHeader, { flex: 1 }]}>Base Imponible</Text>
-          <Text style={[styles.tableHeader, { flex: 1 }]}>IVA</Text>
+          <Text style={[styles.tableHeader, { flex: 1 }]}>IVA 21%</Text>
           <Text style={[styles.tableHeader, { flex: 1 }]}>Total</Text>
         </View>
 
@@ -77,7 +75,7 @@ export const DocumentsFooterPDF = ({ footers }) => {
         <View style={styles.tableRow}>
           <Text style={[styles.tableCell, { flex: 1 }]}>{footers.subtotal}</Text>
           <Text style={[styles.tableCell, { flex: 1 }]}>{footers.base_imponible}</Text>
-          <Text style={[styles.tableCell, { flex: 1 }]}>{footers.iva}%</Text>
+          <Text style={[styles.tableCell, { flex: 1 }]}>{footers.iva}</Text>
           <Text style={[styles.tableCell, styles.totalCell, { flex: 1 }, styles.lastTableCell]}>
             {footers.total}
           </Text>

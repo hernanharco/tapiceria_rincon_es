@@ -1,63 +1,57 @@
-import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
 // Función auxiliar para formatear monedas
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR'
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
   }).format(value || 0);
 };
 
 // Estilos del PDF
 const styles = StyleSheet.create({
   table: {
-    width: '100%',
-    borderStyle: 'solid',
+    width: "100%",
+    borderStyle: "solid",
     borderWidth: 1,
-    borderColor: '#000',
-    marginTop: 10,
-    marginBottom: 10
+    borderColor: "#000",    
+  },
+  tableRowEnc: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#000",
+    borderBottomStyle: "solid",
   },
   tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    borderBottomStyle: 'solid'
+    flexDirection: "row",
+    borderBottomWidth: 0,
+    borderBottomColor: "#000",
+    borderBottomStyle: "solid",
   },
   tableHeader: {
-    backgroundColor: '#f2f2f2',
-    fontWeight: 'bold',
-    fontSize: 9
-  },
-  tabletittle: {
-    backgroundColor: '#f2f2f2',
-    fontWeight: 'bold',
+    backgroundColor: "#f2f2f2",
+    fontWeight: "bold",
     fontSize: 9,
-    flex: 1,
-    textAlign: 'center',
-    borderRightWidth: 1,
-    borderRightColor: '#000',
-    borderRightStyle: 'solid'
   },
   cell: {
     fontSize: 8,
     padding: 5,
-    textAlign: 'center',
-    flex: 1,
+    textAlign: "center",
+    flex: 0.5,
     borderRightWidth: 1,
-    borderRightColor: '#000',
-    borderRightStyle: 'solid'
+    borderRightColor: "#000",
+    borderRightStyle: "solid",
   },
   descriptionCell: {
-    flex: 2, // Ancho dos veces mayor que los otros campos
+    flex: 3,
     fontSize: 8,
     padding: 5,
-    textAlign: 'left',
+    textAlign: "left",
     borderRightWidth: 1,
-    borderRightColor: '#000',
-    borderRightStyle: 'solid',
-    wordWrap: 'break-word' // Permite que el texto se divida en múltiples líneas
-  }
+    borderRightColor: "#000",
+    borderRightStyle: "solid",
+    wordWrap: "break-word",
+  },  
 });
 
 export const TableDocumentsPDF = ({ filteredProducts = [] }) => {
@@ -66,8 +60,8 @@ export const TableDocumentsPDF = ({ filteredProducts = [] }) => {
   return (
     <View style={styles.table}>
       {/* Encabezado */}
-      <View style={[styles.tableRow, styles.tableHeader]}>
-        <Text style={styles.cell}>Referencia</Text>
+      <View style={[styles.tableRowEnc, styles.tableHeader]}>
+        <Text style={styles.cell}>Ref</Text>
         <Text style={styles.descriptionCell}>Descripción</Text>
         <Text style={styles.cell}>Cant</Text>
         <Text style={styles.cell}>Precio</Text>
@@ -76,16 +70,65 @@ export const TableDocumentsPDF = ({ filteredProducts = [] }) => {
       </View>
 
       {/* Productos */}
-      {data.map((item, index) => (
-        <View key={item.id || JSON.stringify(item)} style={[styles.tableRow, styles.tableHeader]}>
-          <Text style={styles.cell}>{item.referencia || '-'}</Text>
-          <Text style={styles.descriptionCell}>{item.descripcion || '-'}</Text> {/* Campo Descripción más ancho */}
-          <Text style={styles.cell}>{item.cantidad || 0}</Text>
-          <Text style={styles.cell}>{formatCurrency(item.precio)}</Text>
-          <Text style={styles.cell}>{item.dto ? `${item.dto}%` : '0%'}</Text>
-          <Text style={styles.cell}>{formatCurrency(item.importe)}</Text>
-        </View>
-      ))}
+      {data.map((item, index) => {
+        const esTitulo =
+          item.descripcion &&
+          !["materiales", "mano de obra"].includes(
+            item.descripcion.toLowerCase()
+          );
+
+        const isManoObra =
+          item.descripcion &&
+          item.descripcion.toLowerCase().trim() === "mano de obra";
+
+        return (
+          <View key={item.id || index}>
+            <View style={styles.tableRow}>
+              {/* Referencia */}
+              <Text style={styles.cell}>
+                {esTitulo ? "" : item.referencia || ""}
+              </Text>
+
+              {/* Descripción - Siempre mostramos algo */}
+              <Text style={styles.descriptionCell}>
+                {item.descripcion || "-"}
+              </Text>
+
+              {/* Cantidad */}
+              <Text style={styles.cell}>
+                {esTitulo ? "" : item.cantidad ? item.cantidad : "0"}
+              </Text>
+
+              {/* Precio */}
+              <Text style={styles.cell}>
+                {esTitulo ? "" : formatCurrency(item.precio)}
+              </Text>
+
+              {/* Descuento */}
+              <Text style={styles.cell}>
+                {esTitulo ? "" : item.dto ? `${item.dto}%` : "0%"}
+              </Text>
+
+              {/* Importe */}
+              <Text style={styles.cell}>
+                {esTitulo ? "" : formatCurrency(item.importe)}
+              </Text>
+            </View>
+
+            {/* Línea horizontal después de "mano de obra" */}
+            {isManoObra && (
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: "#000",
+                  marginHorizontal: 5,
+                  marginTop: 2,
+                }}
+              />
+            )}
+          </View>
+        );
+      })}
     </View>
   );
 };

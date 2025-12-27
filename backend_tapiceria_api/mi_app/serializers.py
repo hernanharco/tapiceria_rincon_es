@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago
+from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago, titleDescripcion
 
 class DataCompanySerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,12 +12,16 @@ class DataClientSerializer(serializers.ModelSerializer):
         model = DataClient
         fields = '__all__'
 
-
 class DocumentSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField()  # 👈 Asegura que aparezca 
     class Meta:
         model = Document
-        fields = '__all__'
+        fields = '__all__'    
 
+class titleDescripcionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = titleDescripcion
+        fields = '__all__'
 
 class DataDocumentSerializer(serializers.ModelSerializer):
     class Meta:

@@ -86,3 +86,6 @@ __pycache__/
 /coverage/
 /reports/
 /tmp/
+
+# Archivos Propios
+personal.txt

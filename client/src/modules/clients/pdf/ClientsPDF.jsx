@@ -58,7 +58,7 @@ export const ClientsPDF = ({ client }) => {
             {/* Tabla simple */}
             <View style={styles.table}>
                 <View style={styles.tableRow}>
-                    <Text style={styles.tableCell}>Asturias</Text>
+                    <Text style={styles.tableCell}>{client.province}</Text>
                     <Text style={styles.tableCell}>NIF-CIF</Text>
                     <Text style={styles.tableCell}>{client.cif || '-'}</Text>
                 </View>
