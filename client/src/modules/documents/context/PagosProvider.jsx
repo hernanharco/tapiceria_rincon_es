@@ -1,10 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import api from '@/api/config';
 
-// 1. Creamos el Contexto
 const PagosContext = createContext();
 
-// 2. Creamos un hook para usar el contexto
 export const useApiPagosContext = () => {
   const context = useContext(PagosContext);
   if (!context) {
@@ -13,51 +11,68 @@ export const useApiPagosContext = () => {
   return context;
 };
 
-// 3. El Provider que carga los datos
 export const PagosProvider = ({ children }) => {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Referencia para evitar bucles infinitos en el useEffect
+  const lastFetchedRef = useRef(0);
 
-  // Cargar todos los pagos desde la API
-  const cargarPagos = async () => {
+  const ENDPOINT = '/api/pagos/';
+
+  // 1. Cargar pagos (Estable y seguro contra bucles)
+  const cargarPagos = useCallback(async (silent = false) => {
+    const ahora = Date.now();
+    // Cache de 30 segundos para evitar saturar Frankfurt
+    if (silent && ahora - lastFetchedRef.current < 30000) return;
+
+    if (!silent && pagos.length === 0) setLoading(true);
+    
     try {
-      const res = await axios.get('http://localhost:8000/api/pagos/');
+      const res = await api.get(ENDPOINT);
       setPagos(res.data);
+      lastFetchedRef.current = ahora;
+      setError(null);
     } catch (err) {
-      setError(err);
+      console.error("Error al cargar pagos:", err); // ✅ err usado para ESLint
+      setError("No se pudieron cargar los pagos.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [pagos.length]);
 
-  // 🔹 Nueva función: traer pagos donde cliente_id === id
-  const getPagosByClienteId = async (clienteId) => {
-    try {
-      const res = await axios.get(`http://localhost:8000/api/pagos/?cliente=${clienteId}`);
-      // console.log("res pagos: ", res)
-      setPagos(res.data); // Actualizamos el estado local con los resultados
-      return res.data; // Devolvemos los datos para usarlos en componentes
-    } catch (err) {
-      setError(err);
-      throw err;
-    }
-  };
+  // 2. Búsqueda LOCAL (Instantánea)
+  // Ya no pedimos al servidor "?cliente=...", usamos lo que ya tenemos en memoria
+  const getPagosByClienteId = useCallback((clienteId) => {
+    if (!clienteId) return [];
+    // Filtramos localmente: mucho más rápido que una petición de red
+    return pagos.filter(p => p.cliente === clienteId);
+  }, [pagos]);
 
-  // Cargar datos al inicio
+  // 3. Efecto de carga inicial blindado
   useEffect(() => {
-    cargarPagos().then(() => setLoading(false));
-  }, []);
+    cargarPagos();
+  }, [cargarPagos]);
 
-  const value = {
+  const value = useMemo(() => ({
     pagos,
     loading,
     error,
-    refetchclientes: cargarPagos,
-    getPagosByClienteId, // 👈 Añadimos la nueva función al contexto
-  };
+    refetchPagos: cargarPagos,
+    getPagosByClienteId, 
+  }), [pagos, loading, error, cargarPagos, getPagosByClienteId]);
 
   return (
     <PagosContext.Provider value={value}>
-      {!loading ? children : <div>Cargando datos...</div>}
+      {loading && pagos.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mb-2"></div>
+          <p className="text-sm text-gray-500 italic">Sincronizando pagos...</p>
+        </div>
+      ) : (
+        children
+      )}
     </PagosContext.Provider>
   );
 };

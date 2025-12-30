@@ -1,165 +1,121 @@
-// src/context/ApiContext.jsx
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import api from "@/api/config";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
-
-// Configuración global
-const API_URL = "http://localhost:8000/api/footers/";
-
-// 1. Creamos el Contexto
+const API_URL = "/api/footers/";
 const FootersContext = createContext();
 
-// 2. Creamos un hook para usar el contexto
 export const useApiFootersContext = () => {
   const context = useContext(FootersContext);
   if (!context) {
-    throw new Error(
-      "useApiDataFootersContext debe usarse dentro de FootersProvider"
-    );
+    throw new Error("useApiDataFootersContext debe usarse dentro de FootersProvider");
   }
   return context;
 };
 
-// 3. El Provider que carga los datos
 export const FootersProvider = ({ children }) => {
   const [footers, setFooters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Blindaje contra bucles infinitos
+  const lastFetchedRef = useRef(0);
 
-  // Cargar footers desde la API
-  const cargarFooters = async () => {
+  // 1. Cargar footers (Estable y seguro)
+  const cargarFooters = useCallback(async (silent = false) => {
+    const ahora = Date.now();
+    if (silent && ahora - lastFetchedRef.current < 30000) return;
+
+    if (!silent && footers.length === 0) setLoading(true);
+
     try {
-      const res = await axios.get(API_URL);
+      const res = await api.get(API_URL);
       setFooters(res.data);
+      lastFetchedRef.current = ahora;
+      setError(null);
     } catch (err) {
-      setError(err);
+      console.error("Error al cargar footers:", err);
+      setError("Error de red al cargar pies de página.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [footers.length]);
 
-  // Cargar footers a partir de un ID
-  const loadFooterPorId = async (id) => {
-    try {
-      const res = await axios.get(`${API_URL}${id}/`);
-      setFooters([res.data]); // Actualizamos el estado con el footer encontrado
-    } catch (err) {
-      setError(err);
-    }
-  };
-
-  // Guardar un nuevo footer
+  // 2. Guardar nuevo footer
   const saveFooter = async (nuevoFooter) => {
-    // console.log("Nuevo footer a guardar:", nuevoFooter);
-
-    // Validación inicial
-    if (
-      !nuevoFooter ||
-      typeof nuevoFooter !== "object" ||
-      Object.keys(nuevoFooter).length === 0
-    ) {
-      console.warn("Datos inválidos para guardar footer", nuevoFooter);
+    if (!nuevoFooter || typeof nuevoFooter !== "object") {
       throw new Error("Datos inválidos para guardar footer");
     }
 
     try {
-      const res = await axios.post(API_URL, nuevoFooter);
-      // console.log("Respuesta del servidor:", res.data);
-
-      // Actualizar estado local
+      const res = await api.post(API_URL, nuevoFooter);
       setFooters((prev) => [...prev, res.data]);
-
       return res.data;
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail || err.message || "Error desconocido";
-      console.error("Error al guardar el footer:", errorMsg);
-      setError(errorMsg);
-      throw new Error(`No se pudo guardar el footer: ${errorMsg}`);
+      console.error("Error al guardar el footer:", err);
+      throw err;
     }
   };
 
-  // Nueva función: Buscar por footer_documento
-  const fetchFooterByNum = async (num_presupuesto) => {
-    // console.log("fetchFooterByNum", num_presupuesto);
-    try {
-      const response = await axios.get(API_URL); // Trae todos los documentos
-      const filteredDocuments = response.data.filter(
-        (doc) => doc.footer_documento === num_presupuesto
-      );
-      return filteredDocuments[0];
-    } catch (error) {
-      console.error("Error al buscar documento por footer_documento:", error);
-      return [];
-    }
-  };
+  // 3. Búsqueda LOCAL (Cero latencia con Frankfurt)
+  const fetchFooterByNum = useCallback((documentoId) => {
+    if (!documentoId) return null;
+    return footers.find((f) => f.footer_documento === documentoId) || null;
+  }, [footers]);
 
-  // Actualizar un footer existente basado en el campo footer_documento
+  // 4. Actualizar o Crear (Lógica inteligente)
   const updateFooter = async (footerDocumentoId, datosActualizados) => {
-    // console.log(
-    //   "Datos recibidos en updateFooter",
-    //   footerDocumentoId,
-    //   datosActualizados
-    // );
-
-    if (!footerDocumentoId) {
-      throw new Error(
-        "El ID del documento es requerido para actualizar el footer"
-      );
-    }
+    if (!footerDocumentoId) throw new Error("ID requerido");
 
     try {
-      // Buscar el footer usando el ID del documento
-      const footerExistente = await fetchFooterByNum(footerDocumentoId);
+      // Buscamos primero en nuestro estado local (memoria)
+      const footerExistente = fetchFooterByNum(footerDocumentoId);
 
       if (!footerExistente) {
-        throw new Error(
-          `No se encontró ningún footer para el documento ID: ${footerDocumentoId}`
-        );
+        // Si no está en memoria, lo creamos
+        return await saveFooter({
+          ...datosActualizados,
+          footer_documento: footerDocumentoId,
+        });
       }
 
-      // Hacer PATCH al endpoint con el ID del footer
-      const res = await axios.patch(
-        `${API_URL}${footerExistente.id}/`,
-        datosActualizados
-      );
-
-      // Actualizar estado local
+      // Si existe, enviamos solo los cambios por PATCH
+      const res = await api.patch(`${API_URL}${footerExistente.id}/`, datosActualizados);
+      
       setFooters((prev) =>
-        prev.map((footer) =>
-          footer.id === footerExistente.id ? res.data : footer
-        )
+        prev.map((f) => (f.id === footerExistente.id ? res.data : f))
       );
 
       return res.data;
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail || err.message || "Error desconocido";
-      console.error("Error al actualizar el footer:", errorMsg);
-      setError(errorMsg);
-      throw new Error(`No se pudo actualizar el footer: ${errorMsg}`);
+      console.error("Error en updateFooter:", err);
+      throw err;
     }
   };
 
-  // Nueva función: traer footers donde cliente_id === id
-  const getFootersByFieldId = async (id) => {
-    //console.log("Cargando footers por ID:", id);
+  // 5. Traer footer por ID de documento (Local)
+  const getFootersByFieldId = useCallback((id) => {
+    return footers.find((doc) => doc.footer_documento === id) || null;
+  }, [footers]);
+
+  // 6. Carga por ID desde API (Híbrido)
+  const loadFooterPorId = useCallback(async (id) => {
     try {
-      const response = await axios.get(API_URL); // Trae todos los documentos
-      const filteredDocuments = response.data.filter(
-        (doc) => doc.footer_documento === id
-      );
-      return filteredDocuments[0];
-    } catch (error) {
-      console.error("Error al buscar documento por footer_documento:", error);
-      return [];
+      const res = await api.get(`${API_URL}${id}/`);
+      setFooters((prev) => {
+        const existe = prev.find(f => f.id === res.data.id);
+        if (existe) return prev.map(f => f.id === res.data.id ? res.data : f);
+        return [...prev, res.data];
+      });
+    } catch (err) {
+      console.error("Error loadFooterPorId:", err);
     }
-  };
-
-  // Cargar datos al inicio
-  useEffect(() => {
-    cargarFooters().then(() => setLoading(false));
   }, []);
 
-  const value = {
+  useEffect(() => {
+    cargarFooters();
+  }, [cargarFooters]);
+
+  const value = useMemo(() => ({
     footers,
     loading,
     error,
@@ -168,11 +124,18 @@ export const FootersProvider = ({ children }) => {
     saveFooter,
     updateFooter,
     getFootersByFieldId,
-  };
+    fetchFooterByNum,
+  }), [footers, loading, error, cargarFooters, loadFooterPorId, getFootersByFieldId, fetchFooterByNum]);
 
   return (
     <FootersContext.Provider value={value}>
-      {!loading ? children : <div>Cargando datos...</div>}
+      {loading && footers.length === 0 ? (
+        <div className="flex justify-center p-4">
+          <div className="animate-pulse text-gray-400 italic text-sm">Sincronizando totales...</div>
+        </div>
+      ) : (
+        children
+      )}
     </FootersContext.Provider>
   );
 };

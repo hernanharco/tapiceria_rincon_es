@@ -1,259 +1,179 @@
-import { useState, useEffect } from "react";
-import { PDFViewer } from "@react-pdf/renderer";
-import { DocumentTemplatePdf } from "./DocumentTemplatePdf";
+import { useState, useEffect, useCallback } from "react"; // Añadimos useCallback
+import { PDFViewer, PDFDownloadLink } from "@react-pdf/renderer";
+import { DocumentTemplatePdf } from "@/modules/pdf/DocumentTemplatePdf";
 import { useParams } from "react-router-dom";
+import { HistoryModals } from "@/modules/history/HistoryModals";
 
-// Hooks personalizados para obtener datos
-import useCompany from "../company/hooks/useCompany";
-import useClients from "../clients/hooks/useClients";
-import useDocument from "../documents/hooks/useDocuments";
-import useDataDocuments from "../documents/hooks/useDataDocuments";
-import useFooters from "../documents/hooks/useFooters";
-import usePagos from "../documents/hooks/usePagos";
-import useTitleTableDocuments from "../documents/hooks/useTitleTableDocuments";
+// Mantenemos tus contextos
+import { useApiCompanyContext } from "@/modules/company/context/CompanyProvider";
+import { useApiClientsContext } from "@/modules/clients/context/ClientsProvider";
+import { useApiDocumentsContext } from "@/modules/documents/context/DocumentsProvider";
+import { useApiDataDocumentsContext } from "@/modules/documents/context/DataDocumentsProvider";
+import { useApiFootersContext } from "@/modules/documents/context/FootersProvider";
+import { useApiPagosContext } from "@/modules/documents/context/PagosProvider";
+import { useApiTitleTableDocumentsContext } from "@/modules/documents/context/TitleTableDocumentsProvider";
 
 export const PrintableViewPDF = () => {
-  const { empresas } = useCompany();
-  const { getClientByCif } = useClients();
-  const { fetchDocumentByNum } = useDocument();
-  const { getDocumentsByNum } = useDataDocuments();
-  const { getFootersByFieldId } = useFooters();
-  const { getPagosByClienteId } = usePagos();
-  const { fetchDocumentsByTitleDoc } = useTitleTableDocuments();
-  // 🎯 Recibimos el id desde la URL
+  const { empresas } = useApiCompanyContext();
+  const { getFilteredClients, clients } = useApiClientsContext();
+  const { fetchDocumentByNum } = useApiDocumentsContext();
+  const { getDocumentsByNum } = useApiDataDocumentsContext();
+  const { getFootersByFieldId } = useApiFootersContext(); // Asumimos que tienes un refetch o similar
+  const { pagos } = useApiPagosContext();
+  const { fetchDocumentsByTitleDoc } = useApiTitleTableDocumentsContext();
+
   const { num_presupuesto, title, cif } = useParams();
 
-  // Manejamos los estados del pdf a mostrar
   const [client, setClient] = useState(null);
   const [document, setDocument] = useState(null);
   const [footers, setFooters] = useState(null);
-  const [cashPDF, setCashPDF] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [getAllDocumentsTitle, setGetAllDocumentsTitle] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Carga los datos de la Empresa
+  // 1. CLAVE DE REFRESCO: Para obligar al PDFViewer a reiniciarse
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const company = empresas?.[0];
+  const cashPDF = pagos?.[0];
+  const prinTitle = { num_presupuesto, title };
 
-  //El titulo del documento a imprimir
-  const prinTitle = {
-    num_presupuesto,
-    title,
-  };
+  // 2. FUNCIÓN DE CARGA CENTRALIZADA (Encapsula tu lógica original)
+  const loadAllData = useCallback(async () => {
+    if (!num_presupuesto) return;
+    try {
+      // Cargar cabecera del documento
+      const found = await fetchDocumentByNum(num_presupuesto);
+      setDocument(found);
 
-  /// Cargar cliente
-  useEffect(() => {
-    const fetchClient = async () => {
-      if (!cif) return;
-      try {
-        const foundClient = await getClientByCif(cif);
-        setClient(foundClient);
-      } catch (err) {
-        console.error("Error al cargar cliente:", err);
-      }
-    };
-    fetchClient();
-  }, [cif]);
+      if (found?.id) {
+        // Cargar Footer
+        const foundFooter = getFootersByFieldId(found.id);
+        setFooters(foundFooter);
 
-  // Cargar documento
-  useEffect(() => {
-    const fetchDocument = async () => {
-      if (!num_presupuesto) return;
-      try {
-        const foundDocument = await fetchDocumentByNum(num_presupuesto);
-        setDocument(foundDocument);
-      } catch (err) {
-        console.error("Error al cargar documento:", err);
-      }
-    };
-    fetchDocument();
-  }, [num_presupuesto]);
-
-  // // Cargar productos del documento
-  // useEffect(() => {
-  //   const loadProducts = async () => {
-  //     // console.log("document.id", document[0].id)
-  //     if (!document || !document.id) return;
-  //     try {
-  //       const results = await getDocumentsByNum(document.id);
-  //       setFilteredProducts(results || []);
-  //     } catch (err) {
-  //       console.error("Error al cargar productos:", err);
-  //     }
-  //   };
-  //   loadProducts();
-  // }, [document]);
-
-  // Cargar datos de los productos a mostrar  
-  useEffect(() => {
-    const loadDocumentData = async () => {
-      console.log("document.id", document.id)
-      try {
+        // Cargar Títulos y Productos
         const [titleResponse, productsResponse] = await Promise.all([
-          fetchDocumentsByTitleDoc(document.id),
-          getDocumentsByNum(document.id),
+          fetchDocumentsByTitleDoc(found.id),
+          getDocumentsByNum(found.id),
         ]);
 
-        // console.log("title", titleResponse);
-        // console.log("products", productsResponse);
-
-        // Combinar datos: 1 título + 3 productos, repetido
         const combinedData = [];
-
         for (let i = 0; i < titleResponse.length; i++) {
-          // Convertir título en objeto con campo 'descripcion'
           const { titdescripcion, ...rest } = titleResponse[i];
-
-          const titleItem = {
-            ...rest,
-            descripcion: titdescripcion,
-          };
-
-          // Tomar grupo de 2 productos consecutivos
+          const titleItem = { ...rest, descripcion: titdescripcion };
           const productGroup = productsResponse.slice(i * 2, (i + 1) * 2);
-
-          // Si no hay productos para este título, omitimos
-          if (productGroup.length === 0) continue;
-
-          // Añadimos el título + sus productos
-          combinedData.push(titleItem, ...productGroup);
-          // console.log("combinedData.push", combinedData);
+          if (productGroup.length > 0) {
+            combinedData.push(titleItem, ...productGroup);
+          }
         }
-
-        // Actualizar estado
         setFilteredProducts(combinedData);
-      } catch (error) {
-        console.error("Error al cargar datos del documento:", error);
+        
+        // 3. Incrementamos la clave para que el PDFViewer se refresque visualmente
+        setRefreshKey(prev => prev + 1);
       }
-    };
+    } catch (err) {
+      console.error("Error cargando datos:", err);
+    }
+  }, [num_presupuesto, fetchDocumentByNum, getFootersByFieldId, fetchDocumentsByTitleDoc, getDocumentsByNum]);
 
-    loadDocumentData();
-  }, [document]);
-
-  // // Cargar Titulos de los productos del documento
-  // useEffect(() => {
-  //   const loadTitleProducts = async () => {
-  //     // console.log("document.id-Title", document.id)
-  //     if (!document || !document.id) return;
-  //     try {
-  //       const titleResponse = await fetchDocumentsByTitleDoc(document.id);
-
-  //       for (let i = 0; i < titleResponse.length; i++) {
-  //         // Convertir título en objeto con campo 'descripcion'
-  //         const { titdescripcion, ...rest } = titleResponse[i];
-
-  //         const titleItem = {
-  //           ...rest,
-  //           descripcion: titdescripcion,
-  //         };
-
-  //         // Tomar grupo de 2 productos consecutivos
-  //         const productGroup = productsResponse.slice(i * 2, (i + 1) * 2);
-
-  //         // Si no hay productos para este título, omitimos
-  //         if (productGroup.length === 0) continue;
-
-  //         // Añadimos el título + sus productos
-  //         combinedData.push(titleItem, ...productGroup);
-  //         // console.log("combinedData.push", combinedData);
-  //       }
-
-  //       // Actualizar estado
-  //       setGetAllDocumentsTitle(combinedData);
-  //     } catch (err) {
-  //       console.error("Error al cargar productos:", err);
-  //     }
-  //   };
-  //   loadTitleProducts();
-  // }, [document]);
-
-  // Cargar footer
+  // Efectos iniciales
   useEffect(() => {
-    const fetchFooter = async () => {
-      if (!document || !document.id) return;
-      try {
-        const foundFooter = await getFootersByFieldId(document.id);
-        setFooters(foundFooter || null);
-      } catch (err) {
-        console.error("Error al cargar footer:", err);
-      }
-    };
-    fetchFooter();
-  }, [document]);
+    if (cif && clients.length > 0) {
+      const found = getFilteredClients(cif);
+      setClient(found.length > 0 ? found[0] : null);
+    }
+  }, [cif, clients, getFilteredClients]);
 
-  // Cargar pagos
   useEffect(() => {
-    const fetchCash = async () => {
-      if (!cif) return;
-      try {
-        const foundCash = await getPagosByClienteId(cif);
-        setCashPDF(foundCash[0] || null);
-      } catch (err) {
-        console.error("Error al cargar pagos:", err);
-      }
-    };
-    fetchCash();
-  }, [cif]);
+    loadAllData();
+  }, [loadAllData]);
 
-  // Comprobar si todos los datos están cargados
-  useEffect(() => {
-    const checkDataReady = () => {
-      const isReady =
-        company &&
-        client &&
-        document &&
-        Array.isArray(filteredProducts) &&
-        footers !== null &&
-        cashPDF !== null &&
-        Array.isArray(getAllDocumentsTitle);
-    };
-
-    checkDataReady();
-  }, [company, client, document, filteredProducts, footers, cashPDF]);
-
-  // console.log("company en PrintableViewPDF: ", company)
-  // console.log("client en PrintableViewPDF: ", client)
-  // console.log("document en PrintableViewPDF: ", document)
-  // console.log("filteredProducts en PrintableViewPDF: ", filteredProducts)
-  // console.log("footers en PrintableViewPDF: ", footers)
-  // console.log("cashPDF en PrintableViewPDF: ", cashPDF)  
-
-  const isDataReady =
-    company &&
-    client &&
-    document &&
-    Array.isArray(filteredProducts) &&
-    footers &&
-    cashPDF;
+  const isDataReady = company && client && document && filteredProducts.length > 0 && footers && cashPDF;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Generar PDF Presupuesto</h1>
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+      <div className="max-w-[1400px] mx-auto">
+        
+        {/* ENCABEZADO (Tu estilo intacto) */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+          <div>
+            <h1 className="text-2xl font-black text-gray-800 tracking-tight">Visor de Presupuesto</h1>
+            <p className="text-blue-600 font-medium">{client?.name} — <span className="text-gray-400">{num_presupuesto}</span></p>
+          </div>
 
-      <div className="border rounded shadow-sm p-4 bg-gray-50 mb-6 min-h-[600px] flex items-center justify-center">
-        {company &&
-        client &&
-        document &&
-        filteredProducts &&
-        footers &&
-        cashPDF ? (
-          <PDFViewer
-            style={{ width: "100%", height: "600px" }}
-            className="w-full"
-          >
-            <DocumentTemplatePdf
-              prinTitle={prinTitle}
-              company={company}
-              client={client}
-              document={document}
-              filteredProducts={filteredProducts}
-              footers={footers}
-              cashPDF={cashPDF}
-            />
-          </PDFViewer>
-        ) : (
-          <div>Cargando datos...</div>
-        )}
+          <div className="flex gap-3 mt-4 md:mt-0">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2"
+            >
+              <span>✏️</span> Modificar
+            </button>
+
+            {isDataReady && (
+              <PDFDownloadLink
+                key={`download-${refreshKey}`} // Usamos la key aquí también
+                document={
+                  <DocumentTemplatePdf
+                    prinTitle={prinTitle} company={company} client={client}
+                    document={document} filteredProducts={filteredProducts}
+                    footers={footers} cashPDF={cashPDF}
+                  />
+                }
+                fileName={`${client.name}_${num_presupuesto}.pdf`}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2"
+              >
+                <span>📥</span> Descargar
+              </PDFDownloadLink>
+            )}
+          </div>
+        </div>
+
+        {/* CONTENEDOR PDF (Tu estilo intacto) */}
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col">
+          <div className="bg-gray-50 border-b px-6 py-3 flex items-center justify-between">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-400"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+              <div className="w-3 h-3 rounded-full bg-green-400"></div>
+            </div>
+            <span className="text-xs font-bold text-gray-400 tracking-widest uppercase">Vista Previa Oficial</span>
+            <div className="w-12"></div>
+          </div>
+
+          <div className="p-2 bg-gray-200/50">
+            {isDataReady ? (
+              <PDFViewer 
+                key={refreshKey} // 4. CLAVE VITAL: Al cambiar, el PDF se recarga sin F5
+                style={{ width: "100%", height: "80vh", borderRadius: "12px", border: "none" }}
+              >
+                <DocumentTemplatePdf
+                  prinTitle={prinTitle} company={company} client={client}
+                  document={document} filteredProducts={filteredProducts}
+                  footers={footers} cashPDF={cashPDF}
+                />
+              </PDFViewer>
+            ) : (
+              <div className="h-[80vh] flex flex-col items-center justify-center bg-white rounded-xl">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-gray-500 font-bold italic">Actualizando vista...</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {isModalOpen && (
+        <HistoryModals
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            // 5. EN LUGAR DE RELOAD, LLAMAMOS A LA FUNCIÓN DE CARGA
+            loadAllData(); 
+          }}
+          title={title}
+          searchTerm={`(${client?.cif}) ${client?.name}`}
+          selectedItem={document}
+        />
+      )}
     </div>
   );
 };

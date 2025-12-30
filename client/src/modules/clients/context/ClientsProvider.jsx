@@ -1,132 +1,116 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import api from '@/api/config';
 
-// Configuración global
-const API_URL = 'http://localhost:8000/api/clients/';
-
-// 1. Creamos el Contexto
 const ClientsContext = createContext();
 
-// 2. Hook para usar el contexto fácilmente
 export const useApiClientsContext = () => {
   const context = useContext(ClientsContext);
-  if (!context) {
-    throw new Error('useApiClientsContext debe usarse dentro de ClientsProvider');
-  }
+  if (!context) throw new Error('useApiClientsContext debe usarse dentro de ClientsProvider');
   return context;
 };
 
-// 3. Proveedor de estado – Con búsqueda conectada al backend
 export const ClientsProvider = ({ children }) => {
   const [clients, setClients] = useState([]);
-  const [filteredClients, setFilteredClients] = useState([]); // ✅ Resultados de búsqueda
   const [loading, setLoading] = useState(true);
-  const [loadingSearch, setLoadingSearch] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Usamos useRef para el tiempo. Las referencias NO disparan re-renders ni cambian la función.
+  const lastFetchedRef = useRef(0);
 
-  // Cargar todos los clientes desde Django
-  const refetchClients = async () => {
+  const ENDPOINT = '/api/clients/';
+
+  // 1. Carga Ultra-Estable: CERO dependencias []
+  const refetchClients = useCallback(async (silent = false) => {
+    const ahora = Date.now();
+    
+    // Si es carga silenciosa y pasaron menos de 30s, abortamos
+    if (silent && ahora - lastFetchedRef.current < 30000) return;
+
+    if (!silent && clients.length === 0) setLoading(true);
+    
     try {
-      const res = await axios.get(API_URL); // ✅ Usamos la variable
-      setClients(res.data); // ✅ Axios ya parsea JSON
+      const res = await api.get(ENDPOINT);
+      setClients(res.data);
+      lastFetchedRef.current = ahora; // Actualizamos la referencia (no dispara bucle)
+      setError(null);
     } catch (err) {
-      setError('No se pudieron cargar los clientes.');
-      console.error(err);
+      setError('Error de conexión.');
+      console.error("Error al cargar clientes:", err);
     } finally {
       setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 👈 AL SER VACÍO, LA FUNCIÓN NUNCA CAMBIA. EL BUCLE SE ROMPE AQUÍ.
 
-  // Crear cliente
+  // 2. CRUD (Sin cambios, ya eran estables)
   const addClients = async (cliente) => {
     try {
-      const res = await axios.post(API_URL, cliente); // ✅ Enviamos datos directamente
-      setClients([...clients, res.data]); // ✅ Agregar nuevo cliente a la lista
-    } catch (err) {
-      console.error('Error al crear cliente:', err.response?.data || err.message);
-      throw new Error('No se pudo guardar el cliente.');
-    }
-  };
-
-  // Eliminar cliente por CIF
-  const deleteClients = async (cif) => {
-    try {
-      await axios.delete(`${API_URL}${cif}/`);
-      setClients(clients.filter((client) => client.cif !== cif));
-    } catch (err) {
-      console.error('Error al eliminar cliente:', err.response?.data || err.message);
-      throw new Error('No se pudo eliminar el cliente.');
-    }
-  };
-
-  // Actualizar cliente por CIF
-  const updateClients = async (cif, cliente) => {
-    try {
-      const res = await axios.put(`${API_URL}${cif}/`, cliente);
-      setClients(clients.map((c) => (c.cif === cif ? res.data : c)));
-    } catch (err) {
-      console.error('Error al actualizar cliente:', err.response?.data || err.message);
-      throw new Error('No se pudo actualizar el cliente.');
-    }
-  };
-
-  // Buscar cliente por CIF exacto
-  const getClientByCif = async (cif) => {
-    try {
-      const res = await axios.get(`${API_URL}${cif}/`);
+      const res = await api.post(ENDPOINT, cliente);
+      setClients((prev) => [...prev, res.data]);
       return res.data;
     } catch (err) {
-      console.error('Error al buscar cliente por CIF:', err.response?.data || err.message);
-      setError(`No se pudo encontrar el cliente con CIF: ${cif}`);
-      return null;
+      console.error("Error al crear:", err);
+      throw new Error('Error al guardar.');
     }
   };
 
-  // Buscar clientes con término de búsqueda
-  const fetchClientsFromBackend = async (term) => {
-    if (!term.trim()) {
-      setFilteredClients([]);
-      return;
-    }
-
-    setLoadingSearch(true);
-
+  const updateClients = async (cif, cliente) => {
     try {
-      const res = await axios.get(`${API_URL}?q=${encodeURIComponent(term)}`);
-      setFilteredClients(res.data);
+      const res = await api.patch(`${ENDPOINT}${cif}/`, cliente);
+      setClients((prev) => prev.map((c) => (c.cif === cif ? res.data : c)));
+      return res.data;
     } catch (err) {
-      console.error('Error al buscar clientes:', err.response?.data || err.message);
-      setFilteredClients([]);
-    } finally {
-      setLoadingSearch(false);
+      console.error("Error al actualizar:", err);
+      throw new Error('Error al actualizar.');
     }
   };
 
-  // Cargar datos iniciales
+  const deleteClients = async (cif) => {
+    try {
+      await api.delete(`${ENDPOINT}${cif}/`);
+      setClients((prev) => prev.filter((c) => c.cif !== cif));
+    } catch (err) {
+      console.error("Error al eliminar:", err);
+      throw new Error('Error al eliminar.');
+    }
+  };
+
+  // 3. Filtro local
+  const getFilteredClients = useCallback((term) => {
+    if (!term.trim()) return [];
+    const lowerTerm = term.toLowerCase();
+    return clients.filter(c => 
+      c.name?.toLowerCase().includes(lowerTerm) || 
+      c.cif?.toLowerCase().includes(lowerTerm)
+    );
+  }, [clients]);
+
+  // useEffect se ejecuta UNA SOLA VEZ al montar
   useEffect(() => {
     refetchClients();
-  }, []);
+  }, [refetchClients]);
 
-  // Valor compartido a través del contexto
-  const value = {
+  const value = useMemo(() => ({
     clients,
-    filteredClients,
     loading,
-    loadingSearch,
     error,
-
-    // Funciones
     refetchClients,
     addClients,
     deleteClients,
     updateClients,
-    fetchClientsFromBackend,
-    getClientByCif,
-  };
+    getFilteredClients,
+  }), [clients, loading, error, refetchClients, getFilteredClients]);
 
   return (
     <ClientsContext.Provider value={value}>
-      {!loading ? children : <div>Cargando datos...</div>}
+      {loading && clients.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-screen bg-gray-50 text-gray-600">
+           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+           <p className="italic">Sincronizando con Frankfurt...</p>
+        </div>
+      ) : (
+        children
+      )}
     </ClientsContext.Provider>
   );
 };

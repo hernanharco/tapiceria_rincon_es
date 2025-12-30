@@ -13,6 +13,8 @@ export const HistoryTableDocumentView = ({
   requestSort
 }) => {
 
+  //console.log("datos HistoryTableDocumentView: ", sortedProducts)
+
   return (
     <>
       {/* Vista de escritorio */}

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import useDocuments from "../hooks/useDocuments";
-import { formatDateFor } from "../../../utils/formatUtils";
+// Importamos el hook que contiene los datos ya cargados
+import { useApiDocumentsContext } from "@/modules/documents/context/DocumentsProvider";
+import { formatDateFor } from "@/utils/formatUtils";
 
 export const DocumentsInfo = ({
   cif,
@@ -9,12 +10,12 @@ export const DocumentsInfo = ({
   isEditing,
   selectedItem,
 }) => {
-  const { getAllDocuments } = useDocuments();
+  // Extraemos 'documents' del contexto en lugar de llamar a una función async
+  const { documents } = useApiDocumentsContext();
 
   /* ===========================
-     Inicializar datos en edición
+      Inicializar datos en edición
   ============================ */
-
   useEffect(() => {
     if (isEditing && selectedItem) {
       setDatInfo({
@@ -26,53 +27,49 @@ export const DocumentsInfo = ({
   }, [isEditing, selectedItem, setDatInfo]);
 
   /* ===========================
-     Generar número de presupuesto
-     solo cuando cambia la fecha
-     y NO estamos editando
+      Generar número de presupuesto
+      Lógica síncrona (Instantánea)
   ============================ */
-
   useEffect(() => {
+    // Si no hay fecha o estamos editando, no generamos número nuevo
     if (!datInfo.dataInfoDate || isEditing) return;
 
-    const fetchClientDocuments = async () => {
-      try {
-        const response = await getAllDocuments();
+    // Usamos 'documents' que ya vienen del Provider optimizado
+    if (!Array.isArray(documents) || documents.length === 0) {
+      setDatInfo((prev) => ({
+        ...prev,
+        dataInfoDocument: formatDateFor("PRE", prev.dataInfoDate),
+      }));
+      return;
+    }
 
-        if (!Array.isArray(response) || response.length === 0) {
-          setDatInfo((prev) => ({
-            ...prev,
-            dataInfoDocument: formatDateFor("PRE", prev.dataInfoDate),
-          }));
-          return;
-        }
+    // Obtenemos el último documento de la lista en memoria
+    const lastDocument = documents[documents.length - 1];
+    const lastCode = lastDocument.num_presupuesto;
 
-        const lastDocument = response[response.length - 1];
-        const lastCode = lastDocument.num_presupuesto;
+    if (!lastCode) return;
 
-        const match = lastCode.match(/(\d+)$/);
-        if (!match) {
-          setDatInfo((prev) => ({
-            ...prev,
-            dataInfoDocument: formatDateFor("PRE", prev.dataInfoDate),
-          }));
-          return;
-        }
+    const match = lastCode.match(/(\d+)$/);
+    if (!match) {
+      setDatInfo((prev) => ({
+        ...prev,
+        dataInfoDocument: formatDateFor("PRE", prev.dataInfoDate),
+      }));
+      return;
+    }
 
-        const counter = parseInt(match[1], 10) + 1;
-        const baseCode = lastCode.slice(0, -match[1].length);
-        const nextCode = baseCode + counter.toString().padStart(2, "0");
+    // Incrementamos el contador
+    const counter = parseInt(match[1], 10) + 1;
+    const baseCode = lastCode.slice(0, -match[1].length);
+    const nextCode = baseCode + counter.toString().padStart(2, "0");
 
-        setDatInfo((prev) => ({
-          ...prev,
-          dataInfoDocument: nextCode,
-        }));
-      } catch (error) {
-        console.error("Error al generar presupuesto:", error);
-      }
-    };
+    setDatInfo((prev) => ({
+      ...prev,
+      dataInfoDocument: nextCode,
+    }));
 
-    fetchClientDocuments();
-  }, [datInfo.dataInfoDate, isEditing, getAllDocuments, setDatInfo]);
+    // Nota: Eliminamos getAllDocuments de las dependencias
+  }, [datInfo.dataInfoDate, isEditing, documents, setDatInfo]);
 
   return (
     <div>
@@ -83,9 +80,9 @@ export const DocumentsInfo = ({
         </label>
         <input
           type="text"
-          value={datInfo.dataInfoDocument || "Cargando..."}
+          value={datInfo.dataInfoDocument || "Generando..."}
           readOnly
-          className="w-full px-3 py-2 bg-gray-100 border rounded-md"
+          className="w-full px-3 py-2 bg-gray-100 border rounded-md font-mono"
         />
       </div>
 

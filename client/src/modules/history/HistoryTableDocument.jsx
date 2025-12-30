@@ -16,7 +16,7 @@ import "dayjs/locale/es";
 dayjs.locale("es"); // Configura el idioma por defecto de la fecha
 
 // Importamos los hooks necesarios
-import useHistory from "./hooks/useHistory";
+//import useHistory from "./hooks/useHistory";
 import useDocuments from "../documents/hooks/useDocuments"; // Asegúrate de que la ruta es correcta
 import useHistoryTableDocument from "./hooks/useHistoryTableDocument";
 // Importamos el componente de búsqueda
@@ -55,7 +55,7 @@ export const HistoryTableDocument = ({
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isModalOpenFact, setIsModalOpenFact] = useState(false);
+  //const [isModalOpenFact, setIsModalOpenFact] = useState(false);
   const [documentDate, setDocumentDate] = useState("");
 
   //Todos los clientes
@@ -75,7 +75,7 @@ export const HistoryTableDocument = ({
     };
   };
 
-  const { cif, name } = parseSearchTerm(searchTerm); // Desestructuramos los valores
+  const { cif } = parseSearchTerm(searchTerm); // Desestructuramos los valores
 
   // Filtrar productos cada vez que cambie numDocument
   useEffect(() => {

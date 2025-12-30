@@ -1,14 +1,12 @@
-// src/hooks/useChecklist.js
-
-import useDocuments from "../../documents/hooks/useDocuments";
-import { codegenerator } from "../../../utils/codegenerator"; // Importamos desde otro archivo
+import useDocuments from "@/modules/documents/hooks/useDocuments";
+import { codegenerator } from "@/utils/codegenerator";
 
 /**
  * Hook personalizado para manejar checklist de documentos
  */
 export const useHistoryTableDocument = () => {
-  const { fetchDocumentById, updateDocumentFieldsId, getAllDocuments } =
-    useDocuments();
+  // 1. Extraemos 'documents' (el array de datos) en lugar de 'getAllDocuments'
+  const { fetchDocumentById, updateDocumentFieldsId, documents } = useDocuments();
 
   /**
    * Marca un documento como completado: asigna fecha y genera albarán y factura
@@ -16,19 +14,20 @@ export const useHistoryTableDocument = () => {
   const toggleChecklistItemProvider = async (itemId, documentDate, opc) => {
     if (!itemId || !documentDate) return;
 
-    // console.log("estoy en useHistoryTableDocument.jsx: ", "itemId",itemId, "documentDate",documentDate, "opc",opc);
+    //console.log("Ejecutando toggleChecklistItemProvider:", { itemId, documentDate, opc });
 
     try {
       const doc = await fetchDocumentById(itemId);
       if (!doc) throw new Error(`Documento con ID "${itemId}" no encontrado`);
 
-      // Generar números de albarán y factura
+      // Generar números de albarán o factura
       if (opc === "1") {
+        // 2. Pasamos el array 'documents' directamente al generador
         const datAlbaran = await codegenerator({
           namecod: "ALB",
-          getAllDocuments,
+          getAllDocuments: documents, 
         });
-        console.log("datAlbaran: ", datAlbaran);
+
         await updateDocumentFieldsId(itemId, {
           fecha_factalb: documentDate,
           num_albaran: datAlbaran,
@@ -36,16 +35,16 @@ export const useHistoryTableDocument = () => {
       } else {
         const datFactura = await codegenerator({
           namecod: "FAC",
-          getAllDocuments,
+          // 2. Pasamos el array 'documents' directamente al generador
+          getAllDocuments: documents,
         });
-        // console.log("datFactura: ", datFactura);
+
         await updateDocumentFieldsId(itemId, {
           datefactura: documentDate,
           num_factura: datFactura,
         });
       }
 
-      // console.log("Documento actualizado:", itemId);
       return doc;
     } catch (error) {
       console.error("Error al actualizar documento:", error);
@@ -59,20 +58,18 @@ export const useHistoryTableDocument = () => {
     if (!itemId) return;
 
     try {
-      if(opc==="1"){
+      if (opc === "1") {
         await updateDocumentFieldsId(itemId, {
           fecha_factalb: null,
           num_albaran: null,
           num_factura: null,
         });
       } else {
-         await updateDocumentFieldsId(itemId, {
+        await updateDocumentFieldsId(itemId, {
           datefactura: null,          
           num_factura: null,
         });
       }
-
-      // console.log("Documento desmarcado:", itemId);
     } catch (error) {
       console.error("Error al limpiar documento:", error);
     }

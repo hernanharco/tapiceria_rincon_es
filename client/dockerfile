@@ -1,13 +1,19 @@
-# frontend/Dockerfile
-FROM node:20-alpine
+# Usa Node.js para build
+FROM node:20-alpine AS build
 
 WORKDIR /app
-
 COPY package*.json ./
 RUN npm install
-
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# Stage final: servidor ligero con Nginx
+FROM nginx:stable-alpine
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+# Copiar build de Vite a carpeta de Nginx
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Exponer puerto estándar HTTP
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

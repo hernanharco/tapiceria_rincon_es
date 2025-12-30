@@ -1,27 +1,32 @@
-// src/utils/fetchClientDocuments.js
-import { format } from "date-fns";
+//import { format } from "date-fns";
 
-// Función auxiliar para formatear con fecha (si se necesita como fallback)
+/**
+ * Función auxiliar para generar un código inicial basado en la fecha.
+ * Ejemplo: ALB + 25 (año) + 12 (mes) + 01 = ALB251201
+ */
 const formatDateFor = (prefix, date = new Date()) => {
-  const year = date.getFullYear().toString().slice(-2); // Últimos 2 dígitos del año
+  const year = date.getFullYear().toString().slice(-2); 
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${prefix}${year}${month}01`; // Ej: ALB250401
+  return `${prefix}${year}${month}01`; 
 };
 
 /**
- * Obtiene el siguiente número consecutivo para un tipo de documento
- * @param {{namecod: string, getAllDocuments: Function}} params
+ * Obtiene el siguiente número consecutivo para un tipo de documento.
+ * @param {{namecod: string, getAllDocuments: Array}} params 
  * @returns {Promise<string>}
  */
 export const codegenerator = async ({ namecod, getAllDocuments }) => {
   try {
-    const documents = await getAllDocuments();
+    // 💡 CAMBIO CRUCIAL: 'getAllDocuments' ahora es el array directo.
+    // Ya no hacemos: await getAllDocuments();
+    const documents = getAllDocuments;
 
+    // Validación de que tenemos un array válido
     if (!Array.isArray(documents) || documents.length === 0) {
       return formatDateFor(namecod);
     }
 
-    // Filtrar documentos que tengan un código que empiece con namecod
+    // 1. Filtrar documentos que tengan un código que empiece con el prefijo (ALB o FAC)
     const relevantDocs = documents.filter((doc) => {
       let code = "";
       if (namecod === "ALB") {
@@ -29,46 +34,50 @@ export const codegenerator = async ({ namecod, getAllDocuments }) => {
       } else if (namecod === "FAC") {
         code = doc.num_factura || "";
       } else {
-        // Si usas otros prefijos, ajusta aquí
         code = doc.num_factura || doc.num_albaran || "";
       }
-      return code.startsWith(namecod) && /\d/.test(code); // debe tener al menos un dígito
+      // Debe empezar con el prefijo y contener al menos un número
+      return code.startsWith(namecod) && /\d/.test(code);
     });
 
     if (relevantDocs.length === 0) {
       return formatDateFor(namecod);
     }
 
-    // Extraer el número más alto
+    // 2. Extraer el número más alto encontrado en la lista
     let maxNumber = 0;
-    let basePrefix = namecod;
 
     relevantDocs.forEach((doc) => {
       const code = namecod === "ALB" ? doc.num_albaran : doc.num_factura;
       if (!code) return;
 
-      // Extraer solo los dígitos al final
+      // Usamos Regex para capturar solo los dígitos que siguen al prefijo
+      // Ejemplo: de "ALB250044" captura "250044"
       const match = code.match(new RegExp(`${namecod}(\\d+)$`));
       if (match) {
         const num = parseInt(match[1], 10);
         if (num > maxNumber) {
           maxNumber = num;
-          // Opcional: guardar el prefijo exacto si varía (pero asumimos que es fijo)
         }
       }
     });
 
+    // 3. Generar el siguiente número
     if (maxNumber > 0) {
       const nextNumber = maxNumber + 1;
-      // Aseguramos el mismo número de dígitos que el original (ej: 250008 → 6 dígitos)
+      
+      // Mantenemos el mismo relleno de ceros que el original
+      // Si el máximo era 250044, el siguiente será 250045
       const numDigits = maxNumber.toString().length;
       const paddedNext = nextNumber.toString().padStart(numDigits, "0");
+      
       return `${namecod}${paddedNext}`;
     } else {
       return formatDateFor(namecod);
     }
   } catch (error) {
-    console.error("Error en codegenerator:", error);
-    return "";
+    console.error("Error crítico en codegenerator:", error);
+    // Fallback de seguridad para no dejar el campo vacío
+    return formatDateFor(namecod);
   }
 };

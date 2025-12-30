@@ -1,7 +1,8 @@
 // src/context/ApiContext.jsx
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { createContext, useContext, useState, useEffect } from "react";
+
+import api from '@/api/config';
 
 // 1. Creamos el Contexto
 const CompanyContext = createContext();
@@ -10,7 +11,9 @@ const CompanyContext = createContext();
 export const useApiCompanyContext = () => {
   const context = useContext(CompanyContext);
   if (!context) {
-    throw new Error('useApiDataCompanyContext debe usarse dentro de CompanyProvider');
+    throw new Error(
+      "useApiDataCompanyContext debe usarse dentro de CompanyProvider"
+    );
   }
   return context;
 };
@@ -20,12 +23,12 @@ export const CompanyProvider = ({ children }) => {
   const [empresas, setEmpresas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  
   // Cargar empresas desde la API
   const cargarEmpresas = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/companies/');
-      setEmpresas(res.data);      
+      const res = await api.get(`/api/companies/`);
+      setEmpresas(res.data);
     } catch (err) {
       setError(err);
     }

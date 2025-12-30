@@ -166,8 +166,7 @@ export const HistoryTemplate = () => {
 
     // Filtrado por descripción
     return documents.filter(
-      (doc) =>
-        doc.titdescripcion?.toLowerCase().includes(term) && doc.titledoc
+      (doc) => doc.titdescripcion?.toLowerCase().includes(term) && doc.titledoc
     );
   }, [searchTerm, documents]);
 
@@ -183,8 +182,13 @@ export const HistoryTemplate = () => {
           type="text"
           placeholder="Buscar cliente... 'Todos' muestra todo"
           value={searchTerm}
+          // Selecciona al hacer doble clic (lo que pediste)
+          onDoubleClick={(e) => e.target.select()}
           onChange={(e) => setSearchTerm(e.target.value)}
-          onFocus={() => setShowSuggestions(true)}
+          onFocus={(e) => {
+            setShowSuggestions(true);
+            e.target.select(); // 💡 Mejora: selecciona todo al hacer clic simple para sobrescribir rápido
+          }}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
           ref={inputRef}

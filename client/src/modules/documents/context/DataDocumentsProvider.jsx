@@ -1,134 +1,137 @@
-// src/context/ApiContext.jsx
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import api from '@/api/config';
 
-import { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
-
-// Configuración global
-const API_URL = "http://localhost:8000/api/datadocuments/";
-
-// 1. Creamos el Contexto
+const API_URL = "/api/datadocuments/";
 const DataDocumentsContext = createContext();
 
-// 2. Creamos un hook para usar el contexto
 export const useApiDataDocumentsContext = () => {
   const context = useContext(DataDocumentsContext);
   if (!context) {
-    throw new Error(
-      "useApiDataDataDocumentsContext debe usarse dentro de DataDocumentsProvider"
-    );
+    throw new Error("useApiDataDataDocumentsContext debe usarse dentro de DataDocumentsProvider");
   }
   return context;
 };
 
-// 3. El Provider que carga los datos
 export const DataDocumentsProvider = ({ children }) => {
   const [datadocuments, setDatadocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Referencia para controlar el tiempo sin disparar re-renders
+  const lastFetchedRef = useRef(0);
 
-  // Cargar datadocuments desde la API
-  const cargarDatadocuments = async () => {
+  // 1. Cargar datos (Estable, sin bucles)
+  const cargarDatadocuments = useCallback(async (silent = false) => {
+    const ahora = Date.now();
+    
+    // Si es carga silenciosa y pasaron menos de 30s, no hacemos nada
+    if (silent && ahora - lastFetchedRef.current < 30000) return;
+
+    // Solo bloqueamos la pantalla si no hay datos previos
+    if (!silent && datadocuments.length === 0) setLoading(true);
+
     try {
-      const res = await axios.get(API_URL);
+      const res = await api.get(API_URL);
       setDatadocuments(res.data);
+      lastFetchedRef.current = ahora;
+      setError(null);
     } catch (err) {
-      console.error("Error al cargar documentos:", err); // 👈 Muestra detalles del error
-      setError(err);
+      console.error("Error al cargar documentos:", err);
+      setError("Error al sincronizar documentos.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [datadocuments.length]); 
 
-  // Insertar nuevo producto
+  // 2. Insertar (Actualización local inmediata)
   const addProductTable = async (newProduct) => {
-    // console.log('DataDocumentsProvider. Nuevo producto a agregar:', newProduct);
     try {
-      const response = await axios.post(API_URL, newProduct);
-      setDatadocuments((prev) => [...prev, response.data]); // Agrega respuesta del servidor
+      const response = await api.post(API_URL, newProduct);
+      setDatadocuments((prev) => [...prev, response.data]);
       return response.data;
     } catch (err) {
-      setError(err);
+      console.error("Error al añadir producto:", err);
       throw err;
     }
   };
 
-  // Para borrar un producto
+  // 3. Borrar (Actualización local inmediata)
   const deleteProduct = async (id) => {
     try {
-      await axios.delete(`${API_URL}${id}/`);
-      setDatadocuments((prev) => prev.filter((producto) => producto.id !== id));
+      await api.delete(`${API_URL}${id}/`);
+      setDatadocuments((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
-      setError(err);
+      console.error("Error al borrar producto:", err);
       throw err;
     }
   };
 
-  // Para actualizar un producto
+  // 4. Actualizar (Usando PATCH para velocidad)
   const updateProductTable = async (id, updatedProduct) => {
     try {
-      // console.log("DataDocumentsProvider. Actualizando producto con ID:", id, "Datos:", updatedProduct);
-      const res = await axios.put(`${API_URL}${id}/`, updatedProduct);
+      // Usamos patch para enviar solo lo que cambió
+      const res = await api.patch(`${API_URL}${id}/`, updatedProduct);
       setDatadocuments((prev) =>
         prev.map((prod) => (prod.id === id ? res.data : prod))
       );
       return res.data;
     } catch (err) {
-      setError(err);
+      console.error("Error al actualizar tabla:", err);
       throw err;
     }
   };
 
-  // Buscar documento por id de document (string) valioso para buscar 
-  const getDocumentsByNum = async (num_document) => {
-    // console.log("getDocumentsByNum", num_document);  
-    
-    try {
-      const response = await axios.get(API_URL); // Trae todos los documentos
-      const filteredDocuments = response.data.filter(
-        (doc) => doc.documento === num_document
-      );
-      return filteredDocuments;
-    } catch (error) {
-      console.error("Error al buscar documento por num_presupuesto:", error);
-      return [];
-    }
-    
-  };
+  // 5. Búsqueda LOCAL (Instantánea)
+  // IMPORTANTE: Ya no hace falta ir al servidor, filtramos lo que ya tenemos
+  const getDocumentsByNum = useCallback((num_document) => {
+    if (!num_document) return [];
+    return datadocuments.filter((doc) => doc.documento === num_document);
+  }, [datadocuments]);
 
-  // Buscar documento por ID (entero o string)
-  const getDocumentByIdFromAPI = async (id) => {
-    // console.log("getDocumentByIdFromAPI", id)
+  // 6. Obtener por ID (Primero mira en local, si no está va a la API)
+  const getDocumentByIdFromAPI = useCallback(async (id) => {
     if (!id) return null;
+    
+    // Intentamos buscarlo primero en nuestro estado local
+    const docLocal = datadocuments.find(d => d.id === id);
+    if (docLocal) return docLocal;
+
     try {
-      const response = await axios.get(`${API_URL}${id}/`);
-      console.log("response id: ", response)
-      return response.data; // Devuelve el documento encontrado
+      const response = await api.get(`${API_URL}${id}/`);
+      return response.data;
     } catch (err) {
-      console.error("Error al obtener documento por ID desde la API:", err);
+      console.error("Error al obtener documento por ID:", err);
       return null;
     }
-  };  
+  }, [datadocuments]);
 
-  // Cargar datos al inicio
+  // Ejecución inicial segura
   useEffect(() => {
-    cargarDatadocuments().then(() => {
-      setLoading(false);
-    });
-  }, []);
+    cargarDatadocuments();
+  }, [cargarDatadocuments]);
 
-  const value = {
+  const value = useMemo(() => ({
     datadocuments,
     loading,
     error,
     refetchdatadocuments: cargarDatadocuments,
-    addProductTable, // ✅ Exponemos esta función para usarla en el modal
-    deleteProduct, // Exponemos la función para borrar productos
-    updateProductTable, // Exponemos la función para actualizar productos
+    addProductTable,
+    deleteProduct,
+    updateProductTable,
     getDocumentsByNum,
     getDocumentByIdFromAPI,    
-  };
+  }), [datadocuments, loading, error, cargarDatadocuments, getDocumentsByNum, getDocumentByIdFromAPI]);
 
   return (
     <DataDocumentsContext.Provider value={value}>
-      {!loading ? children : <div>Cargando datos...</div>}
+      {loading && datadocuments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg shadow-sm">
+           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-3"></div>
+           <p className="text-sm text-gray-500 italic">Cargando líneas de detalle...</p>
+        </div>
+      ) : (
+        children
+      )}
     </DataDocumentsContext.Provider>
   );
 };

@@ -1,24 +1,24 @@
+# Usa imagen oficial de Python
 FROM python:3.11-slim
+
+# Variables de entorno
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-# Instalar dependencias del sistema (solo GCC para compilar mysqlclient)
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    default-libmysqlclient-dev \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copiar requirements e instalar
+# Instala dependencias
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copiar todo el código
+# Copia el proyecto
 COPY . .
 
-# Hacer el script ejecutable
-RUN chmod +x wait-for-db.sh
+# Recoger archivos estáticos
+RUN python manage.py collectstatic --noinput
 
-# Comando final: ejecutar el script Python
-CMD ["./wait-for-db.sh"]
+# Expone el puerto que Render usará
+EXPOSE 8000
+
+# Comando por defecto para ejecutar Gunicorn
+CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000"]

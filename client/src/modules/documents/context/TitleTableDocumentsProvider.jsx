@@ -1,11 +1,15 @@
-// src/context/ApiContext.jsx
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import api from "@/api/config";
 
-import { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
-
-// Configuración global
-const API_URL = "http://localhost:8000/api/titleDescripcion/";
-
+const API_URL = "/api/titleDescripcion/";
 const TitleTableDocumentsContext = createContext();
 
 export const useApiTitleTableDocumentsContext = () => {
@@ -23,154 +27,137 @@ export const TitleTableDocumentsProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cargar documentos desde la API
-  const refetch = async () => {
+  // Marca de tiempo para evitar saturación Frankfurt-España
+  const lastFetchedRef = useRef(0);
+
+  // 1. Cargar documentos (Blindado contra bucles)
+  const refetch = useCallback(async (silent = false) => {
+    const ahora = Date.now();
+    // Si se cargó hace menos de 30s y es "silent", no viajamos a Alemania
+    if (silent && ahora - lastFetchedRef.current < 30000) return;
+
+    // Solo mostramos el spinner si la lista está realmente vacía
+    if (!silent && documents.length === 0) setLoading(true);
+
     try {
-      const res = await axios.get(API_URL);
-      // console.log('DocumentsProvider. Datos obtenidos:', res.data);
-      setDocuments(res.data);
+      const res = await api.get(API_URL);
+      const data = Array.isArray(res.data) ? res.data : res.data.results || [];
+      setDocuments(data);
+      lastFetchedRef.current = ahora;
+      setError(null);
     } catch (err) {
-      setError(err);
+      console.error("Error al cargar títulos:", err);
+      setError("Error de conexión con el servidor.");
     } finally {
       setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Cero dependencias para romper el bucle infinito
 
-  // Nueva función: Obtener todos los documentos
-  const getAllDocumentsTitle = async () => {
-    try {
-      const response = await axios.get(API_URL); // URL base trae todos los documentos
+  // 2. Búsqueda por ID (Híbrida: Local primero)
+  const fetchDocumentByIdTitle = useCallback(
+    async (id) => {
+      if (!id) return null;
+      const local = documents.find((d) => d.id === id);
+      if (local) return local;
 
-      if (!Array.isArray(response.data)) {
-        console.error("El backend no devolvió un array");
-        return [];
+      try {
+        const response = await api.get(`${API_URL}${id}/`);
+        return response.data;
+      } catch (err) {
+        console.error("Error al buscar por ID:", err);
+        return null;
       }
+    },
+    [documents]
+  );
 
-      return response.data;
-    } catch (error) {
-      console.error("Error al obtener todos los documentos:", error);
-      setError("No se pudieron cargar los documentos");
-      return [];
-    }
-  };
+  // 3. Búsqueda por número de documento (LOCAL - Instantánea)
+  const getDocumentsByNumTitle = useCallback(
+    (num_document) => {
+      if (!num_document) return [];
+      // Priorizamos la velocidad local sobre la consulta al backend
+      return documents.filter((doc) => doc.titledoc === num_document);
+    },
+    [documents]
+  );
 
-  // Buscar documento por ID
-  const fetchDocumentByIdTitle = async (id) => {
-    console.log("Find fetchDocumentById", id);
-    try {
-      const response = await axios.get(`${API_URL}${id}/`);
-      return response.data;
-    } catch (error) {
-      console.error("Error al buscar documento por ID:", error);
-      return null;
-    }
-  };
-
-  // Buscar documento por titledoc  
-  const fetchDocumentsByTitleDoc = async (titledoc) => {
-    // console.log("Find fetchDocumentBytitledoc", titledoc);
-    try {
-      const response = await axios.get(`${API_URL}title/?titledocument=${titledoc}`);
-      return response.data.results;
-    } catch (error) {
-      console.error("Error al buscar documento por titledoc:", error);
-      return null;
-    }
-  };
-
-  // Insertar nuevo Documento
+  // 4. CRUD con actualización inmediata del estado
   const addProductTitle = async (newProduct) => {
-    // console.log('DocumentsProvider. Nuevo numero de documento a agregar:', newProduct);
     try {
-      const response = await axios.post(API_URL, newProduct);
-      setDocuments((prev) => [...prev, response.data]); // Agrega respuesta del servidor
+      const response = await api.post(API_URL, newProduct);
+      setDocuments((prev) => [...prev, response.data]);
       return response.data;
     } catch (err) {
-      const errorData = err.response?.data || {};
-      const errorMessage =
-        errorData.detail || JSON.stringify(errorData) || err.message;
-      console.error("Error al guardar:", errorMessage);
-      throw new Error(`No se pudo guardar el documento: ${errorMessage}`);
+      console.error("Error al guardar título:", err);
+      throw new Error(err.response?.data?.detail || "Error al guardar");
     }
   };
 
-  // Actualizar los datos a partir del Id
   const updateDocumentFieldsIdTitle = async (id, updatedFields) => {
-    if (id === undefined) return;
-
+    if (!id) return;
     try {
-      const response = await axios.patch(`${API_URL}${id}/`, updatedFields);
+      const response = await api.patch(`${API_URL}${id}/`, updatedFields);
       setDocuments((prev) =>
         prev.map((doc) => (doc.id === id ? response.data : doc))
       );
       return response.data;
     } catch (err) {
-      const message =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        err.message ||
-        "Error desconocido";
-
-      console.error(`Error al actualizar documento ${id}:`, message);
-      throw new Error(message);
-    }
-  };
-
-  // Eliminar un documento por su ID
-  const deleteProductTitle = async (numFactura) => {
-    // console.log('DocumentsProvider. Eliminando documento con numFactura:', numFactura);
-    try {
-      const response = await axios.delete(`${API_URL}${numFactura}/`);
-
-      // Eliminar del estado local solo si la petición fue exitosa
-      setDocuments((prev) =>
-        prev.filter((doc) => doc.num_factura !== numFactura)
-      );
-
-      return response.data; // Opcional, útil si devuelves algo del servidor
-    } catch (err) {
+      console.error("Error al actualizar título:", err);
       throw err;
     }
   };
 
-  // Buscar documento por id de document (string) valioso para buscar
-  const getDocumentsByNumTitle = async (num_document) => {
-    // console.log("getDocumentsByNumTitle", num_document);
-
+  const deleteProductTitle = async (id) => {
     try {
-      const response = await axios.get(API_URL); // Trae todos los documentos
-      const filteredDocuments = response.data.filter(
-        (doc) => doc.titledoc === num_document
-      );
-      return filteredDocuments;
-    } catch (error) {
-      console.error("Error al buscar documento por num_presupuesto:", error);
-      return [];
+      await api.delete(`${API_URL}${id}/`);
+      setDocuments((prev) => prev.filter((doc) => doc.id !== id));
+      return true;
+    } catch (err) {
+      console.error("Error al eliminar título:", err);
+      throw err;
     }
   };
 
-  // Cargar datos al inicio
+  // Efecto inicial seguro
   useEffect(() => {
     refetch();
-  }, []);
+  }, [refetch]);
 
-  const value = {
-    documents,
-    loading,
-    error,
-    refetch, // permite recargar manualmente
-    getAllDocumentsTitle,
-    addProductTitle,
-    deleteProductTitle,
-    updateDocumentFieldsIdTitle,
-    fetchDocumentByIdTitle,
-    fetchDocumentsByTitleDoc,
-    getDocumentsByNumTitle,
-  };
+  const value = useMemo(
+    () => ({
+      documents,
+      loading,
+      error,
+      refetch,
+      addProductTitle,
+      deleteProductTitle,
+      updateDocumentFieldsIdTitle,
+      fetchDocumentByIdTitle,
+      // 💡 Añadimos este alias:
+      fetchDocumentsByTitleDoc: getDocumentsByNumTitle,
+      getDocumentsByNumTitle,
+    }),
+    [
+      documents,
+      loading,
+      error,
+      refetch,
+      fetchDocumentByIdTitle,
+      getDocumentsByNumTitle,
+    ]
+  );
 
   return (
     <TitleTableDocumentsContext.Provider value={value}>
-      {!loading ? children : <div>Cargando datos...</div>}
+      {loading && documents.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-48">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+          <p className="text-gray-500 italic">Sincronizando descripciones...</p>
+        </div>
+      ) : (
+        children
+      )}
     </TitleTableDocumentsContext.Provider>
   );
 };

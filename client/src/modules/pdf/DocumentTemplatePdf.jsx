@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   container: {
     borderWidth: 1,
-    borderColor: "#cccccc",    
+    borderColor: "#cccccc",
     borderRadius: 4,
     padding: 8,
     marginBottom: 10,
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
 });
 
 // Función para mostrar el Titulo del Documento
-const findTitle = (prinTitle) => {
+export const findTitle = (prinTitle) => {
   const title = prinTitle?.title;
 
   if (!title || title === "undefined") return "PRESUPUESTO";
@@ -73,7 +73,7 @@ const findTitle = (prinTitle) => {
 };
 
 //Encontrar que fecha debe Imprimir
-const dateShow = (printTitle, document) => {
+export const dateShow = (printTitle, document) => {
   const title = printTitle?.title;
 
   let printDate = "";
@@ -91,7 +91,7 @@ const dateShow = (printTitle, document) => {
 };
 
 //Encontrar que Codigo debe Imprimir
-const codShow = (printTitle, document) => {
+export const codShow = (printTitle, document) => {
   const title = printTitle?.title;
 
   let printNumber = "";
@@ -128,7 +128,12 @@ export const DocumentTemplatePdf = ({
   });
 
   return (
-    <Document>
+    <Document
+      title={`${findTitle(prinTitle)}_${codShow(prinTitle, document)}`.replace(
+        /\s+/g,
+        "_"
+      )}
+    >
       <Page size="A4" style={styles.page}>
         {/* Título */}
         <Text style={styles.header}>{findTitle(prinTitle)}</Text>
@@ -187,7 +192,7 @@ export const DocumentTemplatePdf = ({
         {prinTitle.title === "undefined" ? (
           <View>
             <View>
-              <Text style={[styles.observation, {textAlign: "right"}]}>
+              <Text style={[styles.observation, { textAlign: "right" }]}>
                 Total: {footers.base_imponible}
               </Text>
             </View>
