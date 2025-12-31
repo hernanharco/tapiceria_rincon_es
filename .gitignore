@@ -5,6 +5,8 @@
 /.env.development.local
 /.env.test.local
 /.env.production.local
+.env
+.env.*
 
 # Archivos temporales de Node.js
 /yarn-error.log
