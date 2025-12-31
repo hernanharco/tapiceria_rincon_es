@@ -162,3 +162,99 @@ Build: Render leerá tu dockerfile, instalará Python, tus requirements.txt (inc
 Logs: Verás una consola negra con letras blancas. Si todo va bien, al final dirá algo como Your service is live.
 
 Migraciones: Recuerda que al ser una base de datos nueva en Neon, es posible que debas ejecutar las migraciones.
+
+# Fase 2: El Frontend (Vite + React)
+
+Ahora que el backend está vivo, necesitamos que tu aplicación de React sepa a dónde llamar.
+
+## 1. Actualizar la URL de la API en el Frontend
+Busca en tu código de Vite (probablemente en un archivo .env del frontend o donde configures Axios/Fetch) y cambia la URL local por la de Render:
+
+- Antes: http://localhost:8000/api
+
+- Ahora: https://tapiceria-rincon-es.onrender.com/api (ajusta según tus rutas).
+
+## 2. Configurar CORS en el Backend (Importante)
+Para que el navegador permita que tu web (Vercel) hable con tu servidor (Render), debemos autorizar la futura URL.
+
+1. Ve al panel de Render de tu servicio tapiceria-rincon-es.
+
+2. Entra en Environment.
+
+3. Busca CORS_ALLOWED_ORIGINS y, por ahora, asegúrate de que tenga al menos una URL (luego pondremos la de Vercel). Si quieres permitir todo temporalmente para probar, puedes usar la variable CORS_ALLOW_ALL_ORIGINS = True (solo para pruebas rápidas). o Busca la variable CORS_ALLOWED_ORIGINS y asegúrate de que incluya tu dirección local:
+
+**http://localhost:5173,http://127.0.0.1:5173**
+
+## 3. Prueba de fuego - Correr el programa en local
+
+**Estás trabajando con lo que llamamos un Entorno de Staging Híbrido.**
+
+Una vez realizados estos dos cambios:
+
+1. En tu terminal del frontend, ejecuta: npm run dev.
+
+2. Abre la aplicación en el navegador.
+
+3. Si tenías datos cargados en Neon (vía DBeaver o el Admin de Django), deberían aparecer ahora mismo en tu web de Vite.
+
+**¿Por qué esto es tan útil para ti ahora?**
+
+- **Datos Reales:** Todo lo que guardes desde tu PC mientras programas, se queda guardado en Neon. Si cierras la laptop y te vas a otro sitio, los datos siguen ahí.
+
+- **Depuración Fácil:** Si algo falla, puedes ver los errores en la terminal de tu VS Code (frontend) y en los logs de Render (backend) al mismo tiempo.
+
+- **Cero sorpresas:** Si funciona así, funcionará al 100% cuando subas el frontend a Vercel, porque ya probaste la conexión a través de internet.
+
+## 3. Despliegue en Vercel
+Vercel es súper sencillo para Vite:
+
+1. Entra en Vercel.com y dale a "Add New Project".
+
+2. Importa el repositorio donde tienes tu carpeta client (el frontend).
+
+3. Configuración crucial:
+
+   - Root Directory: Si tu frontend está en una carpeta llamada client, asegúrate de seleccionarla como Root Directory.
+
+   - Build Command: npm run build o vite build.
+
+   - Output Directory: dist.
+
+----
+## 1. Preparación del repositorio
+Asegúrate de que tu carpeta del frontend (donde está el package.json de Vite) esté subida a GitHub. Si el frontend está en una carpeta llamada client o frontend dentro de tu repositorio principal, no hay problema, Vercel permite seleccionar esa subcarpeta.
+
+## 2. Importar en Vercel
+1. Ve a Vercel.com e inicia sesión con tu cuenta de GitHub.
+
+2. Haz clic en "Add New" > "Project".
+
+3. Busca tu repositorio tapiceria_rincon_es y dale a "Import".
+
+4. Configuración de Carpeta: Si tu frontend no está en la raíz, busca la sección "Root Directory" y selecciona la carpeta específica del frontend.
+
+## 3. Configurar Variables de Entorno (Crucial)
+
+Antes de darle a "Deploy", despliega la sección "Environment Variables". Aquí es donde conectamos el frontend con el backend que acabamos de subir a Render:
+
+Variable: VITE_API_URL
+
+Valor: https://tapiceria-****-es.onrender.com
+
+Nota: No pongas la barra / al final de la URL a menos que tu código de Axios/Fetch lo requiera específicamente.
+
+## 4. Lanzar el Despliegue
+Haz clic en "Deploy". Vercel instalará las dependencias y construirá tu sitio en menos de un minuto. Cuando termine, te dará una URL parecida a tapice******-es.vercel.app.
+
+## 5. El toque final: Autorizar a Vercel en Render
+Para que tu backend acepte las llamadas de tu nueva web, debemos añadir la URL de Vercel a la "lista blanca" de Django:
+
+Copia la URL que te dio Vercel (ej: https://tapiceria-******.vercel.app).
+
+Ve a tu panel de Render > Environment.
+
+En la variable CORS_ALLOWED_ORIGINS, añade una coma al final de lo que ya tienes y pega la nueva URL:
+
+Ejemplo: http://localhost:5173,https://tapiceria-******.vercel.app.
+
+Guarda los cambios en Render.
