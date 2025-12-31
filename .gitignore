@@ -1,93 +1,59 @@
-# Archivos generados por Vite/React
-/node_modules/
-/dist/
-/.env.local
-/.env.development.local
-/.env.test.local
-/.env.production.local
+# --- Entorno y Secretos (CRÍTICO) ---
 .env
 .env.*
+*.env
+local_settings.py
+secrets.py
 
-# Archivos temporales de Node.js
-/yarn-error.log
-/yarn.lock.bak
-/npm-debug.log
-/yarn-debug.log
-/lerna-debug.log
-
-# Archivos de caché de Node.js
-.pnp.*
-.pnp.js
-.pnp.cjs
-.pnp.loader.mjs
-.pnp/.*cache/
-
-# Archivos de configuración de Vite
-/vite.config.ts~
-/vite.config.js~
-
-# Archivos de depuración
-/*.log
-/*.out
-/*.map
-
-# Archivos de desarrollo
-/.idea/
-/.vscode/
-/.history/
-/.DS_Store
-/.nuxt/
-/.next/
-/.cache/
-/.temp/
-/.tmp/
-
-# Archivos de entorno virtual de Python
-/venv/
-/env/
+# --- Dependencias ---
+node_modules/
+jspm_packages/
+# Python
+venv/
+env/
 .venv/
-.pytest_cache/
 __pycache__/
 *.py[cod]
-*$py.class
 
-# Archivos de base de datos locales
-/db.sqlite3
-/migrations/*.py
-/migrations/__init__.py
-
-# Archivos de Django
+# --- Build / Salida de compilación ---
+dist/
+build/
+out/
+.next/
+.nuxt/
 /static/admin/
 /media/
-/local_settings.py
-/secrets.py
 
-# Archivos generados automáticamente
+# --- Logs y Debugging ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.swp
 *.swo
-*.bak
-*.tmp
-*.orig
-*~
+*.map
 
-# Archivos de IDE
-.idea/
+# --- IDEs y Editores ---
 .vscode/
+.idea/
+.history/
 *.iml
 *.iws
 *.ipr
+.DS_Store
 
-# Archivos de Docker
-/docker-compose.yml.swp
-/Dockerfile.swp
-
-# Archivos de build
-/build/
-/dist/
-/out/
+# --- Herramientas y Caché ---
+.pnp.*
+.pnp/
+.cache/
+.temp/
+.tmp/
+.pytest_cache/
 /coverage/
-/reports/
-/tmp/
 
-# Archivos Propios
+# --- Bases de Datos Locales ---
+*.sqlite3
+
+# --- Archivos Propios / Otros ---
 personal.txt
+image.png
