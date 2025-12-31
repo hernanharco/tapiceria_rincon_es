@@ -4,6 +4,7 @@ Django settings for backend_tapiceria_api project.
 
 from pathlib import Path
 from decouple import config, Csv
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -67,17 +68,16 @@ WSGI_APPLICATION = 'backend_tapiceria_api.wsgi.application'
 USE_REMOTE_DB = config('USE_REMOTE_DB', default=True, cast=bool)
 
 if USE_REMOTE_DB:
+    # Esta línea lee automáticamente la URL de Neon de tu .env
     DATABASES = {
-        'default': {
-            'ENGINE': config('DB_ENGINE_REMOTE'),
-            'NAME': config('DB_NAME_REMOTE'),
-            'USER': config('DB_USER_REMOTE'),
-            'PASSWORD': config('DB_PASSWORD_REMOTE'),
-            'HOST': config('DB_HOST_REMOTE'),
-            'PORT': config('DB_PORT_REMOTE', cast=int),
-        }
+        'default': dj_database_url.config(
+            default=config('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
 else:
+    # Configuración para tu MySQL local
     DATABASES = {
         'default': {
             'ENGINE': config('DB_ENGINE'),
