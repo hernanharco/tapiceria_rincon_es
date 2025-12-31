@@ -22,30 +22,42 @@ myproject/
 Crea backend/Dockerfile:
 
 ```
-# Usa imagen oficial de Python
+# 1. Imagen base de Python
 FROM python:3.11-slim
 
-# Variables de entorno
+# 2. Establecer variables de entorno
+# Evita que Python genere archivos .pyc y permite ver logs en tiempo real
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# 3. Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Instala dependencias
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# 4. Instalar dependencias del sistema necesarias para PostgreSQL y compilación
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copia el proyecto
-COPY . .
+# 5. Instalar dependencias de Python
+# Primero copiamos solo requirements para aprovechar la caché de Docker
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir gunicorn dj-database-url  # Aseguramos que estén instalados
 
-# Recoger archivos estáticos
-RUN python manage.py collectstatic --noinput
+# 6. Copiar el resto del código del backend
+COPY . /app/
 
-# Expone el puerto que Render usará
-EXPOSE 8000
+# 7. Exponer el puerto que usa Render (por defecto 10000, pero usamos una variable)
+ENV PORT 10000
+EXPOSE 10000
 
-# Comando por defecto para ejecutar Gunicorn
-CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000"]
+# 8. Comando de inicio
+# Ejecutamos migraciones y luego iniciamos Gunicorn
+# Nota: "backend_tapiceria_api.wsgi" debe coincidir con el nombre de tu carpeta de configuración
+CMD python manage.py migrate --noinput && \
+    gunicorn backend_tapiceria_api.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
 # 3️⃣ Dockerizar Vite (Frontend)
@@ -75,65 +87,9 @@ CMD ["nginx", "-g", "daemon off;"]
 ```
 
 
-# Campos de creación en Render Postgres
+# Campos de creación en DB_Neon.tech.md
 
-1. Name
-
-   - Es un nombre para identificar tu servicio en Render.
-
-   - Ejemplo: myproject-db o tapiceria-db
-
-2. Project
-
-   - Si ya tienes un proyecto en Render, lo eliges aquí.
-
-   - Si no, crea uno nuevo: TapiceriaRincon
-
-3. Database
-
-   -  Es el nombre de la base de datos que usarás en Django.
-
-   - Ejemplo: myproject o tapiceria_db
-
-4. User
-
-   - Usuario que tendrá acceso a la base de datos.
-
-   - Ejemplo: myuser o tapiceria_user
-
-5. Region
-
-   - Render tiene varias regiones de data center.
-
-   - Para España, la más cercana es Frankfurt, Alemania (eu-central-1).
-
-   - No hay un data center exactamente en Asturias/Avilés, así que lo más cercano es Alemania (EU).
-
-6. Version
-
-   - PostgreSQL version.
-
-   - Elige la más reciente estable, por ejemplo 15 o 14
-
-7. Datadog API key y Datadog region
-
-   - Opcional si quieres monitorización.
-
-   - Si no tienes Datadog, deja vacío. Render funciona sin esto.
-  
-## Ejemplo de configuracion final:
-```
-| Campo           | Valor ejemplo   |
-| --------------- | --------------- |
-| Name            | tapiceria-db    |
-| Project         | TapiceriaRincon |
-| Database        | tapiceria_db    |
-| User            | tapiceria_user  |
-| Region          | Frankfurt (EU)  |
-| Version         | 15              |
-| Datadog API Key | *vacío*         |
-| Datadog Region  | *vacío*         |
-```
+Para la creacion de la base de datos en Neon tenemos un archivo en la parte de backend para saber que se debe hacer
 
 - Debemos de configurar el .env
 - Cambiar el settings.py para que pueda tomar la informacion
@@ -143,3 +99,66 @@ CMD ["nginx", "-g", "daemon off;"]
 
 La configuracion seria
 ![alt text](image.png)
+
+# ¿Qué necesitamos para empezar?
+Antes de pasar a la acción, asegúrate de tener estos tres requisitos listos:
+
+1. Cuentas creadas: Una cuenta en Render y otra en Vercel (ambas se pueden conectar con tu GitHub).
+
+2. Repositorio en GitHub: Tu código debe estar subido a GitHub en uno o dos repositorios (puede ser uno para el backend y otro para el frontend, o ambos en carpetas separadas dentro de uno solo).
+
+3. Archivos de configuración: Necesitaremos el Dockerfile que revisamos y el archivo requirements.txt actualizado.
+
+
+# Fase 1: Despliegue del Backend en Render
+Sigue estos pasos para poner tu API en línea:
+
+## 1. Preparar GitHub
+
+   - Sigue estos pasos para poner tu API en línea:
+
+   - Preparar GitHub
+
+## 2. Configurar el servicio en Render
+1. Inicia sesión en Render.com. [Render.com](https://www.render.com)
+
+2. Haz clic en New + y selecciona Web Service.
+
+3. Conecta tu cuenta de GitHub y selecciona el repositorio de tu backend.
+
+4. En la configuración:
+
+   - Name: tapiceria_rincon_es (puedes dejar el que está).
+
+   - Region: Frankfurt (EU Central). Es la mejor opción ya que tu base de datos Neon está en la misma región, lo que hace que todo sea mucho más rápido.
+
+   - Branch: master (asegúrate de que en GitHub tu código principal esté en esa rama).
+
+   - Language: Aquí es donde hay un cambio importante. No elijas Node. Debes cambiarlo a Docker. Render detectará tu archivo dockerfile automáticamente.
+
+   - Root Directory: backend_tapiceria_api (para que use la raíz donde está el dockerfile).
+
+   - Instance Type: Selecciona Free ($0/month).
+
+## 3. Variables de Entorno
+Haz clic en "Add Environment Variable" y añade las siguientes (copia los valores de tu archivo .env local):
+
+| Key | Value |
+| :--- | :--- |
+| **DATABASE_URL** | `postgresql://neondb_owner:******@ep-little-wave-ag2pfpka.c-2.eu-central-1.aws.neon.tech/tapiceria-db?sslmode=require` |
+| **SECRET_KEY** | *(Tu clave larga que tienes en el .env)* |
+| **DEBUG** | `False` |
+| **ALLOWED_HOSTS** | `*` |
+| **USE_REMOTE_DB** | `True` |
+| **CORS_ALLOWED_ORIGINS** | `http://localhost:5173` |
+
+## 4. El paso final: Desplegar
+Una vez que hayas cambiado el Language a Docker y puesto las variables, haz clic en el botón negro "Deploy Web Service".
+
+**¿Qué pasará ahora?**
+
+Build: Render leerá tu dockerfile, instalará Python, tus requirements.txt (incluyendo psycopg2 y decouple) y preparará el contenedor.
+
+Logs: Verás una consola negra con letras blancas. Si todo va bien, al final dirá algo como Your service is live.
+
+Migraciones: Recuerda que al ser una base de datos nueva en Neon, es posible que debas ejecutar las migraciones.
