@@ -8,6 +8,7 @@ export const TableDocuments = ({
 }) => {
   const lastSerializedProductsRef = useRef("");
 
+  // Sincronización con el padre para totales
   useEffect(() => {
     const currentSerialized = JSON.stringify(filteredProducts);
     if (
@@ -22,7 +23,7 @@ export const TableDocuments = ({
   const handleAddRow = (e) => {
     if (e) e.preventDefault();
     const newRows = [
-      { referencia: "", descripcion: "", cantidad: "", precio: "", dto: "", importe: "" },
+      { referencia: "", descripcion: "", cantidad: 0, precio: 0, dto: 0, importe: 0 },
       { referencia: "", descripcion: "Materiales", cantidad: 1, precio: 0, dto: 0, importe: 0 },
       { referencia: "", descripcion: "Mano de Obra", cantidad: 1, precio: 0, dto: 0, importe: 0 },
     ];
@@ -31,34 +32,36 @@ export const TableDocuments = ({
 
   const handleChange = (index, field, value) => {
     const updatedList = [...filteredProducts];
-    updatedList[index][field] = value;
+    const item = { ...updatedList[index] };
+    item[field] = value;
 
     if (["precio", "cantidad", "dto", "importe"].includes(field)) {
-      const precio = parseFloat(updatedList[index].precio) || 0;
-      const cantidad = parseFloat(updatedList[index].cantidad) || 0;
-      const dto = parseFloat(updatedList[index].dto) || 0;
+      const precio = parseFloat(item.precio) || 0;
+      const cantidad = parseFloat(item.cantidad) || 0;
+      const dto = parseFloat(item.dto) || 0;
 
       if (field !== "importe") {
         const subtotal = precio * cantidad;
         const discount = subtotal * (dto / 100);
-        updatedList[index].importe = (subtotal - discount).toFixed(2);
-      } else if (field === "importe" && precio > 0 && cantidad > 0) {
+        item.importe = (subtotal - discount).toFixed(2);
+      } else if (precio > 0 && cantidad > 0) {
         const calculatedDto = 100 - (value / (precio * cantidad)) * 100;
-        updatedList[index].dto = isNaN(calculatedDto) ? 0 : calculatedDto.toFixed(2);
+        item.dto = isNaN(calculatedDto) ? 0 : calculatedDto.toFixed(2);
       }
     }
+    updatedList[index] = item;
     setFilteredProducts(updatedList);
   };
 
   const handleDelete = (index, e) => {
     if (e) e.preventDefault();
     const blockStartIndex = Math.floor(index / 3) * 3;
+    const newList = filteredProducts.filter((_, i) => 
+      i < blockStartIndex || i >= blockStartIndex + 3
+    );
+    setFilteredProducts(newList);
     if (typeof onDeleteRow === "function") {
-      onDeleteRow([...filteredProducts], blockStartIndex);
-    } else {
-      const newList = [...filteredProducts];
-      newList.splice(blockStartIndex, 3);
-      setFilteredProducts(newList);
+      onDeleteRow(newList, blockStartIndex);
     }
   };
 
@@ -70,15 +73,15 @@ export const TableDocuments = ({
       <div className="bg-blue-50 p-2 border-b border-blue-100 flex justify-between items-center px-4">
         <span className="text-blue-800 text-xs font-bold uppercase tracking-wider">Resumen de Estructura</span>
         <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full font-bold">
-          {totalBloques} {totalBloques === 1 ? "Grupo" : "Grupos"} en total
+          {totalBloques} {totalBloques === 1 ? "Grupo" : "Grupos"}
         </span>
       </div>
 
-      {/* --- VISTA ESCRITORIO --- */}
+      {/* --- VISTA ESCRITORIO (TABLA) --- */}
       <div className="hidden md:block w-full overflow-y-auto max-h-[450px]">
         <table className="w-full table-auto border-collapse">
-          <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm">
-            <tr className="text-gray-700 font-semibold text-[11px] uppercase">
+          <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm text-[11px] uppercase text-gray-700 font-semibold">
+            <tr>
               <th className="border-b p-2 w-16 text-center">Bloque</th>
               <th className="border-b p-2">Ref</th>
               <th className="border-b p-2 w-2/5">Descripción</th>
@@ -93,33 +96,73 @@ export const TableDocuments = ({
             {filteredProducts.map((item, idx) => {
               const isFirstInGroup = idx % 3 === 0;
               const isSystem = isSystemRow(item.descripcion);
-              const currentGroupNum = Math.floor(idx / 3) + 1;
 
               return (
                 <tr key={idx} className={`hover:bg-gray-50 border-b last:border-0 ${isFirstInGroup ? "border-t-2 border-t-blue-100" : ""}`}>
-                  <td className="p-2 text-center font-bold text-blue-400 text-xs">{isFirstInGroup ? `#${currentGroupNum}` : ""}</td>
+                  <td className="p-2 text-center font-bold text-blue-400 text-xs">
+                    {isFirstInGroup ? `#${Math.floor(idx / 3) + 1}` : ""}
+                  </td>
                   <td className="p-2 text-center">
-                    <input type="text" value={item.referencia} onChange={(e) => handleChange(idx, "referencia", e.target.value)} className={`w-full text-center text-sm ${isSystem ? "border rounded p-1" : "bg-transparent outline-none"}`} />
+                    <input 
+                      type="text" 
+                      value={item.referencia || ""} 
+                      onChange={(e) => handleChange(idx, "referencia", e.target.value)} 
+                      className="w-full text-center text-sm border rounded p-1 focus:ring-1 focus:ring-blue-400 outline-none transition-all" 
+                    />
                   </td>
                   <td className="p-2">
-                    <textarea rows={isSystem ? 1 : 2} value={item.descripcion} readOnly={isSystem} onChange={(e) => handleChange(idx, "descripcion", e.target.value)} className={`w-full p-1 text-sm rounded border ${isSystem ? "bg-gray-100 text-center font-bold" : "resize-y"}`} />
-                  </td>
-                  {/* Campos Condicionales */}
-                  <td className="p-2">
-                    <input type="number" value={item.cantidad} readOnly={!isSystem} onChange={(e) => handleChange(idx, "cantidad", e.target.value)} className={`w-full text-center text-sm border rounded p-1 ${!isSystem ? "bg-gray-50 border-transparent text-gray-400" : ""}`} />
-                  </td>
-                  <td className="p-2">
-                    <input type="number" value={item.precio} readOnly={!isSystem} onChange={(e) => handleChange(idx, "precio", e.target.value)} className={`w-full text-center text-sm border rounded p-1 ${!isSystem ? "bg-gray-50 border-transparent text-gray-400" : ""}`} />
-                  </td>
-                  <td className="p-2">
-                    <input type="number" value={item.dto} readOnly={!isSystem} onChange={(e) => handleChange(idx, "dto", e.target.value)} className={`w-full text-center text-sm border rounded p-1 ${!isSystem ? "bg-gray-50 border-transparent text-gray-400" : ""}`} />
+                    <textarea 
+                      rows={isSystem ? 1 : 2} 
+                      value={item.descripcion || ""} 
+                      readOnly={isSystem} 
+                      onChange={(e) => handleChange(idx, "descripcion", e.target.value)} 
+                      className={`w-full p-1 text-sm rounded border ${isSystem ? "bg-gray-100 text-center font-bold" : "resize-y focus:ring-1 focus:ring-blue-400 outline-none"}`} 
+                    />
                   </td>
                   <td className="p-2">
-                    <input type="number" value={item.importe} readOnly={!isSystem} onChange={(e) => handleChange(idx, "importe", e.target.value)} className={`w-full text-center text-sm border rounded p-1 font-semibold ${!isSystem ? "bg-gray-50 border-transparent text-gray-400" : "text-blue-700"}`} />
+                    <input 
+                      type="number" 
+                      value={item.cantidad ?? ""} 
+                      readOnly={!isSystem} 
+                      onChange={(e) => handleChange(idx, "cantidad", e.target.value)} 
+                      className={`w-full text-center text-sm border rounded p-1 ${!isSystem ? "bg-gray-50 text-gray-400" : ""}`} 
+                    />
+                  </td>
+                  <td className="p-2">
+                    <input 
+                      type="number" 
+                      value={item.precio ?? ""} 
+                      readOnly={!isSystem} 
+                      onChange={(e) => handleChange(idx, "precio", e.target.value)} 
+                      className={`w-full text-center text-sm border rounded p-1 ${!isSystem ? "bg-gray-50 text-gray-400" : ""}`} 
+                    />
+                  </td>
+                  <td className="p-2">
+                    <input 
+                      type="number" 
+                      value={item.dto ?? ""} 
+                      readOnly={!isSystem} 
+                      onChange={(e) => handleChange(idx, "dto", e.target.value)} 
+                      className={`w-full text-center text-sm border rounded p-1 ${!isSystem ? "bg-gray-50 text-gray-400" : ""}`} 
+                    />
+                  </td>
+                  <td className="p-2">
+                    <input 
+                      type="number" 
+                      value={item.importe ?? ""} 
+                      readOnly={true} 
+                      className="w-full text-center text-sm border rounded p-1 font-semibold bg-gray-50 text-blue-700 outline-none" 
+                    />
                   </td>
                   <td className="p-2 text-center">
                     {item.descripcion === "Mano de Obra" && (
-                      <button type="button" onClick={(e) => handleDelete(idx, e)} className="text-red-500 hover:scale-110 transition-transform">🗑️</button>
+                      <button 
+                        type="button" 
+                        onClick={(e) => handleDelete(idx, e)} 
+                        className="text-red-400 hover:text-red-600 hover:scale-125 transition-all active:scale-90"
+                      >
+                        🗑️
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -129,54 +172,104 @@ export const TableDocuments = ({
         </table>
       </div>
 
-      {/* --- VISTA MÓVIL (Cards) --- */}
-      <div className="md:hidden p-3 space-y-6 overflow-y-auto max-h-[600px] bg-gray-100">
-        {filteredProducts.reduce((acc, curr, i) => {
-          if (i % 3 === 0) acc.push(filteredProducts.slice(i, i + 3));
-          return acc;
-        }, []).map((group, blockIdx) => {
+      {/* --- VISTA MÓVIL (CARDS CON TODOS LOS CAMPOS) --- */}
+      <div className="md:hidden p-3 space-y-8 overflow-y-auto max-h-[600px] bg-gray-50">
+        {Array.from({ length: totalBloques }).map((_, blockIdx) => {
           const startIdx = blockIdx * 3;
+          const group = filteredProducts.slice(startIdx, startIdx + 3);
+          
           return (
-            <div key={blockIdx} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-700 to-blue-500 p-3 flex justify-between items-center">
-                <span className="text-white font-bold text-xs tracking-widest uppercase">Bloque #{blockIdx + 1}</span>
-                <button type="button" onClick={(e) => handleDelete(startIdx, e)} className="bg-red-500/20 hover:bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-bold border border-white/20">Eliminar</button>
+            <div key={blockIdx} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              {/* Cabecera del Bloque */}
+              <div className="bg-blue-600 p-3 flex justify-between items-center">
+                <span className="text-white font-bold text-xs uppercase tracking-widest">Grupo #{blockIdx + 1}</span>
+                <button 
+                  type="button" 
+                  onClick={(e) => handleDelete(startIdx, e)} 
+                  className="bg-white/20 hover:bg-red-500 text-white px-3 py-1 rounded text-[10px] font-bold transition-colors uppercase border border-white/30"
+                >
+                  Eliminar Bloque
+                </button>
               </div>
-              <div className="p-4 space-y-6">
+
+              {/* Mapeo de los 3 elementos del bloque en el móvil */}
+              <div className="p-3 space-y-6 divide-y divide-gray-100">
                 {group.map((item, localIdx) => {
                   const globalIdx = startIdx + localIdx;
                   const isSystem = isSystemRow(item.descripcion);
+
                   return (
-                    <div key={globalIdx} className={`space-y-3 ${localIdx < group.length - 1 ? "pb-6 border-b border-dashed border-gray-200" : ""}`}>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${isSystem ? "bg-orange-400" : "bg-blue-400"}`}></span>
-                        <span className="text-[10px] font-black uppercase text-gray-400">{isSystem ? item.descripcion : "Descripción Principal"}</span>
+                    <div key={globalIdx} className={`pt-4 first:pt-0 space-y-3`}>
+                      {/* Etiqueta de Tipo */}
+                      <div className="flex justify-between items-center">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded ${isSystem ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {isSystem ? item.descripcion.toUpperCase() : "DESCRIPCIÓN PRINCIPAL"}
+                        </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="col-span-2">
-                          <label className="text-[9px] text-gray-400 font-bold ml-1 uppercase">Detalle</label>
-                          <textarea rows={isSystem ? 1 : 2} value={item.descripcion} readOnly={isSystem} onChange={(e) => handleChange(globalIdx, "descripcion", e.target.value)} className={`w-full p-3 text-sm rounded-xl border ${isSystem ? "bg-gray-50 border-gray-100 font-bold" : "border-blue-100 shadow-sm"}`} />
+
+                      {/* Fila: Ref y Descripción */}
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-4">
+                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1">Ref</label>
+                          <input 
+                            type="text" 
+                            value={item.referencia || ""} 
+                            onChange={(e) => handleChange(globalIdx, "referencia", e.target.value)} 
+                            className="w-full text-xs border rounded p-2 focus:ring-1 focus:ring-blue-400 outline-none" 
+                          />
                         </div>
-                        <div className="col-span-2">
-                          <label className="text-[9px] text-gray-400 font-bold ml-1 uppercase">Referencia</label>
-                          <input type="text" value={item.referencia} onChange={(e) => handleChange(globalIdx, "referencia", e.target.value)} className="w-full p-2.5 text-sm border border-gray-200 rounded-xl" />
+                        <div className="col-span-8">
+                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1">Descripción</label>
+                          <textarea 
+                            rows={isSystem ? 1 : 2}
+                            value={item.descripcion || ""} 
+                            readOnly={isSystem} 
+                            onChange={(e) => handleChange(globalIdx, "descripcion", e.target.value)} 
+                            className={`w-full text-xs border rounded p-2 focus:ring-1 focus:ring-blue-400 outline-none ${isSystem ? "bg-gray-50 font-bold" : ""}`} 
+                          />
                         </div>
-                        {/* Campos Numéricos con readOnly condicional */}
+                      </div>
+
+                      {/* Fila: Cant, Precio, Dto e Importe */}
+                      <div className="grid grid-cols-4 gap-2">
                         <div>
-                          <label className="text-[9px] text-gray-400 font-bold ml-1 uppercase">Cant</label>
-                          <input type="number" value={item.cantidad} readOnly={!isSystem} onChange={(e) => handleChange(globalIdx, "cantidad", e.target.value)} className={`w-full p-2.5 text-sm border rounded-xl text-center ${!isSystem ? "bg-gray-50 text-gray-400" : "font-semibold"}`} />
+                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Cant</label>
+                          <input 
+                            type="number" 
+                            value={item.cantidad ?? ""} 
+                            readOnly={!isSystem} 
+                            onChange={(e) => handleChange(globalIdx, "cantidad", e.target.value)} 
+                            className={`w-full text-center text-xs border rounded p-2 ${!isSystem ? "bg-gray-100 text-gray-400" : ""}`} 
+                          />
                         </div>
                         <div>
-                          <label className="text-[9px] text-gray-400 font-bold ml-1 uppercase">Precio</label>
-                          <input type="number" value={item.precio} readOnly={!isSystem} onChange={(e) => handleChange(globalIdx, "precio", e.target.value)} className={`w-full p-2.5 text-sm border rounded-xl text-center ${!isSystem ? "bg-gray-50 text-gray-400" : "font-semibold"}`} />
+                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Precio</label>
+                          <input 
+                            type="number" 
+                            value={item.precio ?? ""} 
+                            readOnly={!isSystem} 
+                            onChange={(e) => handleChange(globalIdx, "precio", e.target.value)} 
+                            className={`w-full text-center text-xs border rounded p-2 ${!isSystem ? "bg-gray-100 text-gray-400" : ""}`} 
+                          />
                         </div>
                         <div>
-                          <label className="text-[9px] text-gray-400 font-bold ml-1 uppercase">Dto %</label>
-                          <input type="number" value={item.dto} readOnly={!isSystem} onChange={(e) => handleChange(globalIdx, "dto", e.target.value)} className={`w-full p-2.5 text-sm border rounded-xl text-center ${!isSystem ? "bg-gray-50 text-gray-400" : "bg-orange-50 text-orange-600 font-bold"}`} />
+                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Dto %</label>
+                          <input 
+                            type="number" 
+                            value={item.dto ?? ""} 
+                            readOnly={!isSystem} 
+                            onChange={(e) => handleChange(globalIdx, "dto", e.target.value)} 
+                            className={`w-full text-center text-xs border rounded p-2 ${!isSystem ? "bg-gray-100 text-gray-400" : ""}`} 
+                          />
                         </div>
                         <div>
-                          <label className="text-[9px] text-gray-400 font-bold ml-1 uppercase text-blue-600">Importe</label>
-                          <input type="number" value={item.importe} readOnly={!isSystem} onChange={(e) => handleChange(globalIdx, "importe", e.target.value)} className={`w-full p-2.5 text-sm border rounded-xl text-center ${!isSystem ? "bg-gray-50 text-gray-400" : "bg-blue-50 text-blue-700 font-black shadow-inner"}`} />
+                          <label className="text-[9px] text-blue-600 uppercase font-bold block mb-1 text-center">Total</label>
+                          <input 
+                            type="number" 
+                            value={item.importe ?? ""} 
+                            readOnly={true} 
+                            className="w-full text-center text-xs border border-blue-200 rounded p-2 font-bold bg-blue-50 text-blue-700" 
+                          />
                         </div>
                       </div>
                     </div>
@@ -189,7 +282,11 @@ export const TableDocuments = ({
       </div>
 
       <div className="p-4 bg-gray-50 border-t flex justify-center sticky bottom-0">
-        <button type="button" onClick={handleAddRow} className="flex items-center gap-2 bg-white border border-blue-500 text-blue-600 px-6 py-2 rounded-full font-semibold hover:bg-blue-50 shadow-sm text-sm">
+        <button 
+          type="button" 
+          onClick={handleAddRow} 
+          className="flex items-center gap-2 bg-white border border-blue-500 text-blue-600 px-6 py-2 rounded-full font-semibold hover:bg-blue-50 shadow-sm text-sm active:scale-95 transition-all"
+        >
           <span>➕</span> Agregar Grupo {totalBloques + 1}
         </button>
       </div>

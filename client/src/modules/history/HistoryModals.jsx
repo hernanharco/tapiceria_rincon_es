@@ -3,34 +3,63 @@ import { DocumentsInfo } from "@/modules/documents/components/DocumentsInfo";
 import { TableDocuments } from "@/modules/documents/components/compTableDocuments/TableDocuments";
 import { DocumentsFooter } from "@/modules/documents/components/DocumentsFooter";
 
-// Hooks de contextos (Sin cambios)
+// Hooks de contextos
 import { useApiDocumentsContext } from "@/modules/documents/context/DocumentsProvider";
 import { useApiTitleTableDocumentsContext } from "@/modules/documents/context/TitleTableDocumentsProvider";
 import { useApiDataDocumentsContext } from "@/modules/documents/context/DataDocumentsProvider";
 import { useApiFootersContext } from "@/modules/documents/context/FootersProvider";
 
-export const HistoryModals = ({ isOpen, onClose, searchTerm, selectedItem }) => {
+export const HistoryModals = ({
+  isOpen,
+  onClose,
+  searchTerm,
+  selectedItem,
+}) => {
   const isEditing = !!selectedItem?.id;
   const [activeTab, setActiveTab] = useState("info");
 
   // --- LÓGICA DE PROVIDERS ---
   const { updateDocumentFieldsId, addProduct } = useApiDocumentsContext();
-  const { addProductTitle, getDocumentsByNumTitle, updateDocumentFieldsIdTitle } = useApiTitleTableDocumentsContext();
-  const { addProductTable, getDocumentsByNum, updateProductTable } = useApiDataDocumentsContext();
-  const { saveFooter, updateFooter, getFootersByFieldId } = useApiFootersContext();
+  const {
+    addProductTitle,
+    getDocumentsByNumTitle,
+    updateDocumentFieldsIdTitle,
+    deleteProductTitle,
+  } = useApiTitleTableDocumentsContext();
+  const { 
+    addProductTable, 
+    getDocumentsByNum, 
+    updateProductTable,
+    deleteProductTable 
+  } = useApiDataDocumentsContext();
+  const { saveFooter, updateFooter, getFootersByFieldId } =
+    useApiFootersContext();
 
-  const [datInfo, setDatInfo] = useState({ dataInfoDocument: "", dataInfoDate: "", dataInfoObservation: "" });
+  const [datInfo, setDatInfo] = useState({
+    dataInfoDocument: "",
+    dataInfoDate: "",
+    dataInfoObservation: "",
+  });
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [datFooter, setDatFooter] = useState({ datsubTotal: 0, datbaseImponible: 0, datIva: 0, datTotal: 0 });
+  const [datFooter, setDatFooter] = useState({
+    datsubTotal: 0,
+    datbaseImponible: 0,
+    datIva: 0,
+    datTotal: 0,
+  });
 
+  const [deletedIds, setDeletedIds] = useState({ titles: [], products: [] });
+
+  // Limpieza del CIF para asegurar que enviamos solo el código (Primary Key en Django)
   const parseSearchTerm = (value) => {
     let match = value?.match(/^\(([^)]+)\)\s*(.*)/);
-    return match ? { cif: match[1] } : { cif: value ?? "" };
+    return match ? match[1] : (value || "");
   };
-  const { cif } = parseSearchTerm(searchTerm);
+  const cleanCif = parseSearchTerm(searchTerm);
 
   useEffect(() => {
     if (!isOpen || !selectedItem) return;
+    
     setDatInfo({
       dataInfoDocument: selectedItem.num_presupuesto || "",
       dataInfoDate: selectedItem.fecha_factura || "",
@@ -43,131 +72,216 @@ export const HistoryModals = ({ isOpen, onClose, searchTerm, selectedItem }) => 
           getDocumentsByNumTitle(selectedItem.id),
           getDocumentsByNum(selectedItem.id),
         ]);
+        
         const combined = [];
-        for (let i = 0; i < titles.length; i++) {
-          const { titdescripcion, ...rest } = titles[i];
-          const titleItem = { ...rest, descripcion: titdescripcion };
-          const group = products.slice(i * 2, i * 2 + 2);
+        // Lógica de emparejamiento basada en tu estructura de UI
+        titles.forEach((title, index) => {
+          const titleItem = { ...title, descripcion: title.titdescripcion };
+          const group = products.filter(p => p.documento === selectedItem.id).slice(index * 2, index * 2 + 2);
           combined.push(titleItem, ...group);
-        }
+        });
+        
         setFilteredProducts(combined);
+        
         const foot = getFootersByFieldId(selectedItem.id);
         if (foot) {
-          setDatFooter({ datsubTotal: foot.subtotal, datbaseImponible: foot.base_imponible, datIva: foot.iva, datTotal: foot.total });
+          setDatFooter({
+            datsubTotal: foot.subtotal,
+            datbaseImponible: foot.base_imponible,
+            datIva: foot.iva,
+            datTotal: foot.total,
+          });
         }
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error("Error cargando datos:", err);
+      }
     };
-    if (isEditing) loadData();
-  }, [isOpen, selectedItem, isEditing, getDocumentsByNumTitle, getDocumentsByNum, getFootersByFieldId]);
+
+    if (isEditing) {
+      loadData();
+      setDeletedIds({ titles: [], products: [] });
+    }
+  }, [isOpen, selectedItem, isEditing]);
 
   const handleSave = async () => {
     try {
+      // 1. ELIMINACIÓN DE REGISTROS MARCADOS
+      await Promise.all([
+        ...deletedIds.titles.map(id => deleteProductTitle(id)),
+        ...deletedIds.products.map(id => deleteProductTable(id))
+      ]);
+
+      // 2. GUARDADO DE CABECERA (Document)
       const documentPayload = {
         fecha_factura: datInfo.dataInfoDate,
         observaciones: datInfo.dataInfoObservation,
         num_presupuesto: datInfo.dataInfoDocument,
-        dataclient: cif,
+        dataclient: cleanCif, // Enviamos el CIF limpio
       };
-      let documentId = selectedItem?.id;
-      if (isEditing) await updateDocumentFieldsId(documentId, documentPayload);
-      else {
+
+      let currentDocId = selectedItem?.id;
+      if (isEditing) {
+        await updateDocumentFieldsId(currentDocId, documentPayload);
+      } else {
         const newDoc = await addProduct(documentPayload);
-        documentId = newDoc.id;
+        currentDocId = newDoc.id; // Obtenemos el ID para las tablas hijas
       }
+
+      // 3. GUARDADO DE LÍNEAS (Titles y DataDocuments)
       const tablePromises = filteredProducts.map(async (item) => {
         if (!item.descripcion?.trim()) return;
-        if (item.descripcion !== "Materiales" && item.descripcion !== "Mano de Obra") {
-          const payload = { titdescripcion: item.descripcion, titledoc: documentId };
-          return item.id ? updateDocumentFieldsIdTitle(item.id, payload) : addProductTitle(payload);
+        
+        const isSystemLine = item.descripcion === "Materiales" || item.descripcion === "Mano de Obra";
+        const isExisting = item.id && !item.id.toString().startsWith("new-");
+
+        if (!isSystemLine) {
+          // Es un título
+          const payloadTitle = {
+            titdescripcion: item.descripcion,
+            titledoc: currentDocId,
+          };
+          return isExisting
+            ? updateDocumentFieldsIdTitle(item.id, payloadTitle)
+            : addProductTitle(payloadTitle);
         } else {
-          const payload = { ...item, documento: documentId };
-          return item.id ? updateProductTable(item.id, payload) : addProductTable(payload);
+          // Es una línea de producto (Materiales/Mano de Obra)
+          const payloadProduct = { 
+            ...item, 
+            documento: currentDocId,
+            // Aseguramos que los números sean Decimales válidos para Django
+            cantidad: parseFloat(item.cantidad) || 0,
+            precio: parseFloat(item.precio) || 0,
+            importe: parseFloat(item.importe) || 0
+          };
+          return isExisting
+            ? updateProductTable(item.id, payloadProduct)
+            : addProductTable(payloadProduct);
         }
       });
+
       await Promise.all(tablePromises);
-      const footerPayload = { subtotal: datFooter.datsubTotal, base_imponible: datFooter.datbaseImponible, iva: datFooter.datIva, total: datFooter.datTotal, footer_documento: documentId };
-      isEditing ? await updateFooter(documentId, footerPayload) : await saveFooter(footerPayload);
+
+      // 4. GUARDADO DE TOTALES (Footer)
+      const footerPayload = {
+        subtotal: datFooter.datsubTotal,
+        base_imponible: datFooter.datbaseImponible,
+        iva: datFooter.datIva,
+        total: datFooter.datTotal,
+        footer_documento: currentDocId,
+      };
+
+      isEditing
+        ? await updateFooter(currentDocId, footerPayload)
+        : await saveFooter(footerPayload);
+      
       onClose();
-    } catch (error) { console.error(error); alert("Error al sincronizar"); }
+    } catch (error) {
+      console.error("Error detallado en handleSave:", error.response?.data || error);
+      alert("Error al sincronizar. Revisa los datos e intenta de nuevo.");
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-6xl max-h-[90vh] flex flex-col relative overflow-hidden border border-white/20">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative overflow-hidden">
         
         {/* HEADER */}
         <div className="px-8 pt-8 pb-4 bg-white shrink-0">
-          <button onClick={onClose} className="absolute top-6 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all active:scale-90">
-            <span className="text-2xl leading-none">&times;</span>
+          <button onClick={onClose} className="absolute top-6 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
+            <span className="text-2xl">&times;</span>
           </button>
-          
           <div className="mb-6">
-            <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest mb-2">Editor de Documentos</span>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tight">{isEditing ? "Actualizar Registro" : "Crear Nuevo Documento"}</h2>
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">
+              Gestión de Documentos
+            </span>
+            <h2 className="text-3xl font-black text-slate-800">
+              {isEditing ? "Editar Presupuesto" : "Nuevo Presupuesto"}
+            </h2>
           </div>
-          
+
           <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit">
-            {[
-              { id: "info", label: "Información", icon: "📄" },
-              { id: "products", label: "Productos", icon: "📦" },
-              { id: "summary", label: "Resumen Final", icon: "📊" }
-            ].map((tab) => (
+            {["info", "products", "summary"].map((tab) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === tab.id ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-white/50"
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === tab ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-white/50"
                 }`}
               >
-                <span>{tab.icon}</span> {tab.label}
+                {tab === "info" ? "📄 Info" : tab === "products" ? "📦 Detalles" : "📊 Totales"}
               </button>
             ))}
           </div>
         </div>
 
-        {/* CUERPO DEL MODAL - Scroll Condicional */}
-        <div className={`flex-1 px-8 py-4 bg-white ${activeTab === 'summary' ? 'overflow-hidden' : 'overflow-y-auto custom-scrollbar'}`}>
-          <div className="animate-in slide-in-from-bottom-2 duration-500">
-            {activeTab === "info" && (
-              <div className="bg-slate-50/50 p-6 rounded-[1.5rem] border border-slate-100">
-                <DocumentsInfo cif={cif} datInfo={datInfo} setDatInfo={setDatInfo} isEditing={isEditing} />
-              </div>
-            )}
-            {activeTab === "products" && (
-              <TableDocuments 
-                filteredProducts={filteredProducts} 
-                setFilteredProducts={setFilteredProducts} 
-                onProductsChange={(newProds) => {
-                  setFilteredProducts(newProds);
-                  const sub = newProds.reduce((acc, i) => acc + (parseFloat(i.importe) || 0), 0);
-                  setDatFooter(prev => ({ ...prev, datsubTotal: sub, datbaseImponible: sub, datIva: sub * 0.21, datTotal: sub * 1.21 }));
-                }} 
-              />
-            )}
-            {activeTab === "summary" && (
-              <div className="h-full flex flex-col justify-center">
-                <div className="bg-gradient-to-br from-slate-50 to-white p-8 rounded-[2rem] border border-slate-100 shadow-inner">
-                  <DocumentsFooter filteredProducts={filteredProducts} setDatFooter={setDatFooter} />
-                </div>
-              </div>
-            )}
-          </div>
+        {/* CONTENIDO DINÁMICO */}
+        <div className="flex-1 px-8 py-4 bg-white overflow-y-auto custom-scrollbar">
+          {activeTab === "info" && (
+            <DocumentsInfo cif={cleanCif} datInfo={datInfo} setDatInfo={setDatInfo} isEditing={isEditing} />
+          )}
+          
+          {activeTab === "products" && (
+            <TableDocuments
+              filteredProducts={filteredProducts}
+              setFilteredProducts={setFilteredProducts}
+              onDeleteRow={(newList, blockStartIndex) => {
+                const block = filteredProducts.slice(blockStartIndex, blockStartIndex + 3);
+                const idsToTrack = { titles: [], products: [] };
+                block.forEach(item => {
+                  if (item.id && !item.id.toString().startsWith('new-')) {
+                    if (item.descripcion !== "Materiales" && item.descripcion !== "Mano de Obra") {
+                      idsToTrack.titles.push(item.id);
+                    } else {
+                      idsToTrack.products.push(item.id);
+                    }
+                  }
+                });
+                setDeletedIds(prev => ({
+                  titles: [...prev.titles, ...idsToTrack.titles],
+                  products: [...prev.products, ...idsToTrack.products]
+                }));
+                setFilteredProducts(newList);
+              }}
+              onProductsChange={(newProds) => {
+                setFilteredProducts(newProds);
+                const sub = newProds.reduce((acc, i) => acc + (parseFloat(i.importe) || 0), 0);
+                setDatFooter({
+                  datsubTotal: sub,
+                  datbaseImponible: sub,
+                  datIva: sub * 0.21,
+                  datTotal: sub * 1.21,
+                });
+              }}
+            />
+          )}
+          
+          {activeTab === "summary" && (
+            <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
+              <DocumentsFooter filteredProducts={filteredProducts} setDatFooter={setDatFooter} />
+            </div>
+          )}
         </div>
 
-        {/* FOOTER */}
-        <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center shrink-0">
-          <p className="text-[11px] text-slate-400 font-medium italic">* Verifique los totales antes de confirmar.</p>
+        {/* ACCIONES */}
+        <div className="px-8 py-6 bg-slate-50 border-t flex justify-between items-center">
+          <p className="text-[11px] text-slate-400 italic">* Campos obligatorios: Cliente y Fecha.</p>
           <div className="flex gap-4">
-            <button onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all active:scale-95">Cerrar</button>
+            <button onClick={onClose} className="px-6 py-3 font-bold text-slate-400">Cancelar</button>
             {activeTab !== "summary" ? (
-              <button onClick={() => setActiveTab(activeTab === "info" ? "products" : "summary")} className="group px-8 py-3 rounded-2xl bg-slate-800 text-white font-bold shadow-xl hover:bg-slate-900 active:scale-95 transition-all flex items-center gap-2">
-                Siguiente paso <span className="group-hover:translate-x-1 transition-transform">→</span>
+              <button
+                onClick={() => setActiveTab(activeTab === "info" ? "products" : "summary")}
+                className="px-8 py-3 rounded-2xl bg-slate-800 text-white font-bold"
+              >
+                Continuar →
               </button>
             ) : (
-              <button onClick={handleSave} className="px-10 py-3 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black shadow-xl hover:opacity-90 active:scale-95 transition-all flex items-center gap-2">
-                <span className="text-lg">✓</span> {isEditing ? "Confirmar Cambios" : "Guardar Documento"}
+              <button
+                onClick={handleSave}
+                className="px-10 py-3 rounded-2xl bg-green-600 text-white font-black shadow-lg hover:bg-green-700 transition-all"
+              >
+                {isEditing ? "Actualizar" : "Guardar Documento"}
               </button>
             )}
           </div>

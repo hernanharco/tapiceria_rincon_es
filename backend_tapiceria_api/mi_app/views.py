@@ -16,8 +16,9 @@ from .serializers import (
     FooterDocumentSerializer,
     PagoSerializer,
     titleDescripcionSerializer,
-    
+
 )
+
 
 class DataCompanyViewSet(viewsets.ModelViewSet):
     queryset = DataCompany.objects.all()
@@ -26,36 +27,24 @@ class DataCompanyViewSet(viewsets.ModelViewSet):
 
 class DataClientViewSet(viewsets.ModelViewSet):
     queryset = DataClient.objects.all()
-    serializer_class = DataClientSerializer 
+    serializer_class = DataClientSerializer
+
 
 class DocumentViewSet(viewsets.ModelViewSet):
-    
     serializer_class = DocumentSerializer
     queryset = Document.objects.all()
 
-    # Esta forma solo sirve para listar informacion
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(name='dataclient', type=str, location='query', description='CIF del cliente'),
-        ]
-    )
-    @action(detail=False, url_path='dataclient', methods=['get'])
-    def get_dataclient(self, request):
-        doc = request.query_params.get('dataclient')
-        if doc:
-            queryset = Document.objects.filter(dataclient__cif=doc)
-        else:
-            queryset = self.get_queryset()
-        # Puedes usar un serializer si lo necesitas
-        return Response({"results": list(queryset.values())})
-    
-    # @action(detail=False, url_path='dataclient/(?P<doc_id>[^/.]+)', methods=['get'])
-    # def get_queryset(self):
-    #     doc = self.request.query_params.get('dataclient')
-    #     if doc:
-    #         # Asegúrate de usar el campo correcto de DataClient, ej: cif
-    #         return Document.objects.filter(dataclient__cif=doc)
-    #     return super().get_queryset()
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            # Esto atrapará el error y te lo mostrará en el Frontend
+            # para que sepamos EXACTAMENTE qué falló.
+            return Response(
+                {"error_servidor": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class titleDescripcionViewSet(viewsets.ModelViewSet):
     serializer_class = titleDescripcionSerializer
@@ -66,14 +55,13 @@ class titleDescripcionViewSet(viewsets.ModelViewSet):
         description="Filtra registros de 'titleDescripcion' cuyo campo 'titledoc' coincida con el ID del Document dado.",
         parameters=[
             OpenApiParameter(
-                name='get_titleDocuments', 
-                type=str, 
-                location='query', 
+                name='get_titleDocuments',
+                type=str,
+                location='query',
                 description='titledoc del documento para filtrar las descripciones asociadas'
             )
         ]
     )
-   
     @action(detail=False, url_path='title', methods=['get'])
     def get_titleDocuments(self, request):
         doc_id = request.query_params.get('titledocument')
@@ -91,19 +79,22 @@ class titleDescripcionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response({"results": serializer.data})
 
+
 class DataDocumentViewSet(viewsets.ModelViewSet):
     queryset = DataDocument.objects.all()
-    serializer_class = DataDocumentSerializer    
+    serializer_class = DataDocumentSerializer
 
-class FooterDocumentViewSet(viewsets.ModelViewSet):    
+
+class FooterDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = FooterDocumentSerializer
 
     # 👇 Añade esta línea:
-    queryset = FooterDocument.objects.none()  # o FooterDocument.objects.all() si quieres que también sirva para listar todos
+    # o FooterDocument.objects.all() si quieres que también sirva para listar todos
+    queryset = FooterDocument.objects.none()
 
     def get_queryset(self):
         footer_documento_id = self.request.query_params.get('footer_documento')
-        
+
         if footer_documento_id:
             try:
                 # Convertir a entero antes de filtrar
@@ -121,11 +112,12 @@ class PagoViewSet(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
 
 # 👇 Añade esta línea:
-    queryset = Pago.objects.none()  # o Pago.objects.all() si quieres que también sirva para listar todos
+    # o Pago.objects.all() si quieres que también sirva para listar todos
+    queryset = Pago.objects.none()
 
     def get_queryset(self):
         pago_id = self.request.query_params.get('empresa')
-        
+
         if pago_id:
             try:
                 # Convertir a entero antes de filtrar

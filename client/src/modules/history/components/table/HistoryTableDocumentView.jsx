@@ -1,5 +1,12 @@
 import React from "react";
-import { FaEdit, FaSort, FaSortUp, FaSortDown, FaCheck } from "react-icons/fa";
+import { 
+  FaEdit, 
+  FaSort, 
+  FaSortUp, 
+  FaSortDown, 
+  FaCheck, 
+  FaTrash 
+} from "react-icons/fa";
 import dayjs from "dayjs";
 
 export const HistoryTableDocumentView = ({
@@ -8,12 +15,11 @@ export const HistoryTableDocumentView = ({
   isDisabled,
   handleUpdate,
   handlePrint,
+  handleDeleteFactura, // Esta función ahora se ejecuta desde la columna Presupuesto
   toggleChecklistItem,
   sortConfig,
   requestSort
 }) => {
-
-  //console.log("datos HistoryTableDocumentView: ", sortedProducts)
 
   return (
     <>
@@ -79,7 +85,7 @@ export const HistoryTableDocumentView = ({
                   key={idx}
                   className={`transition-colors duration-150 hover:bg-gray-50 ${
                     item.observaciones?.toLowerCase().includes("anulado")
-                      ? "bg-red-200" // rojo ladrillo para observaciones anulado
+                      ? "bg-red-200" 
                       : item.num_factura
                       ? "bg-gradient-to-r from-blue-50 via-blue-50/80 to-white"
                       : ""
@@ -94,7 +100,7 @@ export const HistoryTableDocumentView = ({
                       : "-"}
                   </td>
 
-                  {/* Presupuesto */}
+                  {/* Presupuesto (CON BOTONES DE ACCIÓN) */}
                   <td
                     onClick={() => handlePrint(item)}
                     className={`cursor-pointer px-6 py-4 text-center ${
@@ -108,7 +114,9 @@ export const HistoryTableDocumentView = ({
                       {item.fecha_factura &&
                         dayjs(item.fecha_factura).format("DD/MM/YYYY")}
                     </div>
-                    <div className="mt-2 flex justify-center items-center space-x-2">
+                    
+                    {/* Fila de Botones de Acción */}
+                    <div className="mt-2 flex justify-center items-center space-x-3">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -133,6 +141,18 @@ export const HistoryTableDocumentView = ({
                         title="Editar"
                       >
                         <FaEdit />
+                      </button>
+
+                      {/* Botón Eliminar movido aquí */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteFactura(item);
+                        }}
+                        className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                        title="Eliminar Documento/Factura"
+                      >
+                        <FaTrash />
                       </button>
                     </div>
                   </td>
@@ -193,100 +213,72 @@ export const HistoryTableDocumentView = ({
 
       {/* Vista móvil */}
       <div className="block md:hidden space-y-4">
-        {sortedProducts.length === 0 ? (
-          <div className="py-6 text-center text-gray-500 italic">
-            No hay documentos registrados.
-          </div>
-        ) : (
-          sortedProducts.map((item, idx) => (
-            <div
-              key={idx}
-              className={`rounded-lg shadow p-4 border ${
-                item.observaciones?.toLowerCase().includes("anulado")
-                  ? "bg-red-200 border-red-400"
-                  : "bg-white border-gray-200"
-              }`}
-            >
-              <p className="text-xs text-gray-500">Cliente</p>
-              <p className="font-semibold text-gray-800">
-                {item.clienteNombre || "-"}
-              </p>
+        {sortedProducts.map((item, idx) => (
+          <div
+            key={idx}
+            className={`rounded-lg shadow p-4 border ${
+              item.observaciones?.toLowerCase().includes("anulado")
+                ? "bg-red-200 border-red-400"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            <p className="text-xs text-gray-500">Cliente</p>
+            <p className="font-semibold text-gray-800">
+              {item.clienteNombre || "-"}
+            </p>
 
-              <div className="mt-2">
-                <p className="text-xs text-gray-500">Presupuesto</p>
-                <p
-                  onClick={() => handlePrint(item)}
-                  className="font-semibold text-blue-800 cursor-pointer"
-                >
-                  {item.num_presupuesto || "-"}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {item.fecha_factura &&
-                    dayjs(item.fecha_factura).format("DD/MM/YYYY")}
-                </p>
-                <div className="flex mt-1 space-x-2">
+            <div className="mt-2">
+              <p className="text-xs text-gray-500">Presupuesto</p>
+              <div className="flex justify-between items-start">
+                <div onClick={() => handlePrint(item)} className="cursor-pointer">
+                  <p className="font-semibold text-blue-800">
+                    {item.num_presupuesto || "-"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {item.fecha_factura &&
+                      dayjs(item.fecha_factura).format("DD/MM/YYYY")}
+                  </p>
+                </div>
+                <div className="flex space-x-3">
                   <button
                     onClick={() => toggleChecklistItem(item.id, "1")}
                     className={`flex items-center justify-center w-6 h-6 rounded-full border ${
-                      item.num_presupuesto
-                        ? "bg-blue-600 border-blue-600 text-white"
-                        : "bg-white border-gray-400 text-gray-400"
+                      item.num_presupuesto ? "bg-blue-600 text-white" : "bg-white text-gray-400"
                     }`}
                   >
                     {item.num_presupuesto && <FaCheck className="w-3 h-3" />}
                   </button>
-
-                  <button
-                    onClick={() => handleUpdate(item)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
+                  <button onClick={() => handleUpdate(item)} className="text-blue-600">
                     <FaEdit />
                   </button>
-                </div>
-              </div>
-
-              <div className="mt-2">
-                <p className="text-xs text-gray-500">Albarán</p>
-                <p
-                  onClick={() => handlePrint(item, "ALBARAN")}
-                  className="font-semibold text-blue-800 cursor-pointer"
-                >
-                  {item.num_albaran || "-"}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {item.fecha_factalb &&
-                    dayjs(item.fecha_factalb).format("DD/MM/YYYY")}
-                </p>
-                <div className="flex mt-1">
-                  <button
-                    onClick={() => toggleChecklistItem(item.id, "2")}
-                    className={`flex items-center justify-center w-6 h-6 rounded-full border ${
-                      item.num_albaran
-                        ? "bg-blue-600 border-blue-600 text-white"
-                        : "bg-white border-gray-400 text-gray-400"
-                    }`}
-                  >
-                    {item.num_albaran && <FaCheck className="w-3 h-3" />}
+                  <button onClick={() => handleDeleteFactura(item)} className="text-red-500">
+                    <FaTrash />
                   </button>
                 </div>
               </div>
-
-              <div className="mt-2">
-                <p className="text-xs text-gray-500">Factura</p>
-                <p
-                  onClick={() => handlePrint(item, "FACTURA")}
-                  className="font-semibold text-blue-800 cursor-pointer"
-                >
-                  {item.num_factura || "-"}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {item.datefactura &&
-                    dayjs(item.datefactura).format("DD/MM/YYYY")}
-                </p>
-              </div>
             </div>
-          ))
-        )}
+
+            <div className="mt-2">
+              <p className="text-xs text-gray-500">Albarán</p>
+              <p onClick={() => handlePrint(item, "ALBARAN")} className="font-semibold text-blue-800 cursor-pointer">
+                {item.num_albaran || "-"}
+              </p>
+              <p className="text-xs text-gray-500">
+                {item.fecha_factalb && dayjs(item.fecha_factalb).format("DD/MM/YYYY")}
+              </p>
+            </div>
+
+            <div className="mt-2">
+              <p className="text-xs text-gray-500">Factura</p>
+              <p onClick={() => handlePrint(item, "FACTURA")} className="font-semibold text-blue-800 cursor-pointer">
+                {item.num_factura || "-"}
+              </p>
+              <p className="text-xs text-gray-500">
+                {item.datefactura && dayjs(item.datefactura).format("DD/MM/YYYY")}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );

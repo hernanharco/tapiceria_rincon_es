@@ -13,10 +13,19 @@ class DataClientSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DocumentSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()  # 👈 Asegura que aparezca 
+    id = serializers.ReadOnlyField()
+    
+    # Esto le dice a Django: "Busca en la tabla DataClient el registro que 
+    # tenga este CIF". Si no lo encuentra, devolverá un error 400 (limpio) 
+    # en lugar de un 500 (colapso).
+    dataclient = serializers.SlugRelatedField(
+        queryset=DataClient.objects.all(),
+        slug_field='cif'
+    )
+
     class Meta:
         model = Document
-        fields = '__all__'    
+        fields = '__all__'
 
 class titleDescripcionSerializer(serializers.ModelSerializer):
     class Meta:

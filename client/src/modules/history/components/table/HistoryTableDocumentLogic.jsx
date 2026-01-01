@@ -7,8 +7,8 @@ dayjs.locale("es");
 // Hooks y Contextos
 import useDocuments from "@/modules/documents/hooks/useDocuments"; 
 import { useApiDataDocumentsContext } from "@/modules/documents/context/DataDocumentsProvider"; 
-// Usamos el contexto específico de títulos que nos acabas de dar
 import { useApiTitleTableDocumentsContext } from "@/modules/documents/context/TitleTableDocumentsProvider"; 
+import { useApiFootersContext } from "@/modules/documents/context/FootersProvider"; // Importado para el refetch
 import { HistoryTableDocumentView } from "@/modules/history/components/table/HistoryTableDocumentView";
 import { HistoryModals } from "@/modules/history/HistoryModals"; 
 import DateModal from "@/utils/dateModal"; 
@@ -26,15 +26,18 @@ export const HistoryTableDocumentLogic = ({
   const { 
     getDocumentByDoc, 
     documents: documentsFromContext, 
-    fetchDocumentById, 
-    //getAllDocuments 
+    fetchDocumentById,
+    deleteProduct: deleteCabecera // Función para eliminar el documento padre
   } = useDocuments();
   
   // 2. Líneas (Materiales/Mano de obra)
-  const { datadocuments } = useApiDataDocumentsContext();
+  const { datadocuments, refetchdatadocuments } = useApiDataDocumentsContext();
 
-  // 3. Títulos de bloque (Aquí se encuentra el texto "Probando" en 'titdescripcion')
-  const { documents: titlesFromContext } = useApiTitleTableDocumentsContext(); 
+  // 3. Títulos de bloque
+  const { documents: titlesFromContext, refetch: refetchTitles } = useApiTitleTableDocumentsContext(); 
+
+  // 4. Footer (Para refrescar estado)
+  const { refetchclientes: refetchFooters } = useApiFootersContext();
 
   const [showModalSearch, setShowModalSearch] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -49,6 +52,32 @@ export const HistoryTableDocumentLogic = ({
     key: "num_presupuesto",
     direction: "desc",
   });
+
+  // --- NUEVA FUNCIÓN DE ELIMINACIÓN INTEGRAL (CASCADE) ---
+  const handleFullDelete = async (item) => {
+    const confirmacion = window.confirm(
+      `¿Estás seguro de que deseas eliminar COMPLETAMENTE el presupuesto ${item.num_presupuesto}?\n\n` +
+      `Se borrarán automáticamente todas las líneas, títulos y totales asociados.`
+    );
+
+    if (confirmacion) {
+      try {
+        // Al borrar el Documento, Django (por el models.CASCADE) borra 
+        // DataDocument, titleDescripcion y FooterDocument automáticamente.
+        await deleteCabecera(item.id);
+        
+        // Refrescamos los contextos para que la UI se actualice
+        if(refetchdatadocuments) refetchdatadocuments(true);
+        if(refetchTitles) refetchTitles(true);
+        if(refetchFooters) refetchFooters(true);
+
+        alert("Documento eliminado correctamente.");
+      } catch (error) {
+        console.error("Error al eliminar el documento:", error);
+        alert("Hubo un error al intentar eliminar el documento.");
+      }
+    }
+  };
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
@@ -79,7 +108,6 @@ export const HistoryTableDocumentLogic = ({
         } else if (cif) {
           baseDocs = await getDocumentByDoc(String(cif).trim());
         } else if (documentsFromProps && documentsFromProps.length > 0) {
-          // Si vienen resultados de búsqueda por ID, los traemos usando fetchDocumentById
           const titledocsIds = documentsFromProps.map((doc) => doc.titledoc);
           const promises = titledocsIds.map((id) => fetchDocumentById(id));
           const results = await Promise.all(promises);
@@ -91,9 +119,7 @@ export const HistoryTableDocumentLogic = ({
         // --- ENRIQUECIMIENTO ---
         const enrichedDocs = baseDocs.map(doc => ({
           ...doc,
-          // Relación con líneas: linea.documento === doc.id
           lineas: datadocuments?.filter(l => l.documento === doc.id) || [],
-          // Relación con títulos: titulo.titledoc === doc.id (visto en tu Provider)
           titulos: titlesFromContext?.filter(t => t.titledoc === doc.id) || []
         }));
 
@@ -102,23 +128,17 @@ export const HistoryTableDocumentLogic = ({
         // --- FILTRADO MULTICAMPO ---
         if (search.length > 0 && !shouldShowAll && !cif) {
           result = enrichedDocs.filter((doc) => {
-            // A. Cabecera
             const inHeader = (
               doc.num_presupuesto?.toString().includes(search) ||
               doc.observaciones?.toLowerCase().includes(search)
             );
-
-            // B. Líneas (Materiales)
             const inLines = doc.lineas.some(l => 
               l.descripcion?.toLowerCase().includes(search) || 
               l.referencia?.toLowerCase().includes(search)
             );
-
-            // C. Títulos (Texto "Probando" o "TAPIZADO ASIENTO...")
             const inTitles = doc.titulos.some(t => 
               t.titdescripcion?.toLowerCase().includes(search)
             );
-
             return inHeader || inLines || inTitles;
           });
         }
@@ -175,6 +195,7 @@ export const HistoryTableDocumentLogic = ({
         isDisabled={isDisabled}
         handleUpdate={handleUpdate}
         handlePrint={handlePrint}
+        handleDeleteFactura={handleFullDelete} // Usamos la nueva función aquí
         toggleChecklistItem={(id, opc) => { setItemIdToCheck(id); setOpcItem(opc); setIsModalOpen(true); }}
         requestSort={requestSort}
         sortConfig={sortConfig}
