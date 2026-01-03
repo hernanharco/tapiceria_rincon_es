@@ -149,6 +149,8 @@ export const HistoryTableDocumentLogic = ({
           return {
             ...doc,
             clienteNombre: client ? client.name : "Cliente desconocido",
+            //Aseguramos que el CIF esté disponible en el objeto del item
+            cifCliente: doc.dataclient || client?.cif || "-",
           };
         });
 

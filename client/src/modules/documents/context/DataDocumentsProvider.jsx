@@ -45,8 +45,20 @@ export const DataDocumentsProvider = ({ children }) => {
 
   // 2. Insertar (Actualización local inmediata)
   const addProductTable = async (newProduct) => {
+    console.log("addProductTable: ", newProduct)
     try {
-      const response = await api.post(API_URL, newProduct);
+      const dataToSend= {
+        referencia: newProduct.referencia,
+        descripcion: newProduct.descripcion,
+        cantidad: newProduct.cantidad,
+        precio: newProduct.precio,
+        dto: newProduct.dto,
+        importe: newProduct.importe,
+        entrega: "",
+        line: true,        
+        documento: newProduct.documento,
+      }
+      const response = await api.post(API_URL, dataToSend);
       setDatadocuments((prev) => [...prev, response.data]);
       return response.data;
     } catch (err) {

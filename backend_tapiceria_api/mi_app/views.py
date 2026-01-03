@@ -47,8 +47,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
 class TitleDescripcionViewSet(viewsets.ModelViewSet):
-    queryset = DataDocument.objects.all()
-    serializer_class = DataDocumentSerializer
+    queryset = titleDescripcion.objects.all()
+    serializer_class = titleDescripcionSerializer
 
 class DataDocumentViewSet(viewsets.ModelViewSet):
     queryset = DataDocument.objects.all()

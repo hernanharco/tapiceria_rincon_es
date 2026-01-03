@@ -30,9 +30,9 @@ export const HistoryModals = ({
     addProductTable,
     getDocumentsByNum,
     updateProductTable,
-    deleteProductTable,
+    deleteProduct,
   } = useApiDataDocumentsContext();
-  const { saveFooter, updateFooter, getFootersByFieldId } =
+  const { /*saveFooter,*/ updateFooter, getFootersByFieldId } =
     useApiFootersContext();
 
   const [datInfo, setDatInfo] = useState({
@@ -50,12 +50,23 @@ export const HistoryModals = ({
 
   const [deletedIds, setDeletedIds] = useState({ titles: [], products: [] });
 
-  // Limpieza del CIF para asegurar que enviamos solo el código (Primary Key en Django)
+  // --- LÓGICA DE IDENTIFICACIÓN DEL CLIENTE (CIF) ---
+
+  // 1. Definimos la función de limpieza una sola vez
   const parseSearchTerm = (value) => {
-    let match = value?.match(/^\(([^)]+)\)\s*(.*)/);
-    return match ? match[1] : value || "";
+    if (!value) return "";
+    // Busca el patrón (CIF) Nombre
+    const match = value.match(/^\(([^)]+)\)\s*(.*)/);
+    return match ? match[1] : value;
   };
-  const cleanCif = parseSearchTerm(searchTerm);
+
+  // 2. Determinamos el CIF mediante prioridad:
+  // PRIORIDAD 1: Si estamos editando, mandamos el CIF que ya tiene el documento (dataclient).
+  // PRIORIDAD 2: Si es nuevo, limpiamos lo que el usuario escribió en el buscador.
+  const cleanCif = selectedItem?.dataclient || parseSearchTerm(searchTerm);
+
+  // 3. (Opcional) Nombre del cliente para mostrar en la UI si lo necesitas
+  //const clientName = selectedItem?.clienteNombre || "";
 
   useEffect(() => {
     if (!isOpen || !selectedItem) return;
@@ -107,7 +118,19 @@ export const HistoryModals = ({
 
   const handleSave = async () => {
     try {
-      // 1. GUARDAR O EDITAR CABECERA (Igual que antes)
+      // --- 1. PROCESAR ELIMINACIONES PENDIENTES ---
+      if (isEditing) {
+        if (deletedIds.products.length > 0) {
+          await Promise.all(deletedIds.products.map((id) => deleteProduct(id)));
+        }
+        if (deletedIds.titles.length > 0) {
+          await Promise.all(
+            deletedIds.titles.map((id) => deleteProductTitle(id))
+          );
+        }
+      }
+
+      // --- 2. GUARDAR O EDITAR CABECERA ---
       const documentPayload = {
         fecha_factura: datInfo.dataInfoDate,
         observaciones: datInfo.dataInfoObservation || "",
@@ -115,38 +138,81 @@ export const HistoryModals = ({
         dataclient: String(cleanCif),
       };
 
-      let response;
-      if (isEditing) {
-        response = await updateDocumentFieldsId(
+      let headerResponse;
+      if (isEditing && selectedItem?.id) {
+        headerResponse = await updateDocumentFieldsId(
           selectedItem.id,
           documentPayload
         );
       } else {
-        response = await addProduct(documentPayload);
+        headerResponse = await addProduct(documentPayload);
       }
 
-      // 2. TRABAJAR SOLO CON EL PRIMER DATO DE LA TABLA
-      if (filteredProducts.length > 0) {
-        const firstProduct = filteredProducts[0]; // Tomamos el primer objeto {referencia, descripcion, ...}
-        const documentId = response.id; // El ID de la cabecera recién creada
+      const documentId = headerResponse.id;
 
-        // Unimos el ID de cabecera con la descripción (o el objeto completo)
-        const payloadTable = {
-          titledoc: documentId, // El ID que vincula ambos
-          titdescripcion: firstProduct.descripcion,
-          //referencia: firstProduct.referencia, // La referencia que pediste unir
-          // ... puedes agregar más campos aquí si tu API los requiere
+      // --- 3. GUARDAR / ACTUALIZAR LÍNEAS DE LA TABLA ---
+      if (filteredProducts.length > 0) {
+        for (let i = 0; i < filteredProducts.length; i += 3) {
+          const titleItem = filteredProducts[i];
+          const materialItem = filteredProducts[i + 1];
+          const obraItem = filteredProducts[i + 2];
+
+          // A. Procesar Título
+          if (titleItem) {
+            const payloadTitle = {
+              titledoc: documentId,
+              titdescripcion: titleItem.descripcion,
+            };
+            if (titleItem.id && !titleItem.id.toString().startsWith("new-")) {
+              await updateDocumentFieldsIdTitle(titleItem.id, payloadTitle);
+            } else {
+              await addProductTitle(payloadTitle);
+            }
+          }
+
+          // B. Procesar Materiales y Mano de Obra
+          const subItems = [
+            { data: materialItem, type: "Materiales" },
+            { data: obraItem, type: "Mano de Obra" },
+          ];
+
+          for (const item of subItems) {
+            if (item.data) {
+              const payloadDetail = { ...item.data, documento: documentId };
+              if (item.data.id && !item.data.id.toString().startsWith("new-")) {
+                await updateProductTable(item.data.id, payloadDetail);
+              } else {
+                await addProductTable(payloadDetail);
+              }
+            }
+          }
+        }
+      }
+
+      // --- 4. GUARDAR O ACTUALIZAR EL FOOTER (Totales) ---
+      // Este es el paso que habilita tu saveFooter/updateFooter
+      try {        
+        const footerPayload = {
+          // Calculamos, fijamos 2 decimales y convertimos de nuevo a número
+          subtotal: Number(parseFloat(datFooter.datsubTotal || 0).toFixed(2)),
+          base_imponible: Number(parseFloat(datFooter.datbaseImponible || 0).toFixed(2)),
+          iva: Number(parseFloat(datFooter.datIva || 0).toFixed(2)),
+          total: Number(parseFloat(datFooter.datTotal || 0).toFixed(2)),
+          footer_documento: documentId,
         };
 
-        console.log("Enviando a addProductTitle:", payloadTable);
-
-        // Enviamos el objeto combinado a la función
-        await addProductTitle(payloadTable);
+        // updateFooter decidirá internamente si llamar a saveFooter (POST) o hacer PATCH
+        await updateFooter(documentId, footerPayload);
+      } catch (footerError) {
+        console.error("Error al procesar el footer:", footerError);
+        // Aquí podrías decidir si quieres lanzar el error o que el proceso siga
       }
 
-      alert("Proceso completado con el primer registro de la tabla");
+      // 5. FINALIZACIÓN
+      alert("¡Todo se ha guardado correctamente!");
+      onClose();
     } catch (error) {
-      console.error("Error en el proceso:", error);
+      console.error("Error general:", error);
       alert("Error al guardar: " + error.message);
     }
   };
