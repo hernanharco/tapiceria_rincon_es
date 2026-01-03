@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Para que se vea presentable en Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # primero
     'django.middleware.common.CommonMiddleware',
@@ -110,7 +111,13 @@ USE_TZ = True
 # -----------------------
 # Archivos estáticos
 # -----------------------
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# Esta es la carpeta donde Django recolectará todos los archivos estáticos
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Configuración de Whitenoise para servir archivos comprimidos
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

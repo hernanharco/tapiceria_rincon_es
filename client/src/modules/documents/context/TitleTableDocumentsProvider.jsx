@@ -84,8 +84,11 @@ export const TitleTableDocumentsProvider = ({ children }) => {
 
   // 4. CRUD con actualización inmediata del estado
   const addProductTitle = async (newProduct) => {
+    console.log("newProduct: ", newProduct);
     try {
       const response = await api.post(API_URL, newProduct);
+      console.log("api.post:")
+      console.log("response: ", response);
       setDocuments((prev) => [...prev, response.data]);
       return response.data;
     } catch (err) {
@@ -95,6 +98,7 @@ export const TitleTableDocumentsProvider = ({ children }) => {
   };
 
   const updateDocumentFieldsIdTitle = async (id, updatedFields) => {
+    console.log("id: ", id,  "updateFields: ", updatedFields)
     if (!id) return;
     try {
       const response = await api.patch(`${API_URL}${id}/`, updatedFields);

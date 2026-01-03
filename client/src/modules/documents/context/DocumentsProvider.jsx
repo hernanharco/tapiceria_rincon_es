@@ -56,7 +56,7 @@ export const DocumentsProvider = ({ children }) => {
   );
 
   // 2. Insertar documento
-  const addProduct = async (newDocument) => {
+  const addProduct = async (newDocument) => {    
     try {
       const dataToSend = {
         // Asegúrate de que los nombres coincidan exactamente con el models.py
@@ -65,7 +65,7 @@ export const DocumentsProvider = ({ children }) => {
         num_presupuesto: String(newDocument.num_presupuesto),
         observaciones: newDocument.observaciones || "",
         // Si el servidor falla aquí, es por el CIF o porque falta el Footer/Lineas en el serializador
-      };
+      };      
 
       const response = await api.post(API_URL, dataToSend);
       setDocuments((prev) => [...prev, response.data]);

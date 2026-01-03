@@ -42,6 +42,7 @@ export const FootersProvider = ({ children }) => {
 
   // 2. Guardar nuevo footer
   const saveFooter = async (nuevoFooter) => {
+    console.log("saveFooter FooterProvider: ", nuevoFooter);
     if (!nuevoFooter || typeof nuevoFooter !== "object") {
       throw new Error("Datos inválidos para guardar footer");
     }
