@@ -30,7 +30,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 class titleDescripcionSerializer(serializers.ModelSerializer):
     class Meta:
         model = titleDescripcion
-        fields = '__all__'
+        fields = ['id', 'dataclient', 'titles', ...]
 
 class DataDocumentSerializer(serializers.ModelSerializer):
     class Meta:

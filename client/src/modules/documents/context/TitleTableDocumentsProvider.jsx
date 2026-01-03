@@ -86,7 +86,11 @@ export const TitleTableDocumentsProvider = ({ children }) => {
   const addProductTitle = async (newProduct) => {
     console.log("newProduct: ", newProduct);
     try {
-      const response = await api.post(API_URL, newProduct);
+      const dataToSend= {
+        titdescripcion: newProduct.titdescripcion,
+        titledoc: newProduct.titledoc
+      }
+      const response = await api.post(API_URL, dataToSend);
       console.log("api.post:")
       console.log("response: ", response);
       setDocuments((prev) => [...prev, response.data]);
