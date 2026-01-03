@@ -132,7 +132,7 @@ export const HistoryModals = ({
 
         // Unimos el ID de cabecera con la descripción (o el objeto completo)
         const payloadTable = {
-          titledoc_id: documentId, // El ID que vincula ambos
+          titledoc: documentId, // El ID que vincula ambos
           titdescripcion: firstProduct.descripcion,
           //referencia: firstProduct.referencia, // La referencia que pediste unir
           // ... puedes agregar más campos aquí si tu API los requiere

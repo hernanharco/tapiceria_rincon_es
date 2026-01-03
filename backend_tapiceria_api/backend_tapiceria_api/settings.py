@@ -1,7 +1,7 @@
 """
 Django settings for backend_tapiceria_api project.
 """
-
+import os
 from pathlib import Path
 from decouple import config, Csv
 import dj_database_url
@@ -74,6 +74,7 @@ if USE_REMOTE_DB:
         'default': dj_database_url.config(
             default=config('DATABASE_URL'),
             conn_max_age=600,
+            conn_health_checks=True,
             ssl_require=True
         )
     }
