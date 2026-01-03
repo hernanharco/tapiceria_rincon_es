@@ -47,48 +47,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
 class TitleDescripcionViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para manejar los títulos / descripciones asociados a un documento.
-
-    Endpoints disponibles:
-    - GET  /api/titleDescripcion/
-        → Devuelve todos los registros
-
-    - GET  /api/titleDescripcion/?titledocument=ID
-        → Devuelve solo los registros asociados al documento indicado
-
-    - POST /api/titleDescripcion/
-        → Crea un nuevo registro
-    """
-
-    # Serializer que convierte el modelo a JSON y viceversa
-    serializer_class = titleDescripcionSerializer
-
-    # Queryset base (todos los registros)
-    queryset = titleDescripcion.objects.all()
-
-    def get_queryset(self):
-        """
-        Permite filtrar por documento usando un parámetro en la URL.
-
-        Ejemplo:
-        /api/titleDescripcion/?titledocument=66
-        """
-        # Obtenemos el queryset base
-        queryset = super().get_queryset()
-
-        # Leemos el parámetro 'titledocument' desde la URL
-        doc_id = self.request.query_params.get("titledocument")
-
-        # Si el parámetro existe, filtramos por el ID del documento
-        # Django devuelve una lista vacía si el ID no existe (no lanza error)
-        if doc_id:
-            queryset = queryset.filter(titledoc_id=doc_id)
-
-        # Retornamos el queryset final
-        return queryset
-
-
+    queryset = DataDocument.objects.all()
+    serializer_class = DataDocumentSerializer
 
 class DataDocumentViewSet(viewsets.ModelViewSet):
     queryset = DataDocument.objects.all()

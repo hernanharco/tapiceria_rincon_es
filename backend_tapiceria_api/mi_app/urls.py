@@ -7,7 +7,7 @@ from .views import (
     DataDocumentViewSet,
     FooterDocumentViewSet,
     PagoViewSet,   
-    titleDescripcionViewSet,
+    TitleDescripcionViewSet,
 )
 
 router = DefaultRouter()
@@ -17,7 +17,7 @@ router.register(r'documents', DocumentViewSet)
 router.register(r'datadocuments', DataDocumentViewSet)
 router.register(r'footers', FooterDocumentViewSet)
 router.register(r'pagos', PagoViewSet)
-router.register(r'titleDescripcion', titleDescripcionViewSet)
+router.register(r'titleDescripcion', TitleDescripcionViewSet)
 
 urlpatterns = [
     path('api/', include(router.urls)),
