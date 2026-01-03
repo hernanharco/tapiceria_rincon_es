@@ -47,6 +47,25 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
 class titleDescripcionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet que maneja automáticamente:
+    - POST /api/titleDescripcion/ -> Crea un registro (Devuelve 201 Created)
+    - GET  /api/titleDescripcion/ -> Lista todos los registros
+    """
+    serializer_class = titleDescripcionSerializer
+    queryset = titleDescripcion.objects.all()
+
+    def get_queryset(self):
+        """
+        Simplificamos la lógica: Si pasas ?titledocument=ID en la URL, 
+        filtramos automáticamente sin necesidad de una ruta extra.
+        """
+        queryset = super().get_queryset()
+        doc_id = self.request.query_params.get('titledocument')
+        
+        if doc_id:
+            return queryset.filter(titledoc_id=doc_id) # Usamos _id para ser más eficientes
+        return queryset
     serializer_class = titleDescripcionSerializer
     queryset = titleDescripcion.objects.all()
 
