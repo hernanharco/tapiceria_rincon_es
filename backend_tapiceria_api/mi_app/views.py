@@ -46,57 +46,48 @@ class DocumentViewSet(viewsets.ModelViewSet):
             )
 
 
-class titleDescripcionViewSet(viewsets.ModelViewSet):
+class TitleDescripcionViewSet(viewsets.ModelViewSet):
     """
-    ViewSet que maneja automáticamente:
-    - POST /api/titleDescripcion/ -> Crea un registro (Devuelve 201 Created)
-    - GET  /api/titleDescripcion/ -> Lista todos los registros
+    ViewSet para manejar los títulos / descripciones asociados a un documento.
+
+    Endpoints disponibles:
+    - GET  /api/titleDescripcion/
+        → Devuelve todos los registros
+
+    - GET  /api/titleDescripcion/?titledocument=ID
+        → Devuelve solo los registros asociados al documento indicado
+
+    - POST /api/titleDescripcion/
+        → Crea un nuevo registro
     """
+
+    # Serializer que convierte el modelo a JSON y viceversa
     serializer_class = titleDescripcionSerializer
+
+    # Queryset base (todos los registros)
     queryset = titleDescripcion.objects.all()
 
     def get_queryset(self):
         """
-        Simplificamos la lógica: Si pasas ?titledocument=ID en la URL, 
-        filtramos automáticamente sin necesidad de una ruta extra.
+        Permite filtrar por documento usando un parámetro en la URL.
+
+        Ejemplo:
+        /api/titleDescripcion/?titledocument=66
         """
+        # Obtenemos el queryset base
         queryset = super().get_queryset()
-        doc_id = self.request.query_params.get('titledocument')
-        
+
+        # Leemos el parámetro 'titledocument' desde la URL
+        doc_id = self.request.query_params.get("titledocument")
+
+        # Si el parámetro existe, filtramos por el ID del documento
+        # Django devuelve una lista vacía si el ID no existe (no lanza error)
         if doc_id:
-            return queryset.filter(titledoc_id=doc_id) # Usamos _id para ser más eficientes
+            queryset = queryset.filter(titledoc_id=doc_id)
+
+        # Retornamos el queryset final
         return queryset
-    serializer_class = titleDescripcionSerializer
-    queryset = titleDescripcion.objects.all()
 
-    # Esta forma solo sirve para listar informacion
-    @extend_schema(
-        description="Filtra registros de 'titleDescripcion' cuyo campo 'titledoc' coincida con el ID del Document dado.",
-        parameters=[
-            OpenApiParameter(
-                name='get_titleDocuments',
-                type=str,
-                location='query',
-                description='titledoc del documento para filtrar las descripciones asociadas'
-            )
-        ]
-    )
-    @action(detail=False, url_path='title', methods=['get'])
-    def get_titleDocuments(self, request):
-        doc_id = request.query_params.get('titledocument')
-
-        if doc_id:
-            try:
-                # Filtramos los titleDescripcion cuyo "titledoc" sea igual al Document con id=doc_id
-                queryset = self.queryset.filter(titledoc__id=doc_id)
-            except ValueError:
-                return Response({"error": "El valor proporcionado no es un ID válido."}, status=400)
-        else:
-            queryset = self.get_queryset()
-
-        # Serializamos los resultados
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({"results": serializer.data})
 
 
 class DataDocumentViewSet(viewsets.ModelViewSet):
