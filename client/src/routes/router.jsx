@@ -10,6 +10,7 @@ import {PrintableViewPDF} from '../modules/pdf/PrintableViewPDF';
 import {HistoryDocumentsView} from '../pages/HistoryDocumentsView';
 import {CreateClientView} from '../pages/CreateClientView';
 import {SettingView} from '../pages/SettingView'
+import ProfessionalForm from '@/modules/settings/components/ProfessionalForm';
 
 export const router = createBrowserRouter([
   {
@@ -41,7 +42,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/settings',
-        element: <SettingView />,
+        element: <ProfessionalForm />,
       },
     ],
   },
