@@ -67,11 +67,10 @@ export const HistoryTableDocumentView = ({
                 <button
                   onClick={() => setShowModal(true)}
                   disabled={isDisabled}
-                  className={`px-4 py-2 rounded-md text-white font-medium transition-all ${
-                    isDisabled
+                  className={`px-4 py-2 rounded-md text-white font-medium transition-all ${isDisabled
                       ? "bg-gray-400"
                       : "bg-green-600 hover:bg-green-700 hover:shadow-lg"
-                  }`}
+                    }`}
                 >
                   Agregar Nuevo Documento
                 </button>
@@ -91,11 +90,10 @@ export const HistoryTableDocumentView = ({
               return (
                 <tr
                   key={idx}
-                  className={`transition-colors ${
-                    isAnulado
+                  className={`transition-colors ${isAnulado
                       ? "bg-red-200 hover:bg-red-300"
                       : "hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <td
                     className="px-6 py-4 text-center text-gray-700 text-xs font-medium"
@@ -122,18 +120,16 @@ export const HistoryTableDocumentView = ({
                           toggleChecklistItem(item.id, "1");
                         }}
                         disabled={!!item.num_albaran}
-                        className={`${checkStyle} ${
-                          item.num_albaran
+                        className={`${checkStyle} ${item.num_albaran
                             ? "opacity-50 cursor-not-allowed transform-none"
                             : ""
-                        }`}
+                          }`}
                       >
                         <div
-                          className={`w-7 h-7 flex items-center justify-center rounded-full border shadow-sm ${
-                            item.num_presupuesto
+                          className={`w-7 h-7 flex items-center justify-center rounded-full border shadow-sm ${item.num_presupuesto
                               ? "bg-blue-600 border-blue-600 text-white"
                               : "bg-white border-gray-400 text-gray-400"
-                          }`}
+                            }`}
                         >
                           {item.num_presupuesto && (
                             <FaCheck className="w-3 h-3" />
@@ -176,18 +172,16 @@ export const HistoryTableDocumentView = ({
                         toggleChecklistItem(item.id, "2");
                       }}
                       disabled={!!item.num_factura}
-                      className={`${checkStyle} mt-1 ${
-                        item.num_factura
+                      className={`${checkStyle} mt-1 ${item.num_factura
                           ? "opacity-50 cursor-not-allowed transform-none"
                           : ""
-                      }`}
+                        }`}
                     >
                       <div
-                        className={`w-7 h-7 flex items-center justify-center rounded-full border ${
-                          item.num_albaran
+                        className={`w-7 h-7 flex items-center justify-center rounded-full border ${item.num_albaran
                             ? "bg-blue-600 border-blue-600 text-white"
                             : "bg-white border-gray-400 text-gray-400"
-                        }`}
+                          }`}
                       >
                         {item.num_albaran && <FaCheck className="w-3 h-3" />}
                       </div>
@@ -214,11 +208,10 @@ export const HistoryTableDocumentView = ({
         <button
           onClick={() => setShowModal(true)}
           disabled={isDisabled}
-          className={`px-4 py-2 rounded-md text-white font-medium transition-all ${
-            isDisabled
+          className={`px-4 py-2 rounded-md text-white font-medium transition-all ${isDisabled
               ? "bg-gray-400"
               : "bg-green-600 hover:bg-green-700 hover:shadow-lg"
-          }`}
+            }`}
         >
           Agregar Nuevo Documento
         </button>
@@ -226,11 +219,10 @@ export const HistoryTableDocumentView = ({
         {sortedProducts.map((item, idx) => (
           <div
             key={idx}
-            className={`rounded-lg shadow p-4 border transition-all ${
-              item.observaciones?.toLowerCase().includes("anulado")
+            className={`rounded-lg shadow p-4 border transition-all ${item.observaciones?.toLowerCase().includes("anulado")
                 ? "bg-red-200 border-red-400"
                 : "bg-white border-gray-200"
-            }`}
+              }`}
           >
             <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
               Cliente
@@ -288,18 +280,16 @@ export const HistoryTableDocumentView = ({
                 <button
                   onClick={() => toggleChecklistItem(item.id, "1")}
                   disabled={!!item.num_albaran}
-                  className={`${checkStyle} ${
-                    item.num_albaran
+                  className={`${checkStyle} ${item.num_albaran
                       ? "opacity-50 cursor-not-allowed transform-none"
                       : ""
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`w-9 h-9 flex items-center justify-center rounded-full border shadow-sm transition-colors ${
-                      item.num_presupuesto
+                    className={`w-9 h-9 flex items-center justify-center rounded-full border shadow-sm transition-colors ${item.num_presupuesto
                         ? "bg-blue-600 border-blue-600 text-white"
                         : "bg-white border-gray-400 text-gray-400"
-                    }`}
+                      }`}
                   >
                     {item.num_presupuesto && <FaCheck className="w-4 h-4" />}
                   </div>
@@ -309,6 +299,26 @@ export const HistoryTableDocumentView = ({
                   className={editStyle}
                 >
                   <FaEdit size={24} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleChecklistItem(item.id, "2");
+                  }}
+                  disabled={!!item.num_factura}
+                  className={`${checkStyle} mt-1 ${item.num_factura
+                      ? "opacity-50 cursor-not-allowed transform-none"
+                      : ""
+                    }`}
+                >
+                  <div
+                    className={`w-7 h-7 flex items-center justify-center rounded-full border ${item.num_albaran
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "bg-white border-gray-400 text-gray-400"
+                      }`}
+                  >
+                    {item.num_albaran && <FaCheck className="w-3 h-3" />}
+                  </div>
                 </button>
                 <button
                   onClick={() => handleDeleteFactura(item)}
