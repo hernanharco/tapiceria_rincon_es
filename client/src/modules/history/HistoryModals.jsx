@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { DocumentsInfo } from "@/modules/documents/components/DocumentsInfo";
-import { TableDocuments } from "@/modules/documents/components/compTableDocuments/TableDocuments";
-import { DocumentsFooter } from "@/modules/documents/components/DocumentsFooter";
+import { useEffect, useState } from 'react';
+import { DocumentsInfo } from '@/modules/documents/components/DocumentsInfo';
+import { TableDocuments } from '@/modules/documents/components/compTableDocuments/TableDocuments';
+import { DocumentsFooter } from '@/modules/documents/components/DocumentsFooter';
 
 // Hooks de contextos
-import { useApiDocumentsContext } from "@/modules/documents/context/DocumentsProvider";
-import { useApiTitleTableDocumentsContext } from "@/modules/documents/context/TitleTableDocumentsProvider";
-import { useApiDataDocumentsContext } from "@/modules/documents/context/DataDocumentsProvider";
-import { useApiFootersContext } from "@/modules/documents/context/FootersProvider";
+import { useApiDocumentsContext } from '@/context/DocumentsProvider';
+import { useApiTitleTableDocumentsContext } from '@/context/TitleTableDocumentsProvider';
+import { useApiDataDocumentsContext } from '@/context/DataDocumentsProvider';
+import { useApiFootersContext } from '@/context/FootersProvider';
 
 export const HistoryModals = ({
   isOpen,
@@ -16,7 +16,7 @@ export const HistoryModals = ({
   selectedItem,
 }) => {
   const isEditing = !!selectedItem?.id;
-  const [activeTab, setActiveTab] = useState("info");
+  const [activeTab, setActiveTab] = useState('info');
 
   // --- LÓGICA DE PROVIDERS ---
   const { updateDocumentFieldsId, addProduct } = useApiDocumentsContext();
@@ -36,9 +36,9 @@ export const HistoryModals = ({
     useApiFootersContext();
 
   const [datInfo, setDatInfo] = useState({
-    dataInfoDocument: "",
-    dataInfoDate: "",
-    dataInfoObservation: "",
+    dataInfoDocument: '',
+    dataInfoDate: '',
+    dataInfoObservation: '',
   });
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [datFooter, setDatFooter] = useState({
@@ -54,7 +54,7 @@ export const HistoryModals = ({
 
   // 1. Definimos la función de limpieza una sola vez
   const parseSearchTerm = (value) => {
-    if (!value) return "";
+    if (!value) return '';
     // Busca el patrón (CIF) Nombre
     const match = value.match(/^\(([^)]+)\)\s*(.*)/);
     return match ? match[1] : value;
@@ -72,9 +72,9 @@ export const HistoryModals = ({
     if (!isOpen || !selectedItem) return;
 
     setDatInfo({
-      dataInfoDocument: selectedItem.num_presupuesto || "",
-      dataInfoDate: selectedItem.fecha_factura || "",
-      dataInfoObservation: selectedItem.observaciones || "",
+      dataInfoDocument: selectedItem.num_presupuesto || '',
+      dataInfoDate: selectedItem.fecha_factura || '',
+      dataInfoObservation: selectedItem.observaciones || '',
     });
 
     const loadData = async () => {
@@ -106,7 +106,7 @@ export const HistoryModals = ({
           });
         }
       } catch (err) {
-        console.error("Error cargando datos:", err);
+        console.error('Error cargando datos:', err);
       }
     };
 
@@ -125,7 +125,7 @@ export const HistoryModals = ({
         }
         if (deletedIds.titles.length > 0) {
           await Promise.all(
-            deletedIds.titles.map((id) => deleteProductTitle(id))
+            deletedIds.titles.map((id) => deleteProductTitle(id)),
           );
         }
       }
@@ -133,7 +133,7 @@ export const HistoryModals = ({
       // --- 2. GUARDAR O EDITAR CABECERA ---
       const documentPayload = {
         fecha_factura: datInfo.dataInfoDate,
-        observaciones: datInfo.dataInfoObservation || "",
+        observaciones: datInfo.dataInfoObservation || '',
         num_presupuesto: String(datInfo.dataInfoDocument),
         dataclient: String(cleanCif),
       };
@@ -142,7 +142,7 @@ export const HistoryModals = ({
       if (isEditing && selectedItem?.id) {
         headerResponse = await updateDocumentFieldsId(
           selectedItem.id,
-          documentPayload
+          documentPayload,
         );
       } else {
         headerResponse = await addProduct(documentPayload);
@@ -163,7 +163,7 @@ export const HistoryModals = ({
               titledoc: documentId,
               titdescripcion: titleItem.descripcion,
             };
-            if (titleItem.id && !titleItem.id.toString().startsWith("new-")) {
+            if (titleItem.id && !titleItem.id.toString().startsWith('new-')) {
               await updateDocumentFieldsIdTitle(titleItem.id, payloadTitle);
             } else {
               await addProductTitle(payloadTitle);
@@ -172,14 +172,14 @@ export const HistoryModals = ({
 
           // B. Procesar Materiales y Mano de Obra
           const subItems = [
-            { data: materialItem, type: "Materiales" },
-            { data: obraItem, type: "Mano de Obra" },
+            { data: materialItem, type: 'Materiales' },
+            { data: obraItem, type: 'Mano de Obra' },
           ];
 
           for (const item of subItems) {
             if (item.data) {
               const payloadDetail = { ...item.data, documento: documentId };
-              if (item.data.id && !item.data.id.toString().startsWith("new-")) {
+              if (item.data.id && !item.data.id.toString().startsWith('new-')) {
                 await updateProductTable(item.data.id, payloadDetail);
               } else {
                 await addProductTable(payloadDetail);
@@ -191,11 +191,13 @@ export const HistoryModals = ({
 
       // --- 4. GUARDAR O ACTUALIZAR EL FOOTER (Totales) ---
       // Este es el paso que habilita tu saveFooter/updateFooter
-      try {        
+      try {
         const footerPayload = {
           // Calculamos, fijamos 2 decimales y convertimos de nuevo a número
           subtotal: Number(parseFloat(datFooter.datsubTotal || 0).toFixed(2)),
-          base_imponible: Number(parseFloat(datFooter.datbaseImponible || 0).toFixed(2)),
+          base_imponible: Number(
+            parseFloat(datFooter.datbaseImponible || 0).toFixed(2),
+          ),
           iva: Number(parseFloat(datFooter.datIva || 0).toFixed(2)),
           total: Number(parseFloat(datFooter.datTotal || 0).toFixed(2)),
           footer_documento: documentId,
@@ -204,16 +206,16 @@ export const HistoryModals = ({
         // updateFooter decidirá internamente si llamar a saveFooter (POST) o hacer PATCH
         await updateFooter(documentId, footerPayload);
       } catch (footerError) {
-        console.error("Error al procesar el footer:", footerError);
+        console.error('Error al procesar el footer:', footerError);
         // Aquí podrías decidir si quieres lanzar el error o que el proceso siga
       }
 
       // 5. FINALIZACIÓN
-      alert("¡Todo se ha guardado correctamente!");
+      alert('¡Todo se ha guardado correctamente!');
       onClose();
     } catch (error) {
-      console.error("Error general:", error);
-      alert("Error al guardar: " + error.message);
+      console.error('Error general:', error);
+      alert('Error al guardar: ' + error.message);
     }
   };
 
@@ -237,26 +239,26 @@ export const HistoryModals = ({
               Gestión de Documentos
             </span>
             <h2 className="text-3xl font-black text-slate-800">
-              {isEditing ? "Editar Presupuesto" : "Nuevo Presupuesto"}
+              {isEditing ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
             </h2>
           </div>
 
           <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit">
-            {["info", "products", "summary"].map((tab) => (
+            {['info', 'products', 'summary'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
                   activeTab === tab
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-slate-500 hover:bg-white/50"
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-500 hover:bg-white/50'
                 }`}
               >
-                {tab === "info"
-                  ? "📄 Info"
-                  : tab === "products"
-                  ? "📦 Detalles"
-                  : "📊 Totales"}
+                {tab === 'info'
+                  ? '📄 Info'
+                  : tab === 'products'
+                    ? '📦 Detalles'
+                    : '📊 Totales'}
               </button>
             ))}
           </div>
@@ -264,7 +266,7 @@ export const HistoryModals = ({
 
         {/* CONTENIDO DINÁMICO */}
         <div className="flex-1 px-8 py-4 bg-white overflow-y-auto custom-scrollbar">
-          {activeTab === "info" && (
+          {activeTab === 'info' && (
             <DocumentsInfo
               cif={cleanCif}
               datInfo={datInfo}
@@ -273,21 +275,21 @@ export const HistoryModals = ({
             />
           )}
 
-          {activeTab === "products" && (
+          {activeTab === 'products' && (
             <TableDocuments
               filteredProducts={filteredProducts}
               setFilteredProducts={setFilteredProducts}
               onDeleteRow={(newList, blockStartIndex) => {
                 const block = filteredProducts.slice(
                   blockStartIndex,
-                  blockStartIndex + 3
+                  blockStartIndex + 3,
                 );
                 const idsToTrack = { titles: [], products: [] };
                 block.forEach((item) => {
-                  if (item.id && !item.id.toString().startsWith("new-")) {
+                  if (item.id && !item.id.toString().startsWith('new-')) {
                     if (
-                      item.descripcion !== "Materiales" &&
-                      item.descripcion !== "Mano de Obra"
+                      item.descripcion !== 'Materiales' &&
+                      item.descripcion !== 'Mano de Obra'
                     ) {
                       idsToTrack.titles.push(item.id);
                     } else {
@@ -305,7 +307,7 @@ export const HistoryModals = ({
                 setFilteredProducts(newProds);
                 const sub = newProds.reduce(
                   (acc, i) => acc + (parseFloat(i.importe) || 0),
-                  0
+                  0,
                 );
                 setDatFooter({
                   datsubTotal: sub,
@@ -317,7 +319,7 @@ export const HistoryModals = ({
             />
           )}
 
-          {activeTab === "summary" && (
+          {activeTab === 'summary' && (
             <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
               <DocumentsFooter
                 filteredProducts={filteredProducts}
@@ -339,10 +341,10 @@ export const HistoryModals = ({
             >
               Cancelar
             </button>
-            {activeTab !== "summary" ? (
+            {activeTab !== 'summary' ? (
               <button
                 onClick={() =>
-                  setActiveTab(activeTab === "info" ? "products" : "summary")
+                  setActiveTab(activeTab === 'info' ? 'products' : 'summary')
                 }
                 className="px-8 py-3 rounded-2xl bg-slate-800 text-white font-bold"
               >
@@ -353,7 +355,7 @@ export const HistoryModals = ({
                 onClick={handleSave}
                 className="px-10 py-3 rounded-2xl bg-green-600 text-white font-black shadow-lg hover:bg-green-700 transition-all"
               >
-                {isEditing ? "Actualizar" : "Guardar Documento"}
+                {isEditing ? 'Actualizar' : 'Guardar Documento'}
               </button>
             )}
           </div>

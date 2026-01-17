@@ -1,7 +1,10 @@
 import api from './config.js';
 
 export const companyService = {
-  // Obtener todos los datos de la empresa
+  /**
+   * Obtiene los datos de la empresa.
+   * Devuelve un array (generalmente con un único objeto de configuración).
+   */
   async getCompanyData() {
     try {
       const response = await api.get('/api/companies/');
@@ -12,18 +15,30 @@ export const companyService = {
     }
   },
 
-  // Actualizar datos de la empresa
+  /**
+   * Actualiza los datos de la empresa.
+   * @param {string} cif - El identificador único de la empresa.
+   * @param {FormData|Object} data - Los datos a actualizar. 
+   * Si incluye imagen, debe ser FormData.
+   */
   async updateCompanyData(cif, data) {
     try {
-      const response = await api.put(`/api/companies/${cif}/`, data);
+      const response = await api.patch(`/api/companies/${cif}/`, data);
       return response.data;
     } catch (error) {
-      console.error('Error updating company data:', error);
+      // Este log te ahorrará horas de depuración en el futuro
+      if (error.response) {
+        console.error('Error del Backend (Data):', error.response.data);
+        console.error('Código de Error:', error.response.status);
+      }
       throw error;
     }
   },
 
-  // Crear nuevos datos de empresa
+  /**
+   * Crea un nuevo registro de empresa.
+   * @param {FormData|Object} data 
+   */
   async createCompanyData(data) {
     try {
       const response = await api.post('/api/companies/', data);

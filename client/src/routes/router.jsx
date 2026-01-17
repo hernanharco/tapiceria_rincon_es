@@ -1,16 +1,14 @@
-
 import { createBrowserRouter } from 'react-router-dom';
 
 // Componentes
-import {Sidebar} from '../modules/sidebar/Sidebar';
-import {AppProvider} from '../modules/context/AppProvider';
+import { Sidebar } from '../modules/sidebar/Sidebar';
+import { AppProvider } from '../context/AppProvider';
 
 // Paginas
-import {PrintableViewPDF} from '../modules/pdf/PrintableViewPDF';
-import {HistoryDocumentsView} from '../pages/HistoryDocumentsView';
-import {CreateClientView} from '../pages/CreateClientView';
-import {SettingView} from '../pages/SettingView'
-import ProfessionalForm from '@/modules/settings/components/ProfessionalForm';
+import { PrintableViewPDF } from '../pdf/PrintableViewPDF';
+import { HistoryDocumentsView } from '../pages/HistoryDocumentsView';
+import { CreateClientView } from '../pages/CreateClientView';
+import EnterpriseForm from '@/modules/settings/components/EnterpriseForm';
 
 export const router = createBrowserRouter([
   {
@@ -23,7 +21,7 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HistoryDocumentsView />, // Por esta parte tenemos el boton + agregar Nuevo Documento
-      },     
+      },
       {
         path: '/imprimir',
         element: <PrintableViewPDF />,
@@ -31,10 +29,10 @@ export const router = createBrowserRouter([
       {
         path: '/imprimir/:codigo/:prinTitle/:cif',
         element: <PrintableViewPDF />,
-      },      
+      },
       {
         path: '/historial',
-        element: <HistoryDocumentsView />, 
+        element: <HistoryDocumentsView />,
       },
       {
         path: '/clientes',
@@ -42,7 +40,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/settings',
-        element: <ProfessionalForm />,
+        element: <EnterpriseForm />,
       },
     ],
   },

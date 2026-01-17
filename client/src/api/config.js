@@ -6,10 +6,7 @@ const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
 const api = axios.create({
     // Aseguramos que la URL termine en /api sin duplicar barras
-    baseURL: `${baseURL.replace(/\/+$/, '')}`,
-    headers: {
-        'Content-Type': 'application/json',
-    }
+    baseURL: `${baseURL.replace(/\/+$/, '')}`,    
 });
 
 export default api;

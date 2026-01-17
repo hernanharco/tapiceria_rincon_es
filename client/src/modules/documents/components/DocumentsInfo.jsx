@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 // Importamos el hook que contiene los datos ya cargados
-import { useApiDocumentsContext } from "@/modules/documents/context/DocumentsProvider";
-import { formatDateFor } from "@/utils/formatUtils";
+import { useApiDocumentsContext } from '@/context/DocumentsProvider';
+import { formatDateFor } from '@/utils/formatUtils';
 
 export const DocumentsInfo = ({
   cif,
@@ -11,7 +11,7 @@ export const DocumentsInfo = ({
   selectedItem,
 }) => {
   // Extraemos 'documents' del contexto
-  const { documents } = useApiDocumentsContext();  
+  const { documents } = useApiDocumentsContext();
 
   /* ===========================
       Inicializar datos en edición
@@ -19,9 +19,9 @@ export const DocumentsInfo = ({
   useEffect(() => {
     if (isEditing && selectedItem) {
       setDatInfo({
-        dataInfoDocument: selectedItem.num_presupuesto || "",
-        dataInfoDate: selectedItem.fecha_factura || "",
-        dataInfoObservation: selectedItem.observaciones || "",
+        dataInfoDocument: selectedItem.num_presupuesto || '',
+        dataInfoDate: selectedItem.fecha_factura || '',
+        dataInfoObservation: selectedItem.observaciones || '',
       });
     }
   }, [isEditing, selectedItem, setDatInfo]);
@@ -36,7 +36,7 @@ export const DocumentsInfo = ({
     if (!Array.isArray(documents) || documents.length === 0) {
       setDatInfo((prev) => ({
         ...prev,
-        dataInfoDocument: formatDateFor("PRE", prev.dataInfoDate),
+        dataInfoDocument: formatDateFor('PRE', prev.dataInfoDate),
       }));
       return;
     }
@@ -57,7 +57,7 @@ export const DocumentsInfo = ({
     if (maxNumber === 0) {
       setDatInfo((prev) => ({
         ...prev,
-        dataInfoDocument: formatDateFor("PRE", prev.dataInfoDate),
+        dataInfoDocument: formatDateFor('PRE', prev.dataInfoDate),
       }));
       return;
     }
@@ -70,8 +70,8 @@ export const DocumentsInfo = ({
     // Si maxNumber era 250035, nextNumber será 250036
     setDatInfo((prev) => ({
       ...prev,
-      dataInfoDocument: `PRE${nextNumber}`,      
-    }));    
+      dataInfoDocument: `PRE${nextNumber}`,
+    }));
   }, [datInfo.dataInfoDate, isEditing, documents, setDatInfo]);
 
   return (
@@ -84,7 +84,7 @@ export const DocumentsInfo = ({
           </label>
           <input
             type="text"
-            value={datInfo.dataInfoDocument || "Generando..."}
+            value={datInfo.dataInfoDocument || 'Generando...'}
             readOnly
             className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-blue-700 focus:outline-none ring-1 ring-gray-200"
           />
@@ -97,7 +97,7 @@ export const DocumentsInfo = ({
           </label>
           <input
             type="date"
-            value={datInfo.dataInfoDate || ""}
+            value={datInfo.dataInfoDate || ''}
             onChange={(e) =>
               setDatInfo((prev) => ({
                 ...prev,
@@ -128,7 +128,7 @@ export const DocumentsInfo = ({
           Observaciones
         </label>
         <textarea
-          value={datInfo.dataInfoObservation || ""}
+          value={datInfo.dataInfoObservation || ''}
           onChange={(e) =>
             setDatInfo((prev) => ({
               ...prev,

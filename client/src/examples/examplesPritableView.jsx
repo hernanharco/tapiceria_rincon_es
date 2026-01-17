@@ -1,11 +1,9 @@
-
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
-import { DocumentTemplatePdf } from '../modules/pdf/DocumentTemplatePdf';
+import { DocumentTemplatePdf } from '../pdf/DocumentTemplatePdf';
 import useCompany from '../modules/company/hooks/useCompany';
-import useClients from "../modules/clients/hooks/useClients";
+import useClients from '../modules/clients/hooks/useClients';
 
 export const PrintableView = () => {
-
   const { empresas } = useCompany();
 
   // Validación segura: si no hay datos, no muestra nada
@@ -30,10 +28,7 @@ export const PrintableView = () => {
       {/* Vista previa del PDF */}
       <div className="border rounded shadow-sm p-4 bg-gray-50 mb-6">
         <PDFViewer style={{ width: '100%', height: '500px' }}>
-          <DocumentTemplatePdf
-            company={company}
-            client={client}
-          />
+          <DocumentTemplatePdf company={company} client={client} />
         </PDFViewer>
       </div>
 
