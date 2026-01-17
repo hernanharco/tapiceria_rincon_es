@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ./backend_tapiceria_api
+      dockerfile: dockerfile
+    container_name: tapiceria_backend
+    ports:
+      - '10000:10000'
+    env_file:
+      - .env  # Busca el archivo en la raíz del proyecto
+    environment:
+      - USE_REMOTE_DB=True
+      - PORT=10000
+    volumes:
+      - ./backend_tapiceria_api:/app
+    networks:
+      - tapiceria_network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: tapiceria_frontend
+    ports:
+      - '5173:5173' # Mantenemos el 5173, asegúrate de cerrar procesos locales
+    env_file:
+      - .env
+    environment:
+      # Forzamos a que use el backend de Docker
+      - VITE_API_URL=http://localhost:10000 
+    depends_on:
+      - backend
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - tapiceria_network
+    restart: unless-stopped
+
+networks:
+  tapiceria_network:
+    driver: bridge

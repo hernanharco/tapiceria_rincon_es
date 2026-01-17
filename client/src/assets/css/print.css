@@ -1,0 +1,52 @@
+/* src/index.css o src/assets/css/print.css */
+
+@media print {
+  /* Ocultar elementos no deseados */
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Estilo básico del documento */
+  body {
+    background-color: white !important;
+    color: black !important;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Asegurar bordes visibles */
+  table,
+  td,
+  th {
+    border: 1px solid black !important;
+    color: black !important;
+    page-break-inside: avoid;
+  }
+
+  /* Fondo blanco y limpio */
+  .bg-gray-50 {
+    background-color: #F9FAFB !important;
+  }
+
+  .bg-white {
+    background-color: white !important;
+  }
+
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+
+  /* Colores personalizados */
+  .text-blue-500 {
+    color: #2563eb !important;
+  }
+
+  /* Márgenes de página */
+  @page {
+    size: auto;
+    margin: 1cm;
+  }
+}
