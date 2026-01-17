@@ -1,10 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  User,
   Mail,
-  Briefcase,
-  Send,
-  CheckCircle2,
   Loader2,
   Building2,
   MapPin,
@@ -12,13 +8,16 @@ import {
   Globe,
   Phone,
   Image as ImageIcon,
-  Percent,
+  CheckCircle2,
+  Send,
+  Plus as PlusIcon,
 } from 'lucide-react';
 import { companyService } from '@/api/companyService';
 
 const EnterpriseForm = () => {
   const [status, setStatus] = useState('idle');
   const [logoPreview, setLogoPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [existingData, setExistingData] = useState(null);
   const fileInputRef = useRef(null);
@@ -34,15 +33,15 @@ const EnterpriseForm = () => {
     email: '',
   });
 
-  // Cargar datos existentes al montar el componente
+  // Cargar datos al montar el componente
   useEffect(() => {
     const loadCompanyData = async () => {
       try {
         setIsLoading(true);
-        const data = await companyService.getCompanyData();        
-
+        const data = await companyService.getCompanyData();
+        // Asumimos que la API devuelve un array y tomamos el primer registro
         if (data && data.length > 0) {
-          const companyData = data[0]; // Tomar el primer registro
+          const companyData = data[0];
           setExistingData(companyData);
           setFormData({
             cif: companyData.cif || '',
@@ -54,6 +53,9 @@ const EnterpriseForm = () => {
             number: companyData.number || '',
             email: companyData.email || '',
           });
+          if (companyData.logo_url) {
+            setLogoPreview(companyData.logo_url);
+          }
         }
       } catch (error) {
         console.error('Error loading company data:', error);
@@ -61,7 +63,6 @@ const EnterpriseForm = () => {
         setIsLoading(false);
       }
     };
-
     loadCompanyData();
   }, []);
 
@@ -73,6 +74,7 @@ const EnterpriseForm = () => {
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setLogoPreview(reader.result);
       reader.readAsDataURL(file);
@@ -83,31 +85,50 @@ const EnterpriseForm = () => {
     e.preventDefault();
     setStatus('loading');
 
-    try {
-      if (existingData) {
-        // Actualizar datos existentes
-        await companyService.updateCompanyData(formData.cif, formData);
-      } else {
-        // Crear nuevos datos
-        await companyService.createCompanyData(formData);
+    const data = new FormData();
+
+    // 1. Añadimos los campos de texto uno por uno
+    // FILTRO CRÍTICO: No permitimos que 'logo' entre en este bucle
+    Object.keys(formData).forEach((key) => {
+      if (
+        key !== 'logo' &&
+        formData[key] !== null &&
+        formData[key] !== undefined &&
+        formData[key] !== ''
+      ) {
+        data.append(key, formData[key]);
       }
+    });
+
+    // 2. Solo añadimos el logo si el usuario seleccionó un ARCHIVO nuevo
+    // Si logoFile es la URL antigua (string), no se añade nada.
+    if (logoFile instanceof File) {
+      data.append('logo', logoFile);
+    }
+
+    try {
+      const cif = existingData?.cif || formData.cif;
+      await companyService.updateCompanyData(cif, data);
 
       setStatus('success');
-      // Recargar datos para actualizar el estado
-      const data = await companyService.getCompanyData();
-      if (data && data.length > 0) {
-        setExistingData(data[0]);
+
+      // 3. Refrescar datos
+      const updated = await companyService.getCompanyData();
+      if (updated && updated.length > 0) {
+        const companyData = updated[0];
+        setExistingData(companyData);
+        setLogoPreview(companyData.logo_url);
+        setLogoFile(null);
       }
 
       setTimeout(() => setStatus('idle'), 3000);
     } catch (error) {
-      console.error('Error saving company data:', error);
+      console.error('Error detallado del Backend:', error.response?.data);
       setStatus('error');
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
-  // Helper para renderizar campos con icono de forma limpia
   const InputField = ({
     label,
     name,
@@ -116,7 +137,7 @@ const EnterpriseForm = () => {
     type = 'text',
     half = false,
   }) => (
-    <div className={`space-y-1.5 ${half ? 'col-span-1' : 'col-span-full'}`}>
+    <div className={`space-y-1.5 ${half ? 'md:col-span-1' : 'col-span-full'}`}>
       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
         {label}
       </label>
@@ -138,48 +159,44 @@ const EnterpriseForm = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-100 p-12">
-        <div className="flex items-center justify-center">
-          <Loader2 className="animate-spin text-blue-600" size={32} />
-          <span className="ml-3 text-lg font-medium text-slate-600">
-            Cargando datos de la empresa...
-          </span>
-        </div>
+      <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-12 flex items-center justify-center">
+        <Loader2 className="animate-spin text-blue-600 mr-3" size={32} />
+        <span className="text-lg font-medium text-slate-600">
+          Cargando datos maestros...
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-      {/* Header con diseño profesional */}
+    <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+      {/* Header con diseño Dark Mode de Slate */}
       <div className="bg-slate-900 p-8 text-white flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
           <h2 className="text-2xl font-bold">Configuración de Empresa</h2>
           <p className="text-slate-400 text-sm mt-1">
-            {existingData
-              ? 'Actualiza los datos de facturación y contacto de tu negocio.'
-              : 'Define los datos de facturación y contacto de tu negocio.'}
+            Personaliza tus datos fiscales y el logo de tus documentos.
           </p>
         </div>
 
-        {/* Selector de Logo Circular */}
+        {/* Carga de Logo circular */}
         <div
           className="relative group cursor-pointer"
           onClick={() => fileInputRef.current.click()}
         >
-          <div className="w-24 h-24 rounded-full border-4 border-slate-800 bg-slate-800 overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
+          <div className="w-28 h-28 rounded-full border-4 border-slate-800 bg-slate-800 overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105 shadow-xl">
             {logoPreview ? (
               <img
                 src={logoPreview}
-                alt="Logo"
-                className="w-full h-full object-cover"
+                alt="Logo Empresa"
+                className="w-full h-full object-contain p-2"
               />
             ) : (
               <ImageIcon className="text-slate-500" size={32} />
             )}
           </div>
-          <div className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full border-2 border-slate-900">
-            <PlusIcon size={12} className="text-white" />
+          <div className="absolute bottom-1 right-1 bg-blue-600 p-2 rounded-full border-2 border-slate-900 shadow-lg group-hover:bg-blue-500 transition-colors">
+            <PlusIcon size={14} className="text-white" />
           </div>
           <input
             type="file"
@@ -192,7 +209,7 @@ const EnterpriseForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="p-8 md:p-12 space-y-8">
-        {/* Sección: Identificación Fiscal */}
+        {/* Identificación */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <InputField
             label="CIF / NIF"
@@ -203,65 +220,65 @@ const EnterpriseForm = () => {
           />
           <div className="md:col-span-2">
             <InputField
-              label="Nombre Comercial"
+              label="Nombre de la Empresa"
               name="name"
               icon={Building2}
-              placeholder="Tapicería El Rincón"
+              placeholder="Nombre Comercial"
             />
           </div>
         </div>
 
-        {/* Sección: Ubicación */}
+        {/* Localización */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2">
             <InputField
-              label="Dirección Fiscal"
+              label="Dirección"
               name="address"
               icon={MapPin}
-              placeholder="Calle Principal 123"
+              placeholder="Calle, número, piso..."
             />
           </div>
           <InputField
-            label="Cód. Postal"
+            label="C.P."
             name="zip_code"
             icon={Globe}
-            placeholder="28001"
+            placeholder="00000"
             half
           />
           <InputField
             label="Ciudad"
             name="city"
             icon={MapPin}
-            placeholder="Madrid"
+            placeholder="Ciudad"
             half
           />
           <InputField
             label="Provincia"
             name="province"
             icon={MapPin}
-            placeholder="Madrid"
+            placeholder="Provincia"
             half
           />
         </div>
 
-        {/* Sección: Contacto */}
+        {/* Contacto */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
           <InputField
             label="Teléfono"
             name="number"
             icon={Phone}
-            placeholder="+34 600 000 000"
+            placeholder="Ej: 600 000 000"
           />
           <InputField
-            label="Correo Electrónico"
+            label="Email de Contacto"
             name="email"
             icon={Mail}
             type="email"
-            placeholder="contacto@empresa.com"
+            placeholder="email@empresa.com"
           />
         </div>
 
-        {/* Botón de Acción */}
+        {/* Botón de acción con Feedback de estado */}
         <div className="flex justify-end pt-6">
           <button
             type="submit"
@@ -270,7 +287,7 @@ const EnterpriseForm = () => {
               status === 'success'
                 ? 'bg-green-500 shadow-green-200'
                 : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
-            }`}
+            } ${status === 'error' ? 'bg-red-500 shadow-red-200' : ''}`}
           >
             {status === 'loading' ? (
               <Loader2 className="animate-spin" size={20} />
@@ -281,12 +298,10 @@ const EnterpriseForm = () => {
             )}
             <span className="text-lg">
               {status === 'loading'
-                ? 'Actualizando...'
+                ? 'Guardando...'
                 : status === 'success'
                   ? '¡Actualizado!'
-                  : status === 'error'
-                    ? 'Error'
-                    : 'Actualizar Datos'}
+                  : 'Guardar Cambios'}
             </span>
           </button>
         </div>
@@ -294,23 +309,5 @@ const EnterpriseForm = () => {
     </div>
   );
 };
-
-// Pequeño componente interno para el icono de suma
-const PlusIcon = ({ size, className }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="3"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
 
 export default EnterpriseForm;
