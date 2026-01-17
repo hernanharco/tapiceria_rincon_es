@@ -9,6 +9,7 @@ class DataCompany(models.Model):
     city = models.CharField(max_length=100)
     number = models.CharField(max_length=20)
     email = models.EmailField()
+    iva_comp = models.CharField(max_length=10)
     
     # Única adición de imagen: El logo de la empresa
     logo = CloudinaryField(

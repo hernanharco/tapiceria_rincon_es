@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { PDFViewer, PDFDownloadLink, Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { useParams } from "react-router-dom";
-import { formatDate } from "@/utils/formatUtils";
 
 // Contextos
 import { useApiCompanyContext } from "@/modules/company/context/CompanyProvider";

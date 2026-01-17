@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Send,
   Plus as PlusIcon,
+  Percent,
 } from 'lucide-react';
 import { companyService } from '@/api/companyService';
 
@@ -31,6 +32,7 @@ const EnterpriseForm = () => {
     province: '',
     number: '',
     email: '',
+    iva_comp: '',
   });
 
   // Cargar datos al montar el componente
@@ -52,6 +54,7 @@ const EnterpriseForm = () => {
             province: companyData.province || '',
             number: companyData.number || '',
             email: companyData.email || '',
+            iva_comp: companyData.iva_comp || '',
           });
           if (companyData.logo_url) {
             setLogoPreview(companyData.logo_url);
@@ -257,6 +260,13 @@ const EnterpriseForm = () => {
             name="province"
             icon={MapPin}
             placeholder="Provincia"
+            half
+          />
+          <InputField
+            label="iva"
+            name="iva_comp"
+            icon={Percent}
+            placeholder="iva"
             half
           />
         </div>
