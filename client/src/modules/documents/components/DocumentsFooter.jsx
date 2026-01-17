@@ -1,7 +1,11 @@
 import { useEffect } from "react";
 import { formatCurrency } from "@/utils/formatUtils";
+import useCompany from '@/modules/company/hooks/useCompany';
 
 export const DocumentsFooter = ({ filteredProducts = [], setDatFooter }) => {
+
+  const { empresas } = useCompany();
+  
   // 1. Cálculo de Subtotal con redondeo
   const subtotal = Number(
     filteredProducts.reduce(
@@ -24,7 +28,7 @@ export const DocumentsFooter = ({ filteredProducts = [], setDatFooter }) => {
   // 3. Base Imponible (Ahora la resta será exacta)
   const baseImponible = Number((subtotal - totalDescuento).toFixed(2));
   
-  const ivaPorcentaje = 21; 
+  const ivaPorcentaje = empresas[0].iva_comp;  
   
   // 4. IVA y Total redondeados
   const totiva = Number(((baseImponible * ivaPorcentaje) / 100).toFixed(2));

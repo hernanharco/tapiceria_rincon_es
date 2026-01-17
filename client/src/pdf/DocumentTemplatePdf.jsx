@@ -1,11 +1,11 @@
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { formatDate } from "@/utils/formatUtils";
-import { CompanyPDF } from "@/modules/company/pdf/CompanyPDF";
-import { ClientsPDF } from "@/modules/clients/pdf/ClientsPDF";
-import { DocumentInfoPDF } from "@/modules/documents/pdf/DocumentsInfoPDF";
-import { TableDocumentsPDF } from "@/modules/documents/pdf/TableDocumentsPDF";
-import { DocumentsFooterPDF } from "@/modules/documents/pdf/DocumentsFooterPDF";
-import { PagosPDF } from "@/modules/documents/pdf/PagosPDF";
+import { CompanyPDF } from "@/pdf/CompanyPDF";
+import { ClientsPDF } from "@/pdf/ClientsPDF";
+import { DocumentInfoPDF } from "@/pdf/DocumentsInfoPDF";
+import { TableDocumentsPDF } from "@/pdf/TableDocumentsPDF";
+import { DocumentsFooterPDF } from "@/pdf/DocumentsFooterPDF";
+import { PagosPDF } from "@/pdf/PagosPDF";
 
 const styles = StyleSheet.create({
   page: { padding: 30, fontFamily: "Helvetica" },

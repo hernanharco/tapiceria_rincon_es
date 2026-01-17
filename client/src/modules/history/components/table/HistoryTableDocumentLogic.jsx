@@ -1,39 +1,40 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import dayjs from "dayjs";
-import "dayjs/locale/es";
-import { toast } from "sonner"; 
-import Swal from "sweetalert2"; // <-- MEJORA: Para ventanas de confirmación modernas
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
+import { toast } from 'sonner';
+import Swal from 'sweetalert2'; // <-- MEJORA: Para ventanas de confirmación modernas
 
-dayjs.locale("es");
+dayjs.locale('es');
 
 // Hooks y Contextos
-import useDocuments from "@/modules/documents/hooks/useDocuments"; 
-import { useApiDataDocumentsContext } from "@/modules/documents/context/DataDocumentsProvider"; 
-import { useApiTitleTableDocumentsContext } from "@/modules/documents/context/TitleTableDocumentsProvider"; 
-import { useApiFootersContext } from "@/modules/documents/context/FootersProvider"; 
-import { HistoryTableDocumentView } from "@/modules/history/components/table/HistoryTableDocumentView";
-import { HistoryModals } from "@/modules/history/HistoryModals"; 
-import DateModal from "@/utils/dateModal"; 
-import useHistoryTableDocument from "@/modules/history/hooks/useHistoryTableDocument";
+import useDocuments from '@/modules/documents/hooks/useDocuments';
+import { useApiDataDocumentsContext } from '@/context/DataDocumentsProvider';
+import { useApiTitleTableDocumentsContext } from '@/context/TitleTableDocumentsProvider';
+import { useApiFootersContext } from '@/context/FootersProvider';
+import { HistoryTableDocumentView } from '@/modules/history/components/table/HistoryTableDocumentView';
+import { HistoryModals } from '@/modules/history/HistoryModals';
+import DateModal from '@/utils/dateModal';
+import useHistoryTableDocument from '@/modules/history/hooks/useHistoryTableDocument';
 
 export const HistoryTableDocumentLogic = ({
-  setShowModal, 
-  documents: documentsFromProps, 
-  searchTerm, 
-  allClients, 
+  setShowModal,
+  documents: documentsFromProps,
+  searchTerm,
+  allClients,
 }) => {
   const navigate = useNavigate();
-  
-  const { 
-    getDocumentByDoc, 
-    documents: documentsFromContext, 
+
+  const {
+    getDocumentByDoc,
+    documents: documentsFromContext,
     fetchDocumentById,
-    deleteProduct: deleteCabecera 
+    deleteProduct: deleteCabecera,
   } = useDocuments();
-  
+
   const { datadocuments, refetchdatadocuments } = useApiDataDocumentsContext();
-  const { documents: titlesFromContext, refetch: refetchTitles } = useApiTitleTableDocumentsContext(); 
+  const { documents: titlesFromContext, refetch: refetchTitles } =
+    useApiTitleTableDocumentsContext();
   const { refetchclientes: refetchFooters } = useApiFootersContext();
 
   const [showModalSearch, setShowModalSearch] = useState(false);
@@ -46,13 +47,12 @@ export const HistoryTableDocumentLogic = ({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   const [sortConfig, setSortConfig] = useState({
-    key: "num_presupuesto",
-    direction: "desc",
+    key: 'num_presupuesto',
+    direction: 'desc',
   });
 
   // --- MEJORA VISUAL: TRIPLE CONFIRMACIÓN MODERNA (ADIÓS WINDOW.CONFIRM) ---
   const handleFullDelete = async (item) => {
-    
     // PASO 1: Diseño Moderno
     const step1 = await Swal.fire({
       title: '¿Eliminar documento?',
@@ -63,7 +63,7 @@ export const HistoryTableDocumentLogic = ({
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#3b82f6',
     });
-    if (!step1.isConfirmed) return toast("Eliminación cancelada");
+    if (!step1.isConfirmed) return toast('Eliminación cancelada');
 
     // PASO 2: Diseño de Advertencia
     const step2 = await Swal.fire({
@@ -75,7 +75,7 @@ export const HistoryTableDocumentLogic = ({
       cancelButtonText: 'Detener',
       confirmButtonColor: '#f59e0b',
     });
-    if (!step2.isConfirmed) return toast.info("Operación detenida");
+    if (!step2.isConfirmed) return toast.info('Operación detenida');
 
     // PASO 3: Diseño de Peligro Crítico
     const step3 = await Swal.fire({
@@ -95,7 +95,7 @@ export const HistoryTableDocumentLogic = ({
           await Promise.all([
             refetchdatadocuments?.(true),
             refetchTitles?.(true),
-            refetchFooters?.(true)
+            refetchFooters?.(true),
           ]);
         },
         {
@@ -103,7 +103,7 @@ export const HistoryTableDocumentLogic = ({
           success: `Documento ${item.num_presupuesto} eliminado.`,
           error: 'No se pudo eliminar el documento.',
           duration: 4000,
-        }
+        },
       );
     }
   };
@@ -115,12 +115,12 @@ export const HistoryTableDocumentLogic = ({
 
   const shouldShowAll = useMemo(() => {
     const term = debouncedSearchTerm?.trim().toLowerCase();
-    return term === "todos" || term === "%";
+    return term === 'todos' || term === '%';
   }, [debouncedSearchTerm]);
 
   const parseSearchTerm = (value) => {
     const match = value.match(/^\(([^)]+)\)\s*(.*)/);
-    return { cif: match ? match[1] : "" };
+    return { cif: match ? match[1] : '' };
   };
   const { cif } = parseSearchTerm(debouncedSearchTerm);
 
@@ -143,26 +143,27 @@ export const HistoryTableDocumentLogic = ({
           baseDocs = documentsFromContext || [];
         }
 
-        const enrichedDocs = baseDocs.map(doc => ({
+        const enrichedDocs = baseDocs.map((doc) => ({
           ...doc,
-          lineas: datadocuments?.filter(l => l.documento === doc.id) || [],
-          titulos: titlesFromContext?.filter(t => t.titledoc === doc.id) || []
+          lineas: datadocuments?.filter((l) => l.documento === doc.id) || [],
+          titulos:
+            titlesFromContext?.filter((t) => t.titledoc === doc.id) || [],
         }));
 
         let result = enrichedDocs;
 
         if (search.length > 0 && !shouldShowAll && !cif) {
           result = enrichedDocs.filter((doc) => {
-            const inHeader = (
+            const inHeader =
               doc.num_presupuesto?.toString().includes(search) ||
-              doc.observaciones?.toLowerCase().includes(search)
+              doc.observaciones?.toLowerCase().includes(search);
+            const inLines = doc.lineas.some(
+              (l) =>
+                l.descripcion?.toLowerCase().includes(search) ||
+                l.referencia?.toLowerCase().includes(search),
             );
-            const inLines = doc.lineas.some(l => 
-              l.descripcion?.toLowerCase().includes(search) || 
-              l.referencia?.toLowerCase().includes(search)
-            );
-            const inTitles = doc.titulos.some(t => 
-              t.titdescripcion?.toLowerCase().includes(search)
+            const inTitles = doc.titulos.some((t) =>
+              t.titdescripcion?.toLowerCase().includes(search),
             );
             return inHeader || inLines || inTitles;
           });
@@ -172,42 +173,59 @@ export const HistoryTableDocumentLogic = ({
           const client = allClients.find((c) => c.cif === doc.dataclient);
           return {
             ...doc,
-            clienteNombre: client ? client.name : "Cliente desconocido",
-            cifCliente: doc.dataclient || client?.cif || "-",
+            clienteNombre: client ? client.name : 'Cliente desconocido',
+            cifCliente: doc.dataclient || client?.cif || '-',
           };
         });
 
-        finalDocs.sort((a, b) => new Date(b.fecha_factura) - new Date(a.fecha_factura));
+        finalDocs.sort(
+          (a, b) => new Date(b.fecha_factura) - new Date(a.fecha_factura),
+        );
         setFilteredProducts(finalDocs);
         setIsDisabled(!cif && !shouldShowAll);
-
       } catch (error) {
-        console.error("Error en búsqueda HistoryTable:", error);
+        console.error('Error en búsqueda HistoryTable:', error);
         setFilteredProducts([]);
       }
     };
 
     fetchDocuments();
-  }, [debouncedSearchTerm, cif, shouldShowAll, documentsFromProps, documentsFromContext, datadocuments, titlesFromContext, allClients]);
+  }, [
+    debouncedSearchTerm,
+    cif,
+    shouldShowAll,
+    documentsFromProps,
+    documentsFromContext,
+    datadocuments,
+    titlesFromContext,
+    allClients,
+  ]);
 
   const requestSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc')
+      direction = 'desc';
     setSortConfig({ key, direction });
   };
 
   const sortedProducts = useMemo(() => {
     return [...filteredProducts].sort((a, b) => {
-      let vA = a[sortConfig.key] ?? "";
-      let vB = b[sortConfig.key] ?? "";
-      if (typeof vA === "string") { vA = vA.toLowerCase(); vB = vB.toLowerCase(); }
-      if (vA < vB) return sortConfig.direction === "asc" ? -1 : 1;
-      if (vA > vB) return sortConfig.direction === "asc" ? 1 : -1;
+      let vA = a[sortConfig.key] ?? '';
+      let vB = b[sortConfig.key] ?? '';
+      if (typeof vA === 'string') {
+        vA = vA.toLowerCase();
+        vB = vB.toLowerCase();
+      }
+      if (vA < vB) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (vA > vB) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
   }, [filteredProducts, sortConfig]);
 
-  const handleUpdate = (item) => { setSelectedItem(item); setShowModalSearch(true); };
+  const handleUpdate = (item) => {
+    setSelectedItem(item);
+    setShowModalSearch(true);
+  };
 
   const handlePrint = (numDoc, title, clientCif) => {
     if (!numDoc || !clientCif) return;
@@ -225,14 +243,23 @@ export const HistoryTableDocumentLogic = ({
         handleUpdate={handleUpdate}
         handlePrint={handlePrint}
         handleDeleteFactura={handleFullDelete}
-        toggleChecklistItem={(id, opc) => { setItemIdToCheck(id); setOpcItem(opc); setIsModalOpen(true); }}
+        toggleChecklistItem={(id, opc) => {
+          setItemIdToCheck(id);
+          setOpcItem(opc);
+          setIsModalOpen(true);
+        }}
         requestSort={requestSort}
         sortConfig={sortConfig}
         onDoubleClickSearch={(e) => e.target.select()}
       />
 
-      <HistoryModals isOpen={showModalSearch} onClose={() => setShowModalSearch(false)} selectedItem={selectedItem} searchTerm={searchTerm} />
-      
+      <HistoryModals
+        isOpen={showModalSearch}
+        onClose={() => setShowModalSearch(false)}
+        selectedItem={selectedItem}
+        searchTerm={searchTerm}
+      />
+
       <DateModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

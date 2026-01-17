@@ -13,16 +13,20 @@ import {
   Plus as PlusIcon,
   Percent,
 } from 'lucide-react';
-import { companyService } from '@/api/companyService';
+
+// Importamos el Contexto Único
+import { useApiCompanyContext } from "@/context/CompanyProvider";
 
 const EnterpriseForm = () => {
+  // Extraemos los datos y la función de actualización del contexto
+  const { empresas, actualizarEmpresa, loading: contextLoading } = useApiCompanyContext();
+  
   const [status, setStatus] = useState('idle');
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [existingData, setExistingData] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Estado del formulario
   const [formData, setFormData] = useState({
     cif: '',
     name: '',
@@ -35,39 +39,27 @@ const EnterpriseForm = () => {
     iva_comp: '',
   });
 
-  // Cargar datos al montar el componente
+  // Sincronizamos el formulario cuando los datos del contexto cambian (o cargan por primera vez)
   useEffect(() => {
-    const loadCompanyData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await companyService.getCompanyData();
-        // Asumimos que la API devuelve un array y tomamos el primer registro
-        if (data && data.length > 0) {
-          const companyData = data[0];
-          setExistingData(companyData);
-          setFormData({
-            cif: companyData.cif || '',
-            name: companyData.name || '',
-            address: companyData.address || '',
-            zip_code: companyData.zip_code || '',
-            city: companyData.city || '',
-            province: companyData.province || '',
-            number: companyData.number || '',
-            email: companyData.email || '',
-            iva_comp: companyData.iva_comp || '',
-          });
-          if (companyData.logo_url) {
-            setLogoPreview(companyData.logo_url);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading company data:', error);
-      } finally {
-        setIsLoading(false);
+    if (empresas && empresas.length > 0) {
+      const companyData = empresas[0];
+      setFormData({
+        cif: companyData.cif || '',
+        name: companyData.name || '',
+        address: companyData.address || '',
+        zip_code: companyData.zip_code || '',
+        city: companyData.city || '',
+        province: companyData.province || '',
+        number: companyData.number || '',
+        email: companyData.email || '',
+        iva_comp: companyData.iva_comp || '',
+      });
+      if (companyData.logo) {
+        // Añadimos timestamp para evitar caché visual en el formulario
+        setLogoPreview(`${companyData.logo}?t=${new Date().getTime()}`);
       }
-    };
-    loadCompanyData();
-  }, []);
+    }
+  }, [empresas]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,43 +82,29 @@ const EnterpriseForm = () => {
 
     const data = new FormData();
 
-    // 1. Añadimos los campos de texto uno por uno
-    // FILTRO CRÍTICO: No permitimos que 'logo' entre en este bucle
+    // 1. Añadimos campos de texto
     Object.keys(formData).forEach((key) => {
-      if (
-        key !== 'logo' &&
-        formData[key] !== null &&
-        formData[key] !== undefined &&
-        formData[key] !== ''
-      ) {
+      if (key !== 'logo' && formData[key] !== null && formData[key] !== '') {
         data.append(key, formData[key]);
       }
     });
 
-    // 2. Solo añadimos el logo si el usuario seleccionó un ARCHIVO nuevo
-    // Si logoFile es la URL antigua (string), no se añade nada.
+    // 2. Añadimos archivo de logo solo si es nuevo
     if (logoFile instanceof File) {
       data.append('logo', logoFile);
     }
 
     try {
-      const cif = existingData?.cif || formData.cif;
-      await companyService.updateCompanyData(cif, data);
+      const cifActual = empresas[0]?.cif || formData.cif;
+      
+      // USAMOS LA FUNCIÓN DE LA CLASE ÚNICA
+      // Esta función ya hace el "refetch" interno
+      await actualizarEmpresa(cifActual, data);
 
       setStatus('success');
-
-      // 3. Refrescar datos
-      const updated = await companyService.getCompanyData();
-      if (updated && updated.length > 0) {
-        const companyData = updated[0];
-        setExistingData(companyData);
-        setLogoPreview(companyData.logo_url);
-        setLogoFile(null);
-      }
-
+      setLogoFile(null); // Limpiamos el estado del archivo
       setTimeout(() => setStatus('idle'), 3000);
     } catch (error) {
-      console.error('Error detallado del Backend:', error.response?.data);
       setStatus('error');
       setTimeout(() => setStatus('idle'), 3000);
     }
@@ -160,12 +138,13 @@ const EnterpriseForm = () => {
     </div>
   );
 
-  if (isLoading) {
+  // Loader inicial mientras el Provider trae los datos de Neon/PostgreSQL
+  if (contextLoading && empresas.length === 0) {
     return (
-      <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-12 flex items-center justify-center">
-        <Loader2 className="animate-spin text-blue-600 mr-3" size={32} />
-        <span className="text-lg font-medium text-slate-600">
-          Cargando datos maestros...
+      <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-12 flex flex-col items-center justify-center">
+        <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+        <span className="text-lg font-bold text-slate-600 tracking-tight">
+          Sincronizando con el servidor...
         </span>
       </div>
     );
@@ -173,16 +152,16 @@ const EnterpriseForm = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
-      {/* Header con diseño Dark Mode de Slate */}
+      {/* Header */}
       <div className="bg-slate-900 p-8 text-white flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
-          <h2 className="text-2xl font-bold">Configuración de Empresa</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Configuración de Empresa</h2>
           <p className="text-slate-400 text-sm mt-1">
-            Personaliza tus datos fiscales y el logo de tus documentos.
+            Gestión centralizada de datos fiscales y branding.
           </p>
         </div>
 
-        {/* Carga de Logo circular */}
+        {/* Logo interactivo */}
         <div
           className="relative group cursor-pointer"
           onClick={() => fileInputRef.current.click()}
@@ -191,7 +170,7 @@ const EnterpriseForm = () => {
             {logoPreview ? (
               <img
                 src={logoPreview}
-                alt="Logo Empresa"
+                alt="Preview"
                 className="w-full h-full object-contain p-2"
               />
             ) : (
@@ -212,106 +191,41 @@ const EnterpriseForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="p-8 md:p-12 space-y-8">
-        {/* Identificación */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <InputField
-            label="CIF / NIF"
-            name="cif"
-            icon={Hash}
-            placeholder="B12345678"
-            half
-          />
+          <InputField label="CIF / NIF" name="cif" icon={Hash} placeholder="B12345678" half />
           <div className="md:col-span-2">
-            <InputField
-              label="Nombre de la Empresa"
-              name="name"
-              icon={Building2}
-              placeholder="Nombre Comercial"
-            />
+            <InputField label="Nombre de la Empresa" name="name" icon={Building2} placeholder="Nombre Comercial" />
           </div>
         </div>
 
-        {/* Localización */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2">
-            <InputField
-              label="Dirección"
-              name="address"
-              icon={MapPin}
-              placeholder="Calle, número, piso..."
-            />
+            <InputField label="Dirección" name="address" icon={MapPin} placeholder="Calle, número..." />
           </div>
-          <InputField
-            label="C.P."
-            name="zip_code"
-            icon={Globe}
-            placeholder="00000"
-            half
-          />
-          <InputField
-            label="Ciudad"
-            name="city"
-            icon={MapPin}
-            placeholder="Ciudad"
-            half
-          />
-          <InputField
-            label="Provincia"
-            name="province"
-            icon={MapPin}
-            placeholder="Provincia"
-            half
-          />
-          <InputField
-            label="iva"
-            name="iva_comp"
-            icon={Percent}
-            placeholder="iva"
-            half
-          />
+          <InputField label="C.P." name="zip_code" icon={Globe} placeholder="00000" half />
+          <InputField label="Ciudad" name="city" icon={MapPin} placeholder="Ciudad" half />
+          <InputField label="Provincia" name="province" icon={MapPin} placeholder="Provincia" half />
+          <InputField label="IVA General (%)" name="iva_comp" icon={Percent} placeholder="21" half />
         </div>
 
-        {/* Contacto */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
-          <InputField
-            label="Teléfono"
-            name="number"
-            icon={Phone}
-            placeholder="Ej: 600 000 000"
-          />
-          <InputField
-            label="Email de Contacto"
-            name="email"
-            icon={Mail}
-            type="email"
-            placeholder="email@empresa.com"
-          />
+          <InputField label="Teléfono" name="number" icon={Phone} placeholder="600 000 000" />
+          <InputField label="Email de Contacto" name="email" icon={Mail} type="email" placeholder="email@empresa.com" />
         </div>
 
-        {/* Botón de acción con Feedback de estado */}
         <div className="flex justify-end pt-6">
           <button
             type="submit"
             disabled={status === 'loading'}
             className={`flex items-center gap-3 px-10 py-4 rounded-2xl font-bold text-white transition-all shadow-lg active:scale-95 ${
-              status === 'success'
-                ? 'bg-green-500 shadow-green-200'
-                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
-            } ${status === 'error' ? 'bg-red-500 shadow-red-200' : ''}`}
+              status === 'success' ? 'bg-green-500' : 'bg-blue-600 hover:bg-blue-700'
+            } ${status === 'error' ? 'bg-red-500' : ''}`}
           >
-            {status === 'loading' ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : status === 'success' ? (
-              <CheckCircle2 size={20} />
-            ) : (
-              <Send size={20} />
-            )}
+            {status === 'loading' ? <Loader2 className="animate-spin" size={20} /> : 
+             status === 'success' ? <CheckCircle2 size={20} /> : <Send size={20} />}
             <span className="text-lg">
-              {status === 'loading'
-                ? 'Guardando...'
-                : status === 'success'
-                  ? '¡Actualizado!'
-                  : 'Guardar Cambios'}
+              {status === 'loading' ? 'Sincronizando...' : 
+               status === 'success' ? '¡Actualizado!' : 'Guardar Cambios'}
             </span>
           </button>
         </div>
