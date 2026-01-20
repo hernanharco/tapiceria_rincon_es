@@ -179,6 +179,52 @@ export const DocumentsProvider = ({ children }) => {
     [documents],
   );
 
+  // 5. Filtrar documentos por rango de fechas y tipo (NUEVA FUNCIÓN)
+  const fetchDocumentsFiltered = useCallback(    
+    async (startDate, endDate, documentType = 'Todos') => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Construir URL dinámica con parámetros
+        let url = API_URL;
+        const params = new URLSearchParams();
+
+        if (startDate && endDate) {
+          params.append('start', dayjs(startDate).format('YYYY-MM-DD'));
+          params.append('end', dayjs(endDate).format('YYYY-MM-DD'));
+        }
+
+        if (documentType && documentType !== 'Todos') {
+          params.append('type', documentType);
+        }
+
+        if (params.toString()) {
+          url += `?${params.toString()}`;
+        }
+
+        const response = await api.get(url);
+        setDocuments(response.data);
+        return response.data;
+      } catch (err) {
+        console.error('Error al filtrar documentos:', err);
+        setError('No se pudieron filtrar los documentos');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  // Mantener compatibilidad con la función anterior
+  const fetchDocumentsByDateRange = useCallback(
+    async (startDate, endDate) => {
+      return fetchDocumentsFiltered(startDate, endDate, 'Todos');
+    },
+    [fetchDocumentsFiltered],
+  );
+
   const clearDocuments = () => setDocuments([]);
 
   useEffect(() => {
@@ -199,6 +245,8 @@ export const DocumentsProvider = ({ children }) => {
       updateDocumentFieldsId,
       fetchDocumentById,
       getDocumentsByObservaciones,
+      fetchDocumentsFiltered,
+      fetchDocumentsByDateRange,
     }),
     [
       documents,
@@ -209,6 +257,8 @@ export const DocumentsProvider = ({ children }) => {
       getDocumentsByObservaciones,
       fetchDocumentById,
       fetchDocumentByNum,
+      fetchDocumentsFiltered,
+      fetchDocumentsByDateRange,
     ],
   );
 

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        /* CONFIGURACIÓN DE PÁGINA */
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            /* Definimos un solo frame fijo para el número de página */
+            @frame footer_frame {
+                -pdf-frame-content: pie-pagina;
+                left: 1.5cm; width: 18cm; top: 27.5cm; height: 1cm;
+            }
+        }
+
+        /* ESTILOS BASE */
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            color: #000;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .table-full {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* CABECERA (Contenido que empuja) */
+        .header-section {
+            margin-bottom: 20px;
+        }
+
+        .header-line {
+            border-bottom: 2px solid #000;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            border: 1px solid #000;
+            padding: 10px;
+            vertical-align: top;
+            width: 48%;
+        }
+
+        /* CONTROL DE TABLA PARA EVITAR ERRORES EN LINUX */
+        tr {
+            -pdf-keep-together: true; /* Evita que una fila se parta entre dos hojas */
+        }
+
+        /* Títulos de sección en la tabla */
+        .row-section-header td {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            border-top: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="pie-pagina" style="text-align: right; font-size: 8pt; border-top: 1px solid #eee;">
+        Página <pdf:pagenumber> de <pdf:pagecount>
+    </div>
+
+    <div class="main-container">
+        
+        <div class="header-section">
+            <h1 style="font-size: 18pt; margin: 0 0 10px 0; text-align: center; font-weight: bold;">
+                {{ tipo|upper }}
+            </h1>
+
+            <table class="table-full header-line">
+                <tr>
+                    <td style="padding-bottom: 10px">
+                        <strong>{{ company.name }}</strong><br />
+                        {{ company.address }}<br />
+                        {{ company.zip_code }} {{ company.city }}<br />
+                        Tel: {{ company.number }} | NIE: {{ company.cif }}<br />
+                        Email: {{ company.email }}
+                    </td>
+                    <td style="text-align: right; vertical-align: middle">
+                        {% if logo_url %}
+                        <img src="{{ logo_url }}" style="width: 120px; height: auto;" />
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+
+            <table class="table-full" style="margin-bottom: 20px">
+                <tr>
+                    <td class="info-box">
+                        <strong>Num. {{ tipo }}:</strong> {{ doc.num_presupuesto }}<br />
+                        <strong>Fecha:</strong> {{ doc.fecha_factura|date:"d/m/Y" }}<br />
+                        <strong>Código Cliente:</strong> {{ client.cod_client }}<br />
+                        <strong>Observaciones:</strong><br/>
+                        {{ doc.observaciones|linebreaksbr }}
+                    </td>
+                    <td style="width: 4%"></td>
+                    <td class="info-box">
+                        <div style="font-weight: bold; font-size: 8pt; margin-bottom: 5px; border-bottom: 1px solid #eee;">
+                            CLIENTE
+                        </div>
+                        <strong>{{ client.name }}</strong><br />
+                        {{ client.address }}<br />
+                        {{ client.zip_code }} {{ client.city }}<br />
+                        TELF: {{ client.number }}<br/>
+                        {{ client.province }} | CIF: {{ client.cif }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        {% include "pdf/tablePDF.html" %}
+
+        <div style="margin-top: 20px;">
+            <table class="table-full" style="border: 1px solid #000; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 8px; background-color: #f2f2f2; font-size: 9pt; border-bottom: 1px solid #000;">
+                            FORMAS DE PAGO ACEPTADAS
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pagos %}
+                    <tr>
+                        <td style="padding: 6px 10px; font-size: 9pt;">
+                            {{ pagos.formas_pago }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td style="padding: 6px 10px; font-size: 9pt; color: #666;">
+                            No hay formas de pago registradas.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div> </body>
+</html>

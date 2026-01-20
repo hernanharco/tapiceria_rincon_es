@@ -13,12 +13,14 @@ from .views import (
 router = DefaultRouter()
 router.register(r'companies', DataCompanyViewSet)
 router.register(r'clients', DataClientViewSet)
-router.register(r'documents', DocumentViewSet)
+# IMPORTANTE: Aquí se registra 'documents'. 
+# Esto hará que la ruta de impresión sea /api/documents/print/...
+router.register(r'documents', DocumentViewSet) 
 router.register(r'datadocuments', DataDocumentViewSet)
 router.register(r'footers', FooterDocumentViewSet)
 router.register(r'pagos', PagoViewSet)
 router.register(r'titleDescripcion', TitleDescripcionViewSet)
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)), # Quitamos 'api/' de aquí porque lo pondremos en el principal
 ]
