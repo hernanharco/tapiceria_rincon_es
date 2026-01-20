@@ -126,3 +126,6 @@ image.png
 # --- REPORTES ---
 /coverage/
 /reports/
+
+# --- EXCEPCIÓN: Permitir el archivo de ejemplo ---
+!.env.example
