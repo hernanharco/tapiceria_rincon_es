@@ -27,8 +27,7 @@ export const DocumentServicePDF = {
    * Envío por WhatsApp.
    * Mantenemos la lógica de construcción de mensaje con las URLs de la instancia api.
    */
-  sendWhatsApp: (docsSeleccionados, options) => {
-    console.log("options", options)
+  sendWhatsApp: (docsSeleccionados, options) => {    
     // 1. Agrupamos por cliente
     const gruposPorCliente = docsSeleccionados.reduce((acc, doc) => {
       const clienteId = doc.dataclient;
