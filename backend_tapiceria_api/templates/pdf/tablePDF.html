@@ -1,13 +1,36 @@
 <style>
-    .cabecera { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-    .cabecera th { background-color: #f2f2f2; font-weight: bold; font-size: 9pt; padding: 8px; border: 1px solid #000; }
-    .cabecera td { padding: 6px 8px; font-size: 9pt; border-left: 1px solid #000; border-right: 1px solid #000; }
-    
-    .row-section-header td { 
-        background-color: #fcfcfc; font-weight: bold; border-top: 1px solid #000 !important;
-        -pdf-keep-with-next: true; /* El título nunca se queda solo al final */
+    .cabecera {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
     }
-    .row-block-closure td { border-bottom: 1px solid #000 !important; }
+
+    .cabecera th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+        font-size: 9pt;
+        padding: 8px;
+        border: 1px solid #000;
+    }
+
+    .cabecera td {
+        padding: 6px 8px;
+        font-size: 9pt;
+        border-left: 1px solid #000;
+        border-right: 1px solid #000;
+    }
+
+    .row-section-header td {
+        background-color: #fcfcfc;
+        font-weight: bold;
+        border-top: 1px solid #000 !important;
+        -pdf-keep-with-next: true;
+        /* El título nunca se queda solo al final */
+    }
+
+    .row-block-closure td {
+        border-bottom: 1px solid #000 !important;
+    }
 </style>
 
 <table class="cabecera">
@@ -22,23 +45,23 @@
     </thead>
     <tbody>
         {% for item in content %}
-            {% if item.type == 'title' %}
-                <tr class="row-section-header">
-                    <td colspan="5">{{ item.value|upper }}</td>
-                </tr>
-            {% else %}
-                <tr class="{% if forloop.last or 'Mano de Obra' in item.value.descripcion %}row-block-closure{% endif %}">
-                    <td style="padding-left: 20px;">{{ item.value.descripcion }}</td>
-                    <td style="text-align: center;">{{ item.value.cantidad }}</td>
-                    <td style="text-align: center;">{{ item.value.precio }} €</td>
-                    <td style="text-align: center;">{{ item.value.descuento|default:"0" }}%</td>
-                    <td style="text-align: center;">{{ item.value.importe }} €</td>
-                </tr>
-            {% endif %}
+        {% if item.type == 'title' %}
+        <tr class="row-section-header">
+            <td colspan="5">{{ item.value|upper }}</td>
+        </tr>
+        {% else %}
+        <tr class="{% if forloop.last or 'Mano de Obra' in item.value.descripcion %}row-block-closure{% endif %}">
+            <td style="padding-left: 20px;">{{ item.value.descripcion }}</td>
+            <td style="text-align: center;">{{ item.value.cantidad }}</td>
+            <td style="text-align: center;">{{ item.value.precio }} €</td>
+            <td style="text-align: center;">{{ item.value.descuento|default:"0" }}%</td>
+            <td style="text-align: center;">{{ item.value.importe }} €</td>
+        </tr>
+        {% endif %}
         {% endfor %}
     </tbody>
 </table>
-
+{% if tipo|upper != 'PRESUPUESTO' %}
 <table class="cabecera" style="margin-top: 5px;">
     <thead>
         <tr>
@@ -57,3 +80,6 @@
         </tr>
     </tbody>
 </table>
+{% else %}
+    <p style="text-align: right; font-weight: bold;">TOTAL: {{ footer.total }} €</p>
+{% endif %}

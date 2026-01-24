@@ -6,8 +6,8 @@ from xhtml2pdf import pisa
 from io import BytesIO
 from django.db.models import Q
 
-# Asegúrate de que la ruta de importación de Pago sea la correcta en tu proyecto
-# from mi_app.models import Pago 
+# Importación de modelos (ajusta 'core.models' al nombre real de tu app)
+# from core.models import Pago, DataCompany, DataClient, Document
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,8 @@ class PDFService:
     @staticmethod
     def get_image_base64(url):
         """
-        Convierte una imagen de URL (Cloudinary/S3) a Base64 para evitar 
-        problemas de permisos en sistemas Linux.
+        Convierte una imagen de URL (Cloudinary) a Base64 para evitar 
+        problemas de carga en el renderizado de PDF en Linux/Docker.
         """
         try:
             response = requests.get(url, timeout=5)
@@ -32,6 +32,7 @@ class PDFService:
     def generate_document_pdf(document, tipo_label=None):
         """
         Genera el PDF procesando títulos, items, lógica de prefijos y logos.
+        Incluye validación de formas de pago por consola.
         """
         try:            
             client = document.dataclient
@@ -39,7 +40,6 @@ class PDFService:
             footer = getattr(document, 'footer', None)
 
             # --- 1. LÓGICA DE DETECCIÓN DE TIPO POR PREFIJO ---
-            # Intentamos obtener el código de cualquier campo disponible
             codigo_actual = (
                 document.num_presupuesto or 
                 document.num_factura or 
@@ -48,24 +48,36 @@ class PDFService:
             ).upper()
             
             prefix = codigo_actual[:3]
-
             mapeo_tipos = {
                 'PRE': 'PRESUPUESTO',
                 'FAC': 'FACTURA',
                 'ALB': 'ALBARÁN',
             }
-
-            # Prioridad: 1. El label que venga de la vista, 2. El detectado por prefijo, 3. "DOCUMENTO"
             tipo_final = tipo_label if tipo_label else mapeo_tipos.get(prefix, 'DOCUMENTO')
 
-            # --- 2. OBTENER FORMAS DE PAGO (OPCIONAL) ---
-            # Si tienes el modelo Pago relacionado a la empresa
+            # --- 2. OBTENER FORMAS DE PAGO (Ajustado a tu modelo Pago) ---
             formas_pago = []
             try:
-                from core.models import Pago # Ajusta el import a tu modelo
+                # Import dinámico para evitar colisiones
+                from mi_app.models import Pago                
                 formas_pago = Pago.objects.filter(empresa=company)
-            except ImportError:
-                logger.warning("Modelo Pago no encontrado para PDF.")
+                
+                # 🔍 DEBUG DE CONSOLA PARA DOCKER
+                print("\n" + "═"*60)
+                print(f"DEBUG PDF: Generando para {tipo_final} - {codigo_actual}")
+                print(f"Empresa: {company.name} (CIF: {company.cif})")
+                
+                if formas_pago.exists():
+                    print(f"✅ Formas de pago encontradas ({formas_pago.count()}):")
+                    for p in formas_pago:
+                        print(f"  - ID {p.id}: {p.forma_pago}") # Campo exacto de tu modelo
+                else:
+                    print(f"⚠️ Alerta: No hay formas de pago registradas para esta empresa.")
+                print("═"*60 + "\n")
+                
+            except (ImportError, Exception) as e:
+                logger.error(f"Error cargando pagos: {e}")
+                print(f"❌ Error crítico cargando pagos: {e}")
 
             # --- 3. LÓGICA DE EMPAREJAMIENTO (Título + Items) ---
             content = []
@@ -74,14 +86,13 @@ class PDFService:
             
             item_index = 0
             for title in all_titles:
-                # Agregamos el Título de la sección
                 content.append({
                     'type': 'title',
                     'value': title.titdescripcion
                 })
                 
-                # Agregamos los items correspondientes (basado en tu lógica de bloques)
-                # Si un título siempre lleva los siguientes 2 items:
+                # Lógica de bloques: asocia items al título actual
+                # (Ajustar esta lógica si tu relación items-títulos es distinta)
                 for _ in range(2):
                     if item_index < len(all_items):
                         item = all_items[item_index]
@@ -96,7 +107,7 @@ class PDFService:
                         })
                         item_index += 1
 
-            # 4. Procesar items huérfanos (si sobran items sin título)
+            # Procesar items restantes sin título
             while item_index < len(all_items):
                 item = all_items[item_index]
                 content.append({
@@ -110,29 +121,27 @@ class PDFService:
                 })
                 item_index += 1
 
-            # --- 5. PROCESAMIENTO DE LOGO ---
+            # --- 4. PROCESAMIENTO DE LOGO ---
             logo_base64 = None
-            if hasattr(company, 'logo') and company.logo:
+            if company.logo:
                 logo_base64 = PDFService.get_image_base64(company.logo.url)
 
-            # --- 6. CONTEXTO PARA EL HTML ---
+            # --- 5. CONTEXTO Y RENDERIZADO ---
             context = {
                 'doc': document,
-                'tipo': tipo_final,      # Ejemplo: "FACTURA"
-                'prefix': prefix,        # Ejemplo: "FAC"
+                'tipo': tipo_final,
+                'prefix': prefix,
                 'codigo_completo': codigo_actual,
                 'company': company,
                 'client': client,
                 'content': content,
                 'footer': footer,
                 'logo_url': logo_base64,  
-                'pagos': formas_pago
+                'pagos': formas_pago # Pasamos el QuerySet con los campos 'forma_pago'
             }
 
-            # 7. Renderizar el HTML
             html_string = render_to_string('pdf/document_v1.html', context)
             
-            # 8. Crear el PDF usando xhtml2pdf
             pdf_buffer = BytesIO()
             pisa_status = pisa.CreatePDF(
                 src=html_string, 
@@ -141,7 +150,7 @@ class PDFService:
             )
             
             if pisa_status.err:
-                logger.error("Error en xhtml2pdf: %s", pisa_status.err)
+                logger.error(f"Error en xhtml2pdf: {pisa_status.err}")
                 raise Exception("Error interno al generar el PDF")
             
             pdf_bytes = pdf_buffer.getvalue()

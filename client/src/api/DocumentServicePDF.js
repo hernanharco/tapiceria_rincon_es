@@ -28,13 +28,14 @@ export const DocumentServicePDF = {
    * Mantenemos la lógica de construcción de mensaje con las URLs de la instancia api.
    */
   sendWhatsApp: (docsSeleccionados, options) => {
+    console.log("options", options)
     // 1. Agrupamos por cliente
     const gruposPorCliente = docsSeleccionados.reduce((acc, doc) => {
       const clienteId = doc.dataclient;
       if (!acc[clienteId]) {
         acc[clienteId] = {
           nombre: doc.clienteNombre || 'Cliente',
-          telefono: (doc.clienteTelefono || '634405549').replace(/\D/g, ''),
+          telefono: (options.customPhone || '634405549').replace(/\D/g, ''),
           documentos: [],
         };
       }
