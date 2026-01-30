@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8" />
     <style>
@@ -8,14 +9,16 @@
         @page {
             size: A4;
             margin: 1.5cm;
+
             @frame footer_frame {
                 -pdf-frame-content: pie-pagina;
-                left: 1.5cm; 
-                width: 18cm; 
-                top: 27.5cm; 
+                left: 1.5cm;
+                width: 18cm;
+                top: 27.5cm;
                 height: 1cm;
             }
         }
+
         /* css-ignore-end */
 
         /* ESTILOS BASE */
@@ -29,7 +32,7 @@
         .table-full {
             width: 100%;
             /* xhtml2pdf prefiere border-collapse: collapse para tablas complejas */
-            border-collapse: collapse; 
+            border-collapse: collapse;
         }
 
         .header-section {
@@ -44,10 +47,11 @@
         }
 
         /* IMPORTANTE: xhtml2pdf utiliza estos prefijos para evitar cortes */
-        tr, img {
+        tr,
+        img {
             -pdf-keep-with-next: true;
         }
-        
+
         .row-section-header td {
             background-color: #f2f2f2;
             font-weight: bold;
@@ -58,6 +62,7 @@
         /* Puedes ignorar el error de 'at-rule unknown' ya que es necesario para el motor PDF */
     </style>
 </head>
+
 <body>
 
     <div id="pie-pagina" style="text-align: right; font-size: 8pt; border-top: 1px solid #eee;">
@@ -66,7 +71,8 @@
 
     <div class="main-container">
         <div class="header-section">
-            <h1 style="font-size: 18pt; margin: 0 0 10px 0; text-align: center; font-weight: bold; text-transform: uppercase;">
+            <h1
+                style="font-size: 18pt; margin: 0 0 10px 0; text-align: center; font-weight: bold; text-transform: uppercase;">
                 {{ tipo }}
             </h1>
 
@@ -90,34 +96,59 @@
             <table class="table-full" style="margin-bottom: 20px">
                 <tr>
                     <td class="info-box">
-                        <strong>Num. {{ tipo }}:</strong> {{ doc.num_presupuesto }}<br />
-                        <strong>Fecha:</strong> {{ doc.fecha_factura|date:"d/m/Y" }}<br />
+                        <!-- SESION DE CODIGO-->
+                        {% if tipo|upper == 'PRESUPUESTO' %}
+                            <strong>Num. {{ tipo }}:</strong> {{ doc.num_presupuesto }}<br />
+                        {% elif tipo|upper == 'FACTURA' %}
+                            <strong>Num. {{ tipo }}:</strong> {{ doc.num_factura }}<br />
+                        {% else %}
+                            <strong>Num. {{ tipo }}:</strong> {{ doc.num_albaran }}<br />
+                        {% endif %}
+                        <!-- SESION PARA LA FECHA -->
+                        {% if tipo|upper == 'PRESUPUESTO' %}
+                            <strong>Fecha:</strong> {{ doc.fecha_factura|date:"d/m/Y" }}<br />
+                        {% elif tipo|upper == 'FACTURA' %}
+                            <strong>Fecha:</strong> {{ doc.datefactura|date:"d/m/Y" }}<br />                        
+                        {% else %}
+                            <strong>Fecha:</strong> {{ doc.fecha_factalb|date:"d/m/Y" }}<br />    
+                        {% endif %}
                         <strong>Código Cliente:</strong> {{ client.cod_client }}<br />
-                        <strong>Observaciones:</strong><br/>
+                        <strong>Observaciones:</strong><br />
                         {{ doc.observaciones|linebreaksbr }}
                     </td>
                     <td style="width: 4%"></td>
                     <td class="info-box">
-                        <div style="font-weight: bold; font-size: 8pt; margin-bottom: 5px; border-bottom: 1px solid #eee; text-transform: uppercase;">
+                        <div
+                            style="font-weight: bold; font-size: 8pt; margin-bottom: 5px; border-bottom: 1px solid #eee; text-transform: uppercase;">
                             Cliente
                         </div>
                         <strong>{{ client.name }}</strong><br />
                         {{ client.address }}<br />
                         {{ client.zip_code }} {{ client.city }}<br />
-                        TELF: {{ client.number }}<br/>
+                        TELF: {{ client.number }}<br />
                         {{ client.province }} | CIF: {{ client.cif }}
                     </td>
                 </tr>
             </table>
         </div>
 
-        {% include "pdf/tablePDF.html" %}        
+        <!-- RELACION DE DOCUMENTOS -->
+        {% if tipo|upper == 'PRESUPUESTO' %}
+            <!-- {# Se queda vacío intencionadamente #} -->
+        {% elif tipo|upper == 'FACTURA' %}
+            <strong>--> ALBARÁN RELACIONADO  {{ doc.num_albaran }} <-- </strong><br />
+        {% else %}
+            <strong>--> PRESUPUESTO RELACIONADO {{ doc.num_presupuesto }} <-- </strong><br />    
+        {% endif %}
+
+        {% include "pdf/tablePDF.html" %}
 
         <div style="margin-top: 20px;">
             <table class="table-full" style="border: 1px solid #000;">
                 <thead>
                     <tr>
-                        <th style="text-align: left; padding: 8px; background-color: #f2f2f2; font-size: 9pt; border-bottom: 1px solid #000;">
+                        <th
+                            style="text-align: left; padding: 8px; background-color: #f2f2f2; font-size: 9pt; border-bottom: 1px solid #000;">
                             FORMAS DE PAGO ACEPTADAS
                         </th>
                     </tr>
@@ -141,4 +172,5 @@
         </div>
     </div>
 </body>
+
 </html>

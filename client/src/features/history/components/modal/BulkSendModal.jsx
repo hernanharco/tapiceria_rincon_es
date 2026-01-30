@@ -84,7 +84,7 @@ export const BulkSendModal = ({ isOpen, onClose, selectedCount, onConfirm, actio
                     value={clientInfo.telefono}
                     onChange={(e) => setClientInfo({...clientInfo, telefono: e.target.value})}
                     className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition-all font-mono"
-                    placeholder="Ej: 634405549"
+                    placeholder="Ej: 604148060"
                   />
                 </div>
               </div>
