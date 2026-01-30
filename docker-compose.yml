@@ -7,10 +7,11 @@ services:
     ports:
       - '10000:10000'
     env_file:
-      - .env  # Busca el archivo en la raíz del proyecto
+      - .env
     environment:
       - USE_REMOTE_DB=True
       - PORT=10000
+      - DEBUG=True
     volumes:
       - ./backend_tapiceria_api:/app
     networks:
@@ -23,12 +24,12 @@ services:
       dockerfile: Dockerfile
     container_name: tapiceria_frontend
     ports:
-      - '5173:5173' # Mantenemos el 5173, asegúrate de cerrar procesos locales
+      - '5173:5173'
     env_file:
       - .env
+    # La URL se inyectará desde el .env que editaremos manualmente una sola vez
     environment:
-      # Forzamos a que use el backend de Docker
-      - VITE_API_URL=http://localhost:10000 
+      - VITE_API_URL=${VITE_API_URL}
     depends_on:
       - backend
     volumes:
@@ -37,6 +38,16 @@ services:
     networks:
       - tapiceria_network
     restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: tapiceria_tunnel
+    restart: always
+    command: tunnel --url http://tapiceria_backend:10000
+    networks:
+      - tapiceria_network # Crucial para conectar con el backend
+    depends_on:
+      - backend
 
 networks:
   tapiceria_network:

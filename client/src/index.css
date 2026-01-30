@@ -24,3 +24,22 @@ html {
 }
 
 /* modo oscuro para la tabla */
+@layer utilities {
+  /* Clase personalizada para un scrollbar minimalista y oscuro */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #1e293b; /* slate-800 */
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #334155; /* slate-700 */
+  }
+}
