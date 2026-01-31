@@ -16,12 +16,17 @@ export const router = createBrowserRouter([
     children: [
       {
         // CAPA 1: Guardia de seguridad y Proveedores de Datos de Negocio
-        element: (
-          <ProtectedRoute minRole="Viewer">
+        // element: (
+        //   <ProtectedRoute minRole="Viewer">
+        //     <AppProvider>
+        //       <Sidebar />
+        //     </AppProvider>
+        //   </ProtectedRoute>
+        // ),
+        element: (          
             <AppProvider>
               <Sidebar />
-            </AppProvider>
-          </ProtectedRoute>
+            </AppProvider>          
         ),
         // CAPA 2: Rutas de la aplicación (Hijas del Sidebar/Outlet)
         children: [
