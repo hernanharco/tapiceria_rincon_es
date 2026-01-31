@@ -7,9 +7,11 @@ import { FootersProvider } from './FootersProvider';
 import { PagosProvider } from './PagosProvider';
 import { HistoryProvider } from './HistoryProvider';
 import { TitleTableDocumentsProvider } from './TitleTableDocumentsProvider';
+import { AuthProvider } from './AuthContext';
 
 export const AppProvider = ({ children }) => {
   return (
+
     <CompanyProvider>
       <ClientsProvider>
         <DocumentsProvider>
@@ -25,5 +27,6 @@ export const AppProvider = ({ children }) => {
         </DocumentsProvider>
       </ClientsProvider>
     </CompanyProvider>
+
   );
 };

@@ -1,12 +1,16 @@
 import axios from 'axios';
 
-// Obtenemos la URL del .env (que ahora Vite leerá de la raíz gracias a envDir: '../')
-// Si por alguna razón no existe, usamos el fallback de Docker (10000)
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const rawBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+// Solo quitamos las barras inclinadas del final, NO agregamos /api
+const cleanBaseURL = rawBaseURL.replace(/\/+$/, '');
 
 const api = axios.create({
-    // Aseguramos que la URL termine en /api sin duplicar barras
-    baseURL: `${baseURL.replace(/\/+$/, '')}`,    
+  baseURL: cleanBaseURL, 
+//   headers: {
+//     'ngrok-skip-browser-warning': 'true',
+//     'Accept': 'application/json',
+//     'Content-Type': 'application/json'
+//   }
 });
 
 export default api;

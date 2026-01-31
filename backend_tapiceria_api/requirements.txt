@@ -12,7 +12,6 @@ jsonschema-specifications==2025.4.1
 packaging==25.0
 psycopg==3.3.2
 psycopg-binary==3.3.2
-psycopg2-binary==2.9.11
 python-decouple==3.8
 pytz==2025.2
 PyYAML==6.0.2
@@ -23,3 +22,13 @@ tzdata==2025.2
 uritemplate==4.1.1
 whitenoise==6.11.0
 django-cloudinary-storage==0.3.0
+
+# --- DEPENDENCIAS PARA PDF ---
+# Actualizado a versiones estables y compatibles
+reportlab==4.2.5
+pillow==11.0.0
+xhtml2pdf==0.2.17
+requests==2.32.3
+
+# --- SERVIDOR WEB ---
+gunicorn==23.0.0

@@ -16,6 +16,7 @@ class DataCompanySerializer(serializers.ModelSerializer):
         Lógica de limpieza 'a prueba de balas' para evitar errores 400.
         Limpia strings vacíos y evita que las URLs de Cloudinary se validen como archivos.
         """
+        print("DEBUG - Data recibida:", data)
         # 1. Convertimos a diccionario mutable (soporta QueryDict y dicts normales)
         if hasattr(data, 'dict'):
             data = data.dict()

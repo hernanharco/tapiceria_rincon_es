@@ -1,7 +1,7 @@
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
-import { DocumentTemplatePdf } from '../pdf/DocumentTemplatePdf';
-import useCompany from '../modules/company/hooks/useCompany';
-import useClients from '../modules/clients/hooks/useClients';
+import { DocumentTemplatePdf } from '../-pdf/DocumentTemplatePdf';
+import useCompany from '../hooks/company/useCompany';
+import useClients from '../hooks/clients/useClients';
 
 export const PrintableView = () => {
   const { empresas } = useCompany();
