@@ -19,6 +19,8 @@ from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
+    path('', admin.site.urls),
+
     path('admin/', admin.site.urls),
     
     # Aquí conectamos las URLs de tu app con el prefijo /api/
