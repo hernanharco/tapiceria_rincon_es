@@ -1,5 +1,8 @@
+import logging
 from rest_framework import serializers
 from .models import DataCompany, DataClient, Document, DataDocument, FooterDocument, Pago, titleDescripcion
+
+logger = logging.getLogger(__name__)
 
 class DataCompanySerializer(serializers.ModelSerializer):
     # Campo para devolver la URL limpia al frontend
@@ -16,7 +19,7 @@ class DataCompanySerializer(serializers.ModelSerializer):
         Lógica de limpieza 'a prueba de balas' para evitar errores 400.
         Limpia strings vacíos y evita que las URLs de Cloudinary se validen como archivos.
         """
-        print("DEBUG - Data recibida:", data)
+        logger.debug("Data recibida: %s", data)
         # 1. Convertimos a diccionario mutable (soporta QueryDict y dicts normales)
         if hasattr(data, 'dict'):
             data = data.dict()
