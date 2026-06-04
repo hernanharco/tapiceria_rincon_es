@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.db.models import Q
@@ -5,6 +6,8 @@ from rest_framework import viewsets, parsers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .services.pdf_service import PDFService
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     DataCompany, DataClient, Document, DataDocument, 
