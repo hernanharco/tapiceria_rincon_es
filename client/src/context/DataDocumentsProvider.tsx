@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, u
 import api from '@/api/config';
 
 const API_URL = "/api/datadocuments/";
-const DataDocumentsContext = createContext();
+const DataDocumentsContext = createContext(null);
 
 export const useApiDataDocumentsContext = () => {
   const context = useContext(DataDocumentsContext);

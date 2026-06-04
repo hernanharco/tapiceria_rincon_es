@@ -44,13 +44,13 @@ export const DocumentServicePDF = {
 
     // 2. Procesamos cada grupo
     Object.values(gruposPorCliente).forEach((grupo, index) => {
-      let mensaje = `*Hola ${grupo.nombre.toUpperCase()},*%0A`;
+      let mensaje = `*Hola ${(grupo as any).nombre.toUpperCase()},*%0A`;
       mensaje += `Le envío los documentos de *Tapicería Rincón*:%0A%0A`;
 
       // Variable para rastrear si realmente añadimos algún link al mensaje
       let tieneContenido = false;
 
-      grupo.documentos.forEach((doc) => {
+      (grupo as any).documentos.forEach((doc) => {
         // --- LA CLAVE ESTÁ AQUÍ: Evaluamos cada campo por separado ---
         const checks = [
           {
@@ -89,7 +89,7 @@ export const DocumentServicePDF = {
       // 3. Solo abrimos WhatsApp si el mensaje tiene al menos un documento
       if (tieneContenido) {
         setTimeout(() => {
-          const waUrl = `https://wa.me/${grupo.telefono}?text=${mensaje}`;
+          const waUrl = `https://wa.me/${(grupo as any).telefono}?text=${mensaje}`;
           window.open(waUrl, '_blank');
         }, index * 1200);
       }

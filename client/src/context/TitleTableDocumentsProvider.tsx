@@ -10,7 +10,7 @@ import React, {
 import api from "@/api/config";
 
 const API_URL = "/api/titleDescripcion/";
-const TitleTableDocumentsContext = createContext();
+const TitleTableDocumentsContext = createContext(null);
 
 export const useApiTitleTableDocumentsContext = () => {
   const context = useContext(TitleTableDocumentsContext);

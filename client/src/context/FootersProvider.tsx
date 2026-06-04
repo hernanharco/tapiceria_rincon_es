@@ -10,7 +10,7 @@ import React, {
 import api from "@/api/config";
 
 const API_URL = "/api/footers/";
-const FootersContext = createContext();
+const FootersContext = createContext(null);
 
 export const useApiFootersContext = () => {
   const context = useContext(FootersContext);

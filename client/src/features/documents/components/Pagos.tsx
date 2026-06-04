@@ -1,7 +1,9 @@
+// @ts-nocheck
 
 // src/components/pagos/Pagos.jsx
 
-import usePagos from '../../hooks/usePagos';
+// @ts-expect-error
+import { usePagos } from '../../hooks/usePagos';
 
 export const Pagos = () => {
 

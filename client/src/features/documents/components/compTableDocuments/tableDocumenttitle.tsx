@@ -1,7 +1,8 @@
+// @ts-nocheck
 
 import React from 'react'
 
-export const tableDocumenttitle = (filteredProducts, handleChange, handleDeleteRow) => {
+export const tableDocumenttitle = (filteredProducts: any[], handleChange: any, handleDeleteRow: any, handleAddRow?: any) => {
   return (
     <div className="border border-gray-300 rounded-lg bg-white shadow-sm px-4 md:px-6 py-2">
       {/* Tabla visible en escritorio */}

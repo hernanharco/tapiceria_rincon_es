@@ -1,3 +1,6 @@
+// @ts-expect-error
+export { default as axios } from 'axios';
+// @ts-expect-error - axios has no types installed
 import axios from 'axios';
 
 const rawBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:10000';

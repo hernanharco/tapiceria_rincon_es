@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import api from '@/api/config';
 
-const ClientsContext = createContext();
+const ClientsContext = createContext(null);
 
 export const useApiClientsContext = () => {
   const context = useContext(ClientsContext);

@@ -11,7 +11,7 @@ import api from '@/api/config';
 import dayjs from 'dayjs'; // <-- CORRECCIÓN: Importación faltante
 
 const API_URL = '/api/documents/';
-const DocumentsContext = createContext();
+const DocumentsContext = createContext(null);
 
 export const useApiDocumentsContext = () => {
   const context = useContext(DocumentsContext);

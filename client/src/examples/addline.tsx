@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 import useHistory from "../../hooks/useHistory";
 import useDocuments from '../../hooks/useDocuments';

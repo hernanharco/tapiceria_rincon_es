@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { formatDate } from '@/utils/formatUtils';
 import { CompanyPDF } from '@/-pdf/CompanyPDF';

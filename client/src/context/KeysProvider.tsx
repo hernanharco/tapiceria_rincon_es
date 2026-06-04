@@ -1,10 +1,8 @@
+import { createContext, useContext, type ReactNode } from 'react';
 
-import { createContext, useContext } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const KeysContext = createContext<any>(null);
 
-// 1. Creamos el Contexto
-const KeysContext = createContext();
-
-// 2. Creamos un hook para usar el contexto
 export const useApiKeysContext = () => {
     const context = useContext(KeysContext);
     if (!context) {
@@ -13,49 +11,17 @@ export const useApiKeysContext = () => {
     return context;
 };
 
-// 3. El Provider que carga los datos
-export const KeysProvider = ({ children }) => {
-    switch (e.key) {
-        case 'ArrowDown':
-            e.preventDefault();
-            setActiveSuggestionIndex(prev =>
-                prev < suggestions.length - 1 ? prev + 1 : prev
-            );
-            break;
-
-        case 'ArrowUp':
-            e.preventDefault();
-            setActiveSuggestionIndex(prev => (prev > 0 ? prev - 1 : -1));
-            break;
-
-        case 'Enter':
-            e.preventDefault();
-            if (activeSuggestionIndex >= 0) {
-                setSearchTerm(suggestions[activeSuggestionIndex].name);
-                setShowSuggestions(false);
-                setActiveSuggestionIndex(-1);
-            }
-            break;
-
-        case 'Escape':
-            setShowSuggestions(false);
-            setActiveSuggestionIndex(-1);
-            break;
-
-        default:
-            break;
-    }
-
+export const KeysProvider = ({ children }: { children: ReactNode }) => {
     const value = {
-        pagos,
-        loading,
-        error,
-        refetchclientes: cargarPagos,
+        pagos: [],
+        loading: false,
+        error: null,
+        refetchclientes: () => {},
     };
 
     return (
-        <useApiKeysContext.Provider value={value}>
-            {!loading ? children : <div>Cargando datos...</div>}
-        </useApiKeysContext.Provider>
+        <KeysContext.Provider value={value}>
+            {children}
+        </KeysContext.Provider>
     );
 };

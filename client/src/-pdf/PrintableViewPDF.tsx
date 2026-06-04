@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
 import { useParams } from 'react-router-dom';

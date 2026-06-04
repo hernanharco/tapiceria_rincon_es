@@ -1,7 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
-const AuthContext = createContext();
+interface AuthContextType {
+  user: { name: string; email: string; role: string; id?: number } | null;
+  isLoading: boolean;
+  checkAuth: () => Promise<void>;
+  isAuthEnabled: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider() {
   const [user, setUser] = useState(null);

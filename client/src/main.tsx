@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import { Buffer } from 'buffer';
 
-window.Buffer = Buffer;
+(window as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

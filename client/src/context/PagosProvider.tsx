@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import api from '@/api/config';
 
-const PagosContext = createContext();
+const PagosContext = createContext(null);
 
 export const useApiPagosContext = () => {
   const context = useContext(PagosContext);

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import api from '@/api/config';
 
-const CompanyContext = createContext();
+const CompanyContext = createContext(null);
 
 export const useApiCompanyContext = () => {
   const context = useContext(CompanyContext);

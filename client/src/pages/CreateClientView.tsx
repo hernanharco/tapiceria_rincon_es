@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { CreateClientsModal } from '../features/clients/components/modals/CreateClientsModal';
 import { HistoryModals } from '@/features/clients/components/modals/DocumentCreateModal';

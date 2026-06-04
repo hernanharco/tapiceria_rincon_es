@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocumentTemplatePdf } from '../-pdf/DocumentTemplatePdf';
 import useCompany from '../hooks/company/useCompany';

@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 // 1. Crear el Contexto
-const HistoryContext = createContext();
+const HistoryContext = createContext(null);
 
 // 2. Hook para usar el contexto fácilmente
 export const useApiHistoryContext = () => {

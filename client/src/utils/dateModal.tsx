@@ -41,7 +41,8 @@ const DateModal = ({ isOpen, onClose, onSave, initialDate }) => {
 };
 
 // Estilos simples para el modal
-const styles = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const styles: Record<string, any> = {
   modalOverlay: {
     position: 'fixed',
     top: 0,
