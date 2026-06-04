@@ -24,10 +24,8 @@ whitenoise==6.11.0
 django-cloudinary-storage==0.3.0
 
 # --- DEPENDENCIAS PARA PDF ---
-# Actualizado a versiones estables y compatibles
-reportlab==4.2.5
+weasyprint==69.0
 pillow==11.0.0
-xhtml2pdf==0.2.17
 requests==2.32.3
 
 # --- SERVIDOR WEB ---

@@ -11,13 +11,6 @@ from io import BytesIO
 from mi_app.services.pdf_service import PDFService
 
 
-def _mock_pisa_result(*args, **kwargs):
-    """Side effect helper: escribe al buffer y devuelve un objeto con err=None."""
-    dest = kwargs.get('dest') or args[1]
-    dest.write(b'%PDF-1.4 fake content')
-    return MagicMock(err=None)
-
-
 class TestPDFServiceGetImageBase64:
     """Tests para get_image_base64 (conversión de URL a Base64)."""
 
@@ -60,27 +53,32 @@ class TestPDFServiceGenerateDocument:
     """Tests para generate_document_pdf (lógica de generación)."""
 
     @patch('mi_app.services.pdf_service.render_to_string')
-    @patch('mi_app.services.pdf_service.pisa.CreatePDF')
+    @patch('mi_app.services.pdf_service.HTML')
     def test_generate_document_pdf_creates_pdf(
-        self, mock_pisa_create, mock_render, document_with_relations
+        self, mock_html, mock_render, document_with_relations
     ):
         """Generate pasa el contexto correcto a la plantilla."""
         mock_render.return_value = '<html>PDF</html>'
-        mock_pisa_create.side_effect = _mock_pisa_result
+        mock_html_instance = MagicMock()
+        mock_html_instance.write_pdf.return_value = b'%PDF-1.4 fake content'
+        mock_html.return_value = mock_html_instance
 
         result = PDFService.generate_document_pdf(document_with_relations, 'PRESUPUESTO')
 
         assert result is not None
         assert result.startswith(b'%PDF-1.4')
+        mock_html.assert_called_once_with(string='<html>PDF</html>')
 
     @patch('mi_app.services.pdf_service.render_to_string')
-    @patch('mi_app.services.pdf_service.pisa.CreatePDF')
+    @patch('mi_app.services.pdf_service.HTML')
     def test_generate_pdf_detects_prefix(
-        self, mock_pisa_create, mock_render, document_with_relations
+        self, mock_html, mock_render, document_with_relations
     ):
         """El tipo de documento se pasa a la plantilla."""
         mock_render.return_value = '<html>PDF</html>'
-        mock_pisa_create.side_effect = _mock_pisa_result
+        mock_html_instance = MagicMock()
+        mock_html_instance.write_pdf.return_value = b'%PDF-1.4'
+        mock_html.return_value = mock_html_instance
 
         PDFService.generate_document_pdf(document_with_relations, 'PRESUPUESTO')
         call_context = mock_render.call_args[0][1]
@@ -88,9 +86,9 @@ class TestPDFServiceGenerateDocument:
         assert call_context['prefix'] == 'PRE'
 
     @patch('mi_app.services.pdf_service.render_to_string')
-    @patch('mi_app.services.pdf_service.pisa.CreatePDF')
+    @patch('mi_app.services.pdf_service.HTML')
     def test_generate_pdf_detects_invoice(
-        self, mock_pisa_create, mock_render, document_with_relations
+        self, mock_html, mock_render, document_with_relations
     ):
         """Factura - se pasa el label FACTURA."""
         doc = document_with_relations
@@ -98,7 +96,9 @@ class TestPDFServiceGenerateDocument:
         doc.num_factura = 'FAC0001'
 
         mock_render.return_value = '<html>PDF</html>'
-        mock_pisa_create.side_effect = _mock_pisa_result
+        mock_html_instance = MagicMock()
+        mock_html_instance.write_pdf.return_value = b'%PDF-1.4'
+        mock_html.return_value = mock_html_instance
 
         PDFService.generate_document_pdf(doc, 'FACTURA')
         call_context = mock_render.call_args[0][1]
@@ -106,13 +106,15 @@ class TestPDFServiceGenerateDocument:
         assert call_context['prefix'] == 'FAC'
 
     @patch('mi_app.services.pdf_service.render_to_string')
-    @patch('mi_app.services.pdf_service.pisa.CreatePDF')
+    @patch('mi_app.services.pdf_service.HTML')
     def test_generate_pdf_includes_company_and_client(
-        self, mock_pisa_create, mock_render, document_with_relations
+        self, mock_html, mock_render, document_with_relations
     ):
         """El contexto incluye empresa y cliente."""
         mock_render.return_value = '<html>PDF</html>'
-        mock_pisa_create.side_effect = _mock_pisa_result
+        mock_html_instance = MagicMock()
+        mock_html_instance.write_pdf.return_value = b'%PDF-1.4'
+        mock_html.return_value = mock_html_instance
 
         PDFService.generate_document_pdf(document_with_relations, 'PRESUPUESTO')
         context = mock_render.call_args[0][1]
@@ -121,13 +123,15 @@ class TestPDFServiceGenerateDocument:
         assert context['doc'] is not None
 
     @patch('mi_app.services.pdf_service.render_to_string')
-    @patch('mi_app.services.pdf_service.pisa.CreatePDF')
+    @patch('mi_app.services.pdf_service.HTML')
     def test_generate_pdf_includes_content_list(
-        self, mock_pisa_create, mock_render, document_with_relations
+        self, mock_html, mock_render, document_with_relations
     ):
         """El contexto incluye la lista de contenido (títulos + items)."""
         mock_render.return_value = '<html>PDF</html>'
-        mock_pisa_create.side_effect = _mock_pisa_result
+        mock_html_instance = MagicMock()
+        mock_html_instance.write_pdf.return_value = b'%PDF-1.4'
+        mock_html.return_value = mock_html_instance
 
         PDFService.generate_document_pdf(document_with_relations, 'PRESUPUESTO')
         context = mock_render.call_args[0][1]

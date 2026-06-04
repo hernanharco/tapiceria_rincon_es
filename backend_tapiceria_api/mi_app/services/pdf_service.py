@@ -2,7 +2,7 @@ import base64
 import requests
 import logging
 from django.template.loader import render_to_string
-from xhtml2pdf import pisa  
+from weasyprint import HTML
 from io import BytesIO
 from django.db.models import Q
 
@@ -142,20 +142,7 @@ class PDFService:
 
             html_string = render_to_string('pdf/document_v1.html', context)
             
-            pdf_buffer = BytesIO()
-            pisa_status = pisa.CreatePDF(
-                src=html_string, 
-                dest=pdf_buffer,
-                encoding='UTF-8'
-            )
-            
-            if pisa_status.err:
-                logger.error(f"Error en xhtml2pdf: {pisa_status.err}")
-                raise Exception("Error interno al generar el PDF")
-            
-            pdf_bytes = pdf_buffer.getvalue()
-            pdf_buffer.close()
-            
+            pdf_bytes = HTML(string=html_string).write_pdf()
             return pdf_bytes
             
         except Exception as e:
