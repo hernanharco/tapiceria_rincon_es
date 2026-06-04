@@ -10,12 +10,6 @@ declare module 'sonner' {
   export const Toaster: any;
 }
 
-declare module 'react-hot-toast' {
-  const toast: any;
-  export default toast;
-  export const Toaster: any;
-}
-
 declare module 'sweetalert2' {
   const Swal: any;
   export default Swal;

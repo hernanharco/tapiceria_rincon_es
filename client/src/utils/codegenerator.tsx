@@ -1,4 +1,4 @@
-//import { format } from "date-fns";
+
 
 /**
  * Función auxiliar para generar un código inicial basado en la fecha.
