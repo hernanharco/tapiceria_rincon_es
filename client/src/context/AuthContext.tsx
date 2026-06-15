@@ -1,63 +1,129 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  role: string;
+}
+
 interface AuthContextType {
-  user: { name: string; email: string; role: string; id?: number } | null;
+  user: User | null;
   isLoading: boolean;
-  checkAuth: () => Promise<void>;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => void;
   isAuthEnabled: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Helper: extraer datos del usuario de authCore
+// Normalizar rol al formato esperado (ej: "ADMIN" → "Admin")
+function normalizeRole(role: string): string {
+  if (!role) return 'Viewer';
+  return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+}
+
+function mapUser(data: any): User {
+  return {
+    id: data.id || data.user_id,
+    username: data.username || '',
+    email: data.email || '',
+    full_name: data.full_name || data.name || data.email || 'Usuario',
+    role: normalizeRole(data.role || data.rol || 'VIEWER'),
+  };
+}
+
 export function AuthProvider() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🛠️ CONFIGURACIÓN DEL INTERRUPTOR
-  // Detecta si la seguridad está activa. Si no existe la variable, por defecto es 'true'.
   const isAuthEnabled = import.meta.env.VITE_ENABLE_AUTH !== 'false';
+  const authURL = import.meta.env.VITE_AUTH_URL || 'http://localhost:8000';
 
-  const checkAuth = async () => {
-    // Si la seguridad está desactivada, saltamos la llamada al servidor
-    if (!isAuthEnabled) {
-      console.warn("⚠️ SEGURIDAD DESACTIVADA: Usando modo desarrollo.");
-      setUser({
-        id: 0,
-        name: "Arquitecto Senior (Dev)",
-        role: "Admin",
-        email: "dev@empresa.com"
-      });
-      setIsLoading(false);
-      return;
-    }
+  // Obtener perfil desde authCore
+  const fetchProfile = async (): Promise<User | null> => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return null;
 
     try {
-      const response = await fetch('http://localhost:4000/api/perfil', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include' 
+      const response = await fetch(`${authURL}/api/v1/users/me`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        return mapUser(data);
       } else {
-        setUser(null);
+        // Token inválido o expirado
+        localStorage.removeItem('auth_token');
+        return null;
       }
-    } catch (error) {
-      console.error("Error crítico de autenticación:", error);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+    } catch {
+      localStorage.removeItem('auth_token');
+      return null;
     }
   };
 
+  // Login: llama a authCore y guarda el token
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${authURL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) return false;
+
+      const data = await response.json();
+      localStorage.setItem('auth_token', data.access_token);
+
+      const userData = await fetchProfile();
+      if (userData) {
+        setUser(userData);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  // Logout: limpia token y estado
+  const logout = () => {
+    localStorage.removeItem('auth_token');
+    setUser(null);
+  };
+
+  // Carga inicial
   useEffect(() => {
-    checkAuth();
+    const init = async () => {
+      if (!isAuthEnabled) {
+        console.warn("⚠️ SEGURIDAD DESACTIVADA: Usando modo desarrollo.");
+        setUser({
+          id: 0,
+          username: 'dev',
+          email: 'dev@empresa.com',
+          full_name: 'Arquitecto Senior (Dev)',
+          role: 'ADMIN',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const userData = await fetchProfile();
+      setUser(userData);
+      setIsLoading(false);
+    };
+    init();
   }, []);
 
-  // Pantalla de carga profesional con Tailwind
   if (isLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-slate-900">
@@ -72,7 +138,7 @@ export function AuthProvider() {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, checkAuth, isAuthEnabled }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, isAuthEnabled }}>
       <Outlet />
     </AuthContext.Provider>
   );

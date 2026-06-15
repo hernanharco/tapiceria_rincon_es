@@ -1,116 +1,45 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import api from '@/api/config';
+import { createContext, useContext } from "react";
+import { useClients, useCreateClient, useUpdateClient, useDeleteClient } from '@/hooks/queries/useClients';
 
 const ClientsContext = createContext(null);
 
 export const useApiClientsContext = () => {
   const context = useContext(ClientsContext);
-  if (!context) throw new Error('useApiClientsContext debe usarse dentro de ClientsProvider');
+  if (!context) throw new Error("useApiClientsContext debe usarse dentro de ClientsProvider");
   return context;
 };
 
 export const ClientsProvider = ({ children }) => {
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // Usamos useRef para el tiempo. Las referencias NO disparan re-renders ni cambian la función.
-  const lastFetchedRef = useRef(0);
+  const { data: clients = [], isLoading, error, refetch } = useClients();
+  const createMutation = useCreateClient();
+  const updateMutation = useUpdateClient();
+  const deleteMutation = useDeleteClient();
 
-  const ENDPOINT = '/api/clients/';
-
-  // 1. Carga Ultra-Estable: CERO dependencias []
-  const refetchClients = useCallback(async (silent = false) => {
-    const ahora = Date.now();
-    
-    // Si es carga silenciosa y pasaron menos de 30s, abortamos
-    if (silent && ahora - lastFetchedRef.current < 30000) return;
-
-    if (!silent && clients.length === 0) setLoading(true);
-    
-    try {
-      const res = await api.get(ENDPOINT);
-      setClients(res.data);
-      lastFetchedRef.current = ahora; // Actualizamos la referencia (no dispara bucle)
-      setError(null);
-    } catch (err) {
-      setError('Error de conexión.');
-      console.error("Error al cargar clientes:", err);
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 👈 AL SER VACÍO, LA FUNCIÓN NUNCA CAMBIA. EL BUCLE SE ROMPE AQUÍ.
-
-  // 2. CRUD (Sin cambios, ya eran estables)
-  const addClients = async (cliente) => {
-    try {
-      const res = await api.post(ENDPOINT, cliente);
-      setClients((prev) => [...prev, res.data]);
-      return res.data;
-    } catch (err) {
-      console.error("Error al crear:", err);
-      throw new Error('Error al guardar.');
-    }
-  };
-
-  const updateClients = async (cif, cliente) => {
-    try {
-      const res = await api.patch(`${ENDPOINT}${cif}/`, cliente);
-      setClients((prev) => prev.map((c) => (c.cif === cif ? res.data : c)));
-      return res.data;
-    } catch (err) {
-      console.error("Error al actualizar:", err);
-      throw new Error('Error al actualizar.');
-    }
-  };
-
-  const deleteClients = async (cif) => {
-    try {
-      await api.delete(`${ENDPOINT}${cif}/`);
-      setClients((prev) => prev.filter((c) => c.cif !== cif));
-    } catch (err) {
-      console.error("Error al eliminar:", err);
-      throw new Error('Error al eliminar.');
-    }
-  };
-
-  // 3. Filtro local
-  const getFilteredClients = useCallback((term) => {
-    if (!term.trim()) return [];
-    const lowerTerm = term.toLowerCase();
-    return clients.filter(c => 
-      c.name?.toLowerCase().includes(lowerTerm) || 
-      c.cif?.toLowerCase().includes(lowerTerm)
+  // Filtro local por término de búsqueda
+  const getFilteredClients = (term: string) => {
+    if (!term?.trim()) return [];
+    const t = term.trim().toLowerCase();
+    return clients.filter(
+      (c: any) =>
+        c.name?.toLowerCase().includes(t) ||
+        c.cif?.toLowerCase().includes(t)
     );
-  }, [clients]);
+  };
 
-  // useEffect se ejecuta UNA SOLA VEZ al montar
-  useEffect(() => {
-    refetchClients();
-  }, [refetchClients]);
-
-  const value = useMemo(() => ({
+  const value = {
     clients,
-    loading,
+    loading: isLoading,
     error,
-    refetchClients,
-    addClients,
-    deleteClients,
-    updateClients,
+    refetchClients: refetch,
     getFilteredClients,
-  }), [clients, loading, error, refetchClients, getFilteredClients]);
+    addClient: (data: any) => createMutation.mutateAsync(data),
+    updateClients: (cif: string, data: any) => updateMutation.mutateAsync({ cif, data }),
+    deleteClient: (cif: string) => deleteMutation.mutateAsync(cif),
+  };
 
   return (
     <ClientsContext.Provider value={value}>
-      {loading && clients.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-screen bg-gray-50 text-gray-600">
-           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-           <p className="italic">Sincronizando con Frankfurt...</p>
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </ClientsContext.Provider>
   );
 };

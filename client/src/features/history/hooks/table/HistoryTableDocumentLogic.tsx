@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
@@ -50,6 +50,7 @@ export const HistoryTableDocumentLogic = ({
   // Estados para el filtrado
   const [filteredResults, setFilteredResults] = useState([]);
   const [isFiltering, setIsFiltering] = useState(false);
+  const lastFilterRef = useRef(null); // Guarda el último filtro aplicado
 
   const [sortConfig, setSortConfig] = useState({
     key: 'num_presupuesto',
@@ -211,6 +212,7 @@ export const HistoryTableDocumentLogic = ({
     if (sortConfig.key === key && sortConfig.direction === 'asc')
       direction = 'desc';
     setSortConfig({ key, direction });
+    // El useEffect sincroniza filteredResults automáticamente
   };
 
   const sortedProducts = useMemo(() => {
@@ -243,21 +245,23 @@ export const HistoryTableDocumentLogic = ({
      Manejo de filtrado avanzado
      ========================= */
 
+  // Sincronizar resultados cuando cambia el orden o los datos
   useEffect(() => {
     if (!isFiltering) {
       setFilteredResults(sortedProducts);
+    } else if (lastFilterRef.current) {
+      // Re-aplicar el filtro sobre los datos recién ordenados
+      const { startDate, endDate, documentType } = lastFilterRef.current;
+      const items = applyFilter(sortedProducts, startDate, endDate, documentType);
+      setFilteredResults(items);
     }
   }, [sortedProducts, isFiltering]);
 
-  const handleFilter = (startDate, endDate, documentType) => {
-    // Si no hay filtros seleccionados, volvemos al estado normal
-    if (!startDate && !endDate && documentType === 'Todos') {
-      setIsFiltering(false);
-      setResultadosFiltrados(sortedProducts);
-      return;
-    }
+  // Aplica el filtro sobre los datos que recibe (sorted o no)
+  const applyFilter = (items, startDate, endDate, documentType) => {
+    if (!startDate && !endDate && documentType === 'Todos') return items;
 
-    const finalItems = sortedProducts.filter((item) => {
+    return items.filter((item) => {
       const fechaInicio = startDate ? dayjs(startDate).startOf('day') : null;
       const fechaFin = endDate ? dayjs(endDate).endOf('day') : null;
 
@@ -289,7 +293,19 @@ export const HistoryTableDocumentLogic = ({
 
       return cumpleFecha && cumpleTipo;
     });
+  };
 
+  const handleFilter = (startDate, endDate, documentType) => {
+    // Guardamos los parámetros para re-aplicar al ordenar
+    lastFilterRef.current = { startDate, endDate, documentType };
+
+    if (!startDate && !endDate && documentType === 'Todos') {
+      setIsFiltering(false);
+      setFilteredResults(sortedProducts);
+      return;
+    }
+
+    const finalItems = applyFilter(sortedProducts, startDate, endDate, documentType);
     setIsFiltering(true);
     setFilteredResults(finalItems);
   };

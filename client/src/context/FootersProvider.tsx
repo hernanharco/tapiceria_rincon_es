@@ -50,7 +50,7 @@ export const FootersProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [footers.length]
+    [] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // 2. Guardar nuevo footer
@@ -176,15 +176,7 @@ export const FootersProvider = ({ children }) => {
 
   return (
     <FootersContext.Provider value={value}>
-      {loading && footers.length === 0 ? (
-        <div className="flex justify-center p-4">
-          <div className="animate-pulse text-gray-400 italic text-sm">
-            Sincronizando totales...
-          </div>
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </FootersContext.Provider>
   );
 };

@@ -155,14 +155,7 @@ export const TitleTableDocumentsProvider = ({ children }) => {
 
   return (
     <TitleTableDocumentsContext.Provider value={value}>
-      {loading && documents.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-          <p className="text-gray-500 italic">Sincronizando descripciones...</p>
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </TitleTableDocumentsContext.Provider>
   );
 };

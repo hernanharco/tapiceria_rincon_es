@@ -9,6 +9,7 @@ import { useApiDocumentsContext } from '@/context/DocumentsProvider';
 import { useApiTitleTableDocumentsContext } from '@/context/TitleTableDocumentsProvider';
 import { useApiDataDocumentsContext } from '@/context/DataDocumentsProvider';
 import { useApiFootersContext } from '@/context/FootersProvider';
+import { toast } from 'sonner';
 
 export const HistoryModals = ({
   isOpen,
@@ -50,6 +51,29 @@ export const HistoryModals = ({
   });
 
   const [deletedIds, setDeletedIds] = useState({ titles: [], products: [] });
+  const [isSaving, setIsSaving] = useState(false);
+  const [formKey, setFormKey] = useState(0); // Para forzar remount de hijos
+
+  // 🛠️ Resetear estado al abrir un NUEVO documento (no edición)
+  useEffect(() => {
+    if (isOpen && !isEditing) {
+      setActiveTab('info');
+      setDatInfo({
+        dataInfoDocument: '',
+        dataInfoDate: '',
+        dataInfoObservation: '',
+      });
+      setFilteredProducts([]);
+      setDatFooter({
+        datsubTotal: 0,
+        datbaseImponible: 0,
+        datIva: 0,
+        datTotal: 0,
+      });
+      setDeletedIds({ titles: [], products: [] });
+      setFormKey((k) => k + 1); // Fuerza remount de hijos con key
+    }
+  }, [isOpen, isEditing]);
 
   // --- LÓGICA DE IDENTIFICACIÓN DEL CLIENTE (CIF) ---
 
@@ -118,6 +142,8 @@ export const HistoryModals = ({
   }, [isOpen, selectedItem, isEditing]);
 
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       // --- 1. PROCESAR ELIMINACIONES PENDIENTES ---
       if (isEditing) {
@@ -212,11 +238,13 @@ export const HistoryModals = ({
       }
 
       // 5. FINALIZACIÓN
-      alert('¡Todo se ha guardado correctamente!');
+      toast.success('Documento guardado correctamente');
       onClose();
     } catch (error) {
       console.error('Error general:', error);
-      alert('Error al guardar: ' + error.message);
+      toast.error('Error al guardar: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -226,30 +254,31 @@ export const HistoryModals = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md">
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative overflow-hidden">
+      <div className="bg-white rounded-2xl md:rounded-[2rem] shadow-2xl w-full max-w-full md:max-w-6xl mx-2 md:mx-0 max-h-[95vh] md:max-h-[90vh] flex flex-col relative overflow-hidden">
         {/* HEADER */}
-        <div className="px-8 pt-8 pb-4 bg-white shrink-0">
+        <div className="px-4 md:px-8 pt-4 md:pt-8 pb-4 bg-white shrink-0">
           <button
             onClick={onClose}
-            className="absolute top-6 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+            className="absolute top-4 md:top-6 right-4 md:right-8 w-11 h-11 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+            aria-label="Cerrar modal"
           >
-            <span className="text-2xl">&times;</span>
+            <span className="text-xl md:text-2xl">&times;</span>
           </button>
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">
               Gestión de Documentos
             </span>
-            <h2 className="text-3xl font-black text-slate-800">
+            <h2 className="text-xl md:text-3xl font-black text-slate-800">
               {isEditing ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
             </h2>
           </div>
 
-          <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit">
+          <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-full md:w-fit overflow-x-auto">
             {['info', 'products', 'summary'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                className={`px-4 md:px-6 py-3 md:py-2.5 rounded-xl text-xs font-bold transition-all min-w-[80px] md:min-w-0 ${
                   activeTab === tab
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-slate-500 hover:bg-white/50'
@@ -266,7 +295,7 @@ export const HistoryModals = ({
         </div>
 
         {/* CONTENIDO DINÁMICO */}
-        <div className="flex-1 px-8 py-4 bg-white overflow-y-auto custom-scrollbar">
+        <div key={formKey} className="flex-1 px-4 md:px-8 py-4 bg-white overflow-y-auto custom-scrollbar">
           {activeTab === 'info' && (
             <DocumentsInfo
               cif={cleanCif}
@@ -331,11 +360,11 @@ export const HistoryModals = ({
         </div>
 
         {/* ACCIONES */}
-        <div className="px-8 py-6 bg-slate-50 border-t flex justify-between items-center">
+        <div className="sticky bottom-0 px-4 md:px-8 py-4 md:py-6 bg-slate-50 border-t flex flex-col md:flex-row gap-3 md:gap-0 justify-between items-start md:items-center">
           <p className="text-[11px] text-slate-400 italic">
             * Campos obligatorios: Cliente y Fecha.
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
             <button
               onClick={onClose}
               className="px-6 py-3 font-bold text-slate-400"
@@ -354,9 +383,21 @@ export const HistoryModals = ({
             ) : (
               <button
                 onClick={handleSave}
-                className="px-10 py-3 rounded-2xl bg-green-600 text-white font-black shadow-lg hover:bg-green-700 transition-all"
+                disabled={isSaving}
+                className={`px-10 py-3 rounded-2xl font-black shadow-lg transition-all ${
+                  isSaving
+                    ? 'bg-green-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
               >
-                {isEditing ? 'Actualizar' : 'Guardar Documento'}
+                {isSaving ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Guardando...
+                  </span>
+                ) : (
+                  isEditing ? 'Actualizar' : 'Guardar Documento'
+                )}
               </button>
             )}
           </div>

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { HistoryModals } from '../../clients/components/modals/DocumentCreateModal';
 import { HistoryModalLogic } from '@/features/history/hooks/HistoryModalLogic';
 
@@ -145,12 +145,15 @@ export const HistoryTemplate = () => {
      Carga defensiva de documentos
      ========================= */
 
-  // Si no hay documentos, forzamos el refetch
+  // Referencia para evitar bucle infinito: solo refetch una vez al montar
+  const initialLoadDone = useRef(false);
+
   useEffect(() => {
-    if (!documents || documents.length === 0) {
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
       refetch();
     }
-  }, [documents, refetch]);
+  }, [refetch]);
 
   /* =========================
      Filtrado de documentos por texto
@@ -177,7 +180,7 @@ export const HistoryTemplate = () => {
      ========================= */
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* Buscador con sugerencias */}
       <div className="relative" ref={dropdownRef}>
         <input

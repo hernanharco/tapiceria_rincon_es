@@ -41,7 +41,7 @@ export const DataDocumentsProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [datadocuments.length]); 
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2. Insertar (Actualización local inmediata)
   const addProductTable = async (newProduct) => {
@@ -136,14 +136,7 @@ export const DataDocumentsProvider = ({ children }) => {
 
   return (
     <DataDocumentsContext.Provider value={value}>
-      {loading && datadocuments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg shadow-sm">
-           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-3"></div>
-           <p className="text-sm text-gray-500 italic">Cargando líneas de detalle...</p>
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </DataDocumentsContext.Provider>
   );
 };

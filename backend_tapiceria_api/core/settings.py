@@ -79,8 +79,8 @@ if USE_REMOTE_DB:
         'default': dj_database_url.config(
             default=config('DATABASE_URL'),
             conn_max_age=600,
-            conn_health_checks=True,
-            ssl_require=True
+            conn_health_checks=config('DB_CONN_HEALTH_CHECKS', default=True, cast=bool),
+            ssl_require=config('DB_SSL_REQUIRE', default=True, cast=bool)
         )
     }
 else:

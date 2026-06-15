@@ -38,7 +38,7 @@ export const DocumentsProvider = ({ children }) => {
       // Si es una petición silenciosa y han pasado menos de 30 segundos, ignoramos
       if (silent && ahora - lastFetchedRef.current < 30000) return;
 
-      if (!silent && documents.length === 0) setLoading(true);
+      setLoading(true);
 
       try {
         const res = await api.get(API_URL);
@@ -52,7 +52,7 @@ export const DocumentsProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [documents.length],
+    [], // 🛠️ FIX: Sin dependencias para evitar bucle infinito
   );
 
   // 2. Insertar documento
@@ -264,14 +264,7 @@ export const DocumentsProvider = ({ children }) => {
 
   return (
     <DocumentsContext.Provider value={value}>
-      {loading && documents.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-screen bg-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-500 font-medium">Sincronizando Archivos...</p>
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </DocumentsContext.Provider>
   );
 };

@@ -40,7 +40,7 @@ export const PagosProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [pagos.length]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2. Búsqueda LOCAL (Instantánea)
   // Ya no pedimos al servidor "?cliente=...", usamos lo que ya tenemos en memoria
@@ -65,14 +65,7 @@ export const PagosProvider = ({ children }) => {
 
   return (
     <PagosContext.Provider value={value}>
-      {loading && pagos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mb-2"></div>
-          <p className="text-sm text-gray-500 italic">Sincronizando pagos...</p>
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </PagosContext.Provider>
   );
 };

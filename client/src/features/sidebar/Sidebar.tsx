@@ -30,13 +30,18 @@ export const Sidebar = () => {
       <button
         onClick={() => setMobileMenuOpen(true)}
         className="md:hidden fixed top-4 left-4 z-50 text-white bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white/10 active:scale-95 transition-transform"
+        aria-label="Abrir menú de navegación"
+        aria-expanded={isMobileMenuOpen}
+        aria-controls="sidebar-menu"
       >
-        <FaBars size={20} />
+        <FaBars size={20} aria-hidden="true" />
       </button>
 
       <div className="flex h-screen w-full bg-[#F8FAFC]">
         {/* SIDEBAR ASIDE */}
         <aside
+          id="sidebar-menu"
+          aria-label="Menú de navegación principal"
           className={`fixed top-0 left-0 flex flex-col h-screen z-40
             transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
             ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -66,8 +71,10 @@ export const Sidebar = () => {
             <button
               onClick={toggleSidebar}
               className="hidden md:flex absolute -right-4 top-10 w-8 h-8 bg-white border border-slate-100 rounded-full items-center justify-center text-slate-400 hover:text-blue-600 shadow-md transition-all active:scale-90 z-50"
+              aria-label={isOpen ? 'Contraer menú' : 'Expandir menú'}
+              aria-controls="sidebar-menu"
             >
-              {isOpen ? <FaChevronLeft size={12} /> : <FaChevronRight size={12} />}
+              {isOpen ? <FaChevronLeft size={12} aria-hidden="true" /> : <FaChevronRight size={12} aria-hidden="true" />}
             </button>
           </div>
 
@@ -150,16 +157,18 @@ export const Sidebar = () => {
         {isMobileMenuOpen && (
           <div 
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 md:hidden animate-in fade-in duration-300" 
-            onClick={closeMobileMenu} 
+            onClick={closeMobileMenu}
+            role="presentation"
+            aria-hidden="true"
           />
         )}
 
         {/* CONTENEDOR DE CONTENIDO PRINCIPAL */}
         <main 
           className={`flex-1 w-full min-h-screen transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-            ${isOpen ? 'md:ml-72' : 'md:ml-24'}`}
+            ${isOpen ? 'md:ml-72' : 'md:ml-28'}`}
         >
-          <div className="p-4 md:p-8 lg:p-12">
+          <div className="p-4 md:p-6 lg:p-8">
             {/* Aquí se inyectan las vistas de History, Clientes, etc. */}
             <Outlet /> 
           </div>
