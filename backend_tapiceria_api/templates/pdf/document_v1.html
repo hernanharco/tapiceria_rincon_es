@@ -4,34 +4,31 @@
 <head>
     <meta charset="UTF-8" />
     <style>
-        /* CONFIGURACIÓN DE PÁGINA PARA xhtml2pdf */
-        /* css-ignore-start */
         @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 1.5cm 1.5cm 2.5cm 1.5cm;
 
-            @frame footer_frame {
-                -pdf-frame-content: pie-pagina;
-                left: 1.5cm;
-                width: 18cm;
-                top: 27.5cm;
-                height: 1cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 8pt;
+                color: #666;
+                border-top: 1px solid #eee;
+                padding-top: 4px;
+                width: 100%;
             }
         }
 
-        /* css-ignore-end */
-
-        /* ESTILOS BASE */
         body {
             font-family: Helvetica, Arial, sans-serif;
             font-size: 10pt;
             color: #000;
             line-height: 1.2;
+            margin: 0;
+            padding: 0;
         }
 
         .table-full {
             width: 100%;
-            /* xhtml2pdf prefiere border-collapse: collapse para tablas complejas */
             border-collapse: collapse;
         }
 
@@ -46,10 +43,8 @@
             width: 48%;
         }
 
-        /* IMPORTANTE: xhtml2pdf utiliza estos prefijos para evitar cortes */
-        tr,
-        img {
-            -pdf-keep-with-next: true;
+        tr {
+            page-break-inside: avoid;
         }
 
         .row-section-header td {
@@ -57,17 +52,10 @@
             font-weight: bold;
             border-top: 1px solid #000;
         }
-
-        /* Quitar el error visual en el editor (opcional) */
-        /* Puedes ignorar el error de 'at-rule unknown' ya que es necesario para el motor PDF */
     </style>
 </head>
 
 <body>
-
-    <div id="pie-pagina" style="text-align: right; font-size: 8pt; border-top: 1px solid #eee;">
-        Página <pdf:pagenumber> de <pdf:pagecount>
-    </div>
 
     <div class="main-container">
         <div class="header-section">
@@ -96,7 +84,6 @@
             <table class="table-full" style="margin-bottom: 20px">
                 <tr>
                     <td class="info-box">
-                        <!-- SESION DE CODIGO-->
                         {% if tipo|upper == 'PRESUPUESTO' %}
                             <strong>Num. {{ tipo }}:</strong> {{ doc.num_presupuesto }}<br />
                         {% elif tipo|upper == 'FACTURA' %}
@@ -104,7 +91,6 @@
                         {% else %}
                             <strong>Num. {{ tipo }}:</strong> {{ doc.num_albaran }}<br />
                         {% endif %}
-                        <!-- SESION PARA LA FECHA -->
                         {% if tipo|upper == 'PRESUPUESTO' %}
                             <strong>Fecha:</strong> {{ doc.fecha_factura|date:"d/m/Y" }}<br />
                         {% elif tipo|upper == 'FACTURA' %}
@@ -132,12 +118,9 @@
             </table>
         </div>
 
-        <!-- RELACION DE DOCUMENTOS -->
-        {% if tipo|upper == 'PRESUPUESTO' %}
-            <!-- {# Se queda vacío intencionadamente #} -->
-        {% elif tipo|upper == 'FACTURA' %}
-            <strong>--> ALBARÁN RELACIONADO  {{ doc.num_albaran }} <-- </strong><br />
-        {% else %}
+        {% if tipo|upper == 'FACTURA' %}
+            <strong>--> ALBARÁN RELACIONADO {{ doc.num_albaran }} <-- </strong><br />
+        {% elif tipo|upper == 'ALBARÁN' %}
             <strong>--> PRESUPUESTO RELACIONADO {{ doc.num_presupuesto }} <-- </strong><br />    
         {% endif %}
 

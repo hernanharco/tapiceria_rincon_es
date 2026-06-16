@@ -2,7 +2,7 @@ import base64
 import requests
 import logging
 from django.template.loader import render_to_string
-from xhtml2pdf import pisa  
+from weasyprint import HTML
 from io import BytesIO
 from django.db.models import Q
 
@@ -62,22 +62,10 @@ class PDFService:
                 from mi_app.models import Pago                
                 formas_pago = Pago.objects.filter(empresa=company)
                 
-                # 🔍 DEBUG DE CONSOLA PARA DOCKER
-                print("\n" + "═"*60)
-                print(f"DEBUG PDF: Generando para {tipo_final} - {codigo_actual}")
-                print(f"Empresa: {company.name} (CIF: {company.cif})")
-                
-                if formas_pago.exists():
-                    print(f"✅ Formas de pago encontradas ({formas_pago.count()}):")
-                    for p in formas_pago:
-                        print(f"  - ID {p.id}: {p.forma_pago}") # Campo exacto de tu modelo
-                else:
-                    print(f"⚠️ Alerta: No hay formas de pago registradas para esta empresa.")
-                print("═"*60 + "\n")
+                logger.info(f"Generando PDF para {tipo_final} - {codigo_actual} (Empresa: {company.name})")
                 
             except (ImportError, Exception) as e:
                 logger.error(f"Error cargando pagos: {e}")
-                print(f"❌ Error crítico cargando pagos: {e}")
 
             # --- 3. LÓGICA DE EMPAREJAMIENTO (Título + Items) ---
             content = []
@@ -142,20 +130,7 @@ class PDFService:
 
             html_string = render_to_string('pdf/document_v1.html', context)
             
-            pdf_buffer = BytesIO()
-            pisa_status = pisa.CreatePDF(
-                src=html_string, 
-                dest=pdf_buffer,
-                encoding='UTF-8'
-            )
-            
-            if pisa_status.err:
-                logger.error(f"Error en xhtml2pdf: {pisa_status.err}")
-                raise Exception("Error interno al generar el PDF")
-            
-            pdf_bytes = pdf_buffer.getvalue()
-            pdf_buffer.close()
-            
+            pdf_bytes = HTML(string=html_string).write_pdf()
             return pdf_bytes
             
         except Exception as e:
