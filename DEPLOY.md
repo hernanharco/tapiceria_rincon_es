@@ -50,16 +50,16 @@ USE_REMOTE_DB=False
 DB_ENGINE=django.db.backends.postgresql
 DB_NAME=tapiceria_db
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=tu_password_segura
 DB_HOST=infraestructuraglobal-dbglobal-x1wtan
 DB_PORT=5432
 SECRET_KEY=una-clave-segura-aqui
 DEBUG=False
 ALLOWED_HOSTS=*
 CORS_ALLOWED_ORIGINS=http://localhost:5173,https://tprapi.elrincondeharco.com,https://tapiceria-frontend.vercel.app
-CLOUDINARY_CLOUD_NAME=dme1odszm
-CLOUDINARY_API_KEY=311367965424542
-CLOUDINARY_API_SECRET=rpsNjlAJxANTevReBPzi1d5yn_k
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
 ```
 
 > **IMPORTANTE**: `DB_HOST` debe usar el nombre del servicio Docker (`infraestructuraglobal-dbglobal-x1wtan`), NO la IP. Las IPs cambian cuando Dokploy reinicia los contenedores.
