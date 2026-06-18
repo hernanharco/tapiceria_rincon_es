@@ -102,8 +102,8 @@ export const HistoryTemplate = () => {
           e.preventDefault();
           if (activeSuggestionIndex >= 0) {
             const selected = suggestions[activeSuggestionIndex];
-            // Al seleccionar, guardamos CIF + nombre
-            setSearchTerm(`(${selected.cif}) ${selected.name}`);
+            // Al seleccionar, guardamos ID + nombre
+            setSearchTerm(`(#${selected.id}) ${selected.name}`);
             setShowSuggestions(false);
             setActiveSuggestionIndex(-1);
           }
@@ -204,9 +204,9 @@ export const HistoryTemplate = () => {
           <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
             {suggestions.map((client, index) => (
               <li
-                key={client.cif}
+                key={client.id}
                 onClick={() => {
-                  setSearchTerm(`(${client.cif}) ${client.name}`);
+                  setSearchTerm(`(#${client.id}) ${client.name}`);
                   setShowSuggestions(false);
                 }}
                 className={`px-4 py-2 cursor-pointer text-sm ${

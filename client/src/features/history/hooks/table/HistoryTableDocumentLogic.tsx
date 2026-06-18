@@ -125,10 +125,16 @@ export const HistoryTableDocumentLogic = ({
   }, [debouncedSearchTerm]);
 
   const parseSearchTerm = (value) => {
-    const match = value.match(/^\(([^)]+)\)\s*(.*)/);
-    return { cif: match ? match[1] : '' };
+    // Formato: "(#ID) NAME" → extraemos el ID numérico
+    const match = value.match(/^\(#(\d+)\)\s*(.*)/);
+    if (match) {
+      return { clientId: parseInt(match[1], 10), name: match[2] };
+    }
+    // Fallback: formato viejo "(CIF) NAME" (para compatibilidad)
+    const oldMatch = value.match(/^\(([^)]+)\)\s*(.*)/);
+    return { clientId: null, name: oldMatch ? oldMatch[1] : '' };
   };
-  const { cif } = parseSearchTerm(debouncedSearchTerm);
+  const { clientId } = parseSearchTerm(debouncedSearchTerm);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -138,9 +144,9 @@ export const HistoryTableDocumentLogic = ({
 
         if (shouldShowAll) {
           baseDocs = documentsFromContext || [];
-        } else if (cif) {
-          // Buscar por CIF: primero encontramos el cliente, luego filtramos por su ID
-          const client = allClients.find((c) => c.cif === cif);
+        } else if (clientId) {
+          // Buscar directamente por ID de cliente (ya no hay ambigüedad con CIFs duplicados)
+          const client = allClients.find((c) => c.id === clientId);
           baseDocs = client
             ? await getDocumentByDoc(client.id)
             : [];

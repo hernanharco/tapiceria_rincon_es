@@ -81,17 +81,26 @@ export const HistoryModals = ({
 
   // 1. Definimos la función de limpieza una sola vez
   const parseSearchTerm = (value) => {
-    if (!value) return '';
-    // Busca el patrón (CIF) Nombre
-    const match = value.match(/^\(([^)]+)\)\s*(.*)/);
-    return match ? match[1] : value;
+    if (!value) return { clientId: null, cif: '' };
+    // Formato nuevo: "(#ID) NAME"
+    const newMatch = value.match(/^\(#(\d+)\)\s*(.*)/);
+    if (newMatch) {
+      return { clientId: parseInt(newMatch[1], 10), cif: '' };
+    }
+    // Formato viejo: "(CIF) NAME" (compatibilidad)
+    const oldMatch = value.match(/^\(([^)]+)\)\s*(.*)/);
+    if (oldMatch) {
+      return { clientId: null, cif: oldMatch[1] };
+    }
+    return { clientId: null, cif: value };
   };
 
   // 2. Determinamos el ID del cliente y el CIF para mostrar:
   //    - Edición: selectedItem.dataclient es el ID del cliente
   //    - Nuevo: propClientId o parseamos del searchTerm
-  const clientId = selectedItem?.dataclient || propClientId || null;
-  const cleanCif = propClientCif || parseSearchTerm(searchTerm);
+  const parsed = parseSearchTerm(searchTerm);
+  const clientId = selectedItem?.dataclient || propClientId || parsed.clientId || null;
+  const cleanCif = propClientCif || parsed.cif;
 
   // 3. (Opcional) Nombre del cliente para mostrar en la UI si lo necesitas
   //const clientName = selectedItem?.clienteNombre || "";
