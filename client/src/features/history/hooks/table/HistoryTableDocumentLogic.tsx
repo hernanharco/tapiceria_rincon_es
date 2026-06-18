@@ -168,7 +168,7 @@ export const HistoryTableDocumentLogic = ({
 
         let result = enrichedDocs;
 
-        if (search.length > 0 && !shouldShowAll && !cif) {
+        if (search.length > 0 && !shouldShowAll && !clientId) {
           result = enrichedDocs.filter((doc) => {
             const inHeader =
               doc.num_presupuesto?.toString().includes(search) ||
@@ -198,7 +198,7 @@ export const HistoryTableDocumentLogic = ({
           (a, b) => new Date(b.fecha_factura) - new Date(a.fecha_factura),
         );
         setFilteredProducts(finalDocs);
-        setIsDisabled(!cif && !shouldShowAll);
+        setIsDisabled(!clientId && !shouldShowAll);
       } catch (error) {
         console.error('Error en búsqueda HistoryTable:', error);
         setFilteredProducts([]);
@@ -208,7 +208,7 @@ export const HistoryTableDocumentLogic = ({
     fetchDocuments();
   }, [
     debouncedSearchTerm,
-    cif,
+    clientId,
     shouldShowAll,
     documentsFromProps,
     documentsFromContext,
