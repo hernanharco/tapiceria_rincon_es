@@ -47,6 +47,9 @@ class DataClient(models.Model):
         unique_together = ['cif', 'name']
     
     def save(self, *args, **kwargs):
+        # Normalizar nombre a mayúsculas
+        if self.name:
+            self.name = self.name.strip().upper()
         if not self.cod_client:
             prefix = 'CLI'
             last = DataClient.objects.all().order_by('cod_client').last()

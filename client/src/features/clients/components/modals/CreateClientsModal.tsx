@@ -40,7 +40,9 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // El nombre del cliente se convierte automáticamente a mayúsculas
+    const newValue = name === 'name' ? value.toUpperCase() : value;
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
   };
 
   const handleSubmit = (e) => {        
