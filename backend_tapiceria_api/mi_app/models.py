@@ -26,7 +26,8 @@ class DataCompany(models.Model):
         return f"{self.name} ({self.cif})"
 
 class DataClient(models.Model):
-    cif = models.CharField(max_length=20, primary_key=True)
+    # Ahora el id auto-incremental es la PK (Django lo agrega automáticamente)
+    cif = models.CharField(max_length=20, db_index=True, verbose_name="CIF/NIF")
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
     zip_code = models.CharField(max_length=10)    
@@ -42,6 +43,8 @@ class DataClient(models.Model):
     
     class Meta:
         db_table = 'data_client'
+        # Permitimos mismo CIF pero DISTINTO nombre (sucursales)
+        unique_together = ['cif', 'name']
     
     def save(self, *args, **kwargs):
         if not self.cod_client:

@@ -11,6 +11,7 @@ export const HistoryModalLogic = ({
   selectedItem,
   searchTerm,
   onClose,
+  clientId: propClientId,
 }) => {
   const isEditing = !!selectedItem?.num_presupuesto;
 
@@ -64,6 +65,7 @@ export const HistoryModalLogic = ({
   };
 
   const { cif } = parseSearchTerm(searchTerm);
+  const clientId = selectedItem?.dataclient || propClientId || null;
 
   /* ===========================
      Inicialización edición
@@ -164,7 +166,7 @@ export const HistoryModalLogic = ({
       fecha_factura: datInfo.dataInfoDate,
       observaciones: datInfo.dataInfoObservation,
       num_presupuesto: datInfo.dataInfoDocument,
-      dataclient: cif,
+      dataclient: clientId,
     };
 
     let documentId;

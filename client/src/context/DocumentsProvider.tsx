@@ -60,7 +60,7 @@ export const DocumentsProvider = ({ children }) => {
     try {
       const dataToSend = {
         // Asegúrate de que los nombres coincidan exactamente con el models.py
-        dataclient: newDocument.dataclient, // Debe ser el CIF exacto
+        dataclient: newDocument.dataclient, // Debe ser el ID numérico del cliente
         fecha_factura: dayjs(newDocument.fecha_factura).format('YYYY-MM-DD'),
         num_presupuesto: String(newDocument.num_presupuesto),
         observaciones: newDocument.observaciones || '',
@@ -107,10 +107,10 @@ export const DocumentsProvider = ({ children }) => {
   // --- BÚSQUEDAS LOCALES (INSTANTÁNEAS) ---
 
   const getDocumentByDoc = useCallback(
-    (docCif) => {
-      if (!docCif?.trim()) return [];
-      const cif = docCif.trim();
-      return documents.filter((d) => d.dataclient === cif);
+    (clientId) => {
+      if (clientId == null) return [];
+      const id = Number(clientId);
+      return documents.filter((d) => d.dataclient === id);
     },
     [documents],
   );

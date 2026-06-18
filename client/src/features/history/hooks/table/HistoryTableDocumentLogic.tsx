@@ -139,7 +139,11 @@ export const HistoryTableDocumentLogic = ({
         if (shouldShowAll) {
           baseDocs = documentsFromContext || [];
         } else if (cif) {
-          baseDocs = await getDocumentByDoc(String(cif).trim());
+          // Buscar por CIF: primero encontramos el cliente, luego filtramos por su ID
+          const client = allClients.find((c) => c.cif === cif);
+          baseDocs = client
+            ? await getDocumentByDoc(client.id)
+            : [];
         } else if (documentsFromProps && documentsFromProps.length > 0) {
           const titledocsIds = documentsFromProps.map((doc) => doc.titledoc);
           const promises = titledocsIds.map((id) => fetchDocumentById(id));
@@ -176,11 +180,11 @@ export const HistoryTableDocumentLogic = ({
         }
 
         const finalDocs = result.map((doc) => {
-          const client = allClients.find((c) => c.cif === doc.dataclient);
+          const client = allClients.find((c) => c.id === doc.dataclient);
           return {
             ...doc,
             clienteNombre: client ? client.name : 'Cliente desconocido',
-            cifCliente: doc.dataclient || client?.cif || '-',
+            cifCliente: client?.cif || '-',
           };
         });
 

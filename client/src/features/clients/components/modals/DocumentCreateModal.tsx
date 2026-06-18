@@ -16,6 +16,8 @@ export const HistoryModals = ({
   onClose,
   searchTerm,
   selectedItem,
+  clientId: propClientId,
+  clientCif: propClientCif,
 }) => {
   const isEditing = !!selectedItem?.id;
   const [activeTab, setActiveTab] = useState('info');
@@ -85,10 +87,11 @@ export const HistoryModals = ({
     return match ? match[1] : value;
   };
 
-  // 2. Determinamos el CIF mediante prioridad:
-  // PRIORIDAD 1: Si estamos editando, mandamos el CIF que ya tiene el documento (dataclient).
-  // PRIORIDAD 2: Si es nuevo, limpiamos lo que el usuario escribió en el buscador.
-  const cleanCif = selectedItem?.dataclient || parseSearchTerm(searchTerm);
+  // 2. Determinamos el ID del cliente y el CIF para mostrar:
+  //    - Edición: selectedItem.dataclient es el ID del cliente
+  //    - Nuevo: propClientId o parseamos del searchTerm
+  const clientId = selectedItem?.dataclient || propClientId || null;
+  const cleanCif = propClientCif || parseSearchTerm(searchTerm);
 
   // 3. (Opcional) Nombre del cliente para mostrar en la UI si lo necesitas
   //const clientName = selectedItem?.clienteNombre || "";
@@ -162,7 +165,7 @@ export const HistoryModals = ({
         fecha_factura: datInfo.dataInfoDate,
         observaciones: datInfo.dataInfoObservation || '',
         num_presupuesto: String(datInfo.dataInfoDocument),
-        dataclient: String(cleanCif),
+        dataclient: clientId,
       };
 
       let headerResponse;

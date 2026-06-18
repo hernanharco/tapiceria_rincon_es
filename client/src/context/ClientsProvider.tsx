@@ -33,8 +33,8 @@ export const ClientsProvider = ({ children }) => {
     refetchClients: refetch,
     getFilteredClients,
     addClient: (data: any) => createMutation.mutateAsync(data),
-    updateClients: (cif: string, data: any) => updateMutation.mutateAsync({ cif, data }),
-    deleteClient: (cif: string) => deleteMutation.mutateAsync(cif),
+    updateClients: (id: number, data: any) => updateMutation.mutateAsync({ id, data }),
+    deleteClient: (id: number) => deleteMutation.mutateAsync(id),
   };
 
   return (
