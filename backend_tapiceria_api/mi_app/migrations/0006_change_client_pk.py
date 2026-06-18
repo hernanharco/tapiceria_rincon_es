@@ -138,8 +138,24 @@ class Migration(migrations.Migration):
         ),
 
         # 5. Database-level: drop old PK on cif (CASCADE drops FK in Document too)
+        # Usamos PL/pgSQL para encontrar el nombre exacto de la constraint PK
+        # (puede variar según cómo se creó la tabla en PostgreSQL)
         migrations.RunSQL(
-            sql='ALTER TABLE data_client DROP CONSTRAINT data_client_pkey CASCADE;',
+            sql="""
+                DO $$
+                DECLARE
+                    pk_name text;
+                BEGIN
+                    SELECT conname INTO pk_name
+                    FROM pg_constraint
+                    WHERE conrelid = 'data_client'::regclass
+                    AND contype = 'p';
+
+                    IF pk_name IS NOT NULL THEN
+                        EXECUTE 'ALTER TABLE data_client DROP CONSTRAINT ' || pk_name || ' CASCADE';
+                    END IF;
+                END $$;
+            """,
             reverse_sql=migrations.RunSQL.noop,
         ),
 
