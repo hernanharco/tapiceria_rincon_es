@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 const mockClients = [
-  { cif: '12345678A', name: 'María García' },
-  { cif: '87654321B', name: 'Juan Rodríguez' },
+  { id: 1, cif: '12345678A', name: 'María García' },
+  { id: 2, cif: '87654321B', name: 'Juan Rodríguez' },
 ];
 const mockDocuments = [
   { id: 1, titdescripcion: 'Tapizado sofá', titledoc: 1 },
@@ -121,7 +121,7 @@ describe('HistoryTemplate', () => {
     await user.click(screen.getByText('María García'));
 
     expect(screen.getByTestId('search-term')).toHaveTextContent(
-      '(12345678A) María García'
+      '(#1) María García'
     );
   });
 });

@@ -77,9 +77,9 @@ class DataClientSerializer(serializers.ModelSerializer):
 
 class DocumentSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
-    dataclient = serializers.SlugRelatedField(
-        queryset=DataClient.objects.all(),
-        slug_field='cif'
+    # Ahora se usa el ID numérico en vez del CIF como clave foránea
+    dataclient = serializers.PrimaryKeyRelatedField(
+        queryset=DataClient.objects.all()
     )
     class Meta:
         model = Document

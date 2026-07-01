@@ -125,10 +125,16 @@ export const HistoryTableDocumentLogic = ({
   }, [debouncedSearchTerm]);
 
   const parseSearchTerm = (value) => {
-    const match = value.match(/^\(([^)]+)\)\s*(.*)/);
-    return { cif: match ? match[1] : '' };
+    // Formato: "(#ID) NAME" → extraemos el ID numérico
+    const match = value.match(/^\(#(\d+)\)\s*(.*)/);
+    if (match) {
+      return { clientId: parseInt(match[1], 10), name: match[2] };
+    }
+    // Fallback: formato viejo "(CIF) NAME" (para compatibilidad)
+    const oldMatch = value.match(/^\(([^)]+)\)\s*(.*)/);
+    return { clientId: null, name: oldMatch ? oldMatch[1] : '' };
   };
-  const { cif } = parseSearchTerm(debouncedSearchTerm);
+  const { clientId } = parseSearchTerm(debouncedSearchTerm);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -138,8 +144,12 @@ export const HistoryTableDocumentLogic = ({
 
         if (shouldShowAll) {
           baseDocs = documentsFromContext || [];
-        } else if (cif) {
-          baseDocs = await getDocumentByDoc(String(cif).trim());
+        } else if (clientId) {
+          // Buscar directamente por ID de cliente (ya no hay ambigüedad con CIFs duplicados)
+          const client = allClients.find((c) => c.id === clientId);
+          baseDocs = client
+            ? await getDocumentByDoc(client.id)
+            : [];
         } else if (documentsFromProps && documentsFromProps.length > 0) {
           const titledocsIds = documentsFromProps.map((doc) => doc.titledoc);
           const promises = titledocsIds.map((id) => fetchDocumentById(id));
@@ -158,7 +168,7 @@ export const HistoryTableDocumentLogic = ({
 
         let result = enrichedDocs;
 
-        if (search.length > 0 && !shouldShowAll && !cif) {
+        if (search.length > 0 && !shouldShowAll && !clientId) {
           result = enrichedDocs.filter((doc) => {
             const inHeader =
               doc.num_presupuesto?.toString().includes(search) ||
@@ -176,11 +186,11 @@ export const HistoryTableDocumentLogic = ({
         }
 
         const finalDocs = result.map((doc) => {
-          const client = allClients.find((c) => c.cif === doc.dataclient);
+          const client = allClients.find((c) => c.id === doc.dataclient);
           return {
             ...doc,
             clienteNombre: client ? client.name : 'Cliente desconocido',
-            cifCliente: doc.dataclient || client?.cif || '-',
+            cifCliente: client?.cif || '-',
           };
         });
 
@@ -188,7 +198,7 @@ export const HistoryTableDocumentLogic = ({
           (a, b) => new Date(b.fecha_factura) - new Date(a.fecha_factura),
         );
         setFilteredProducts(finalDocs);
-        setIsDisabled(!cif && !shouldShowAll);
+        setIsDisabled(!clientId && !shouldShowAll);
       } catch (error) {
         console.error('Error en búsqueda HistoryTable:', error);
         setFilteredProducts([]);
@@ -198,7 +208,7 @@ export const HistoryTableDocumentLogic = ({
     fetchDocuments();
   }, [
     debouncedSearchTerm,
-    cif,
+    clientId,
     shouldShowAll,
     documentsFromProps,
     documentsFromContext,

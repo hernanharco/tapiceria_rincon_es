@@ -88,8 +88,8 @@ class TestClientViewSet:
         assert response.data['cod_client'].startswith('CLI')
 
     def test_get_client_detail(self, api_client, client_model):
-        """GET /api/clients/{cif}/ devuelve detalle."""
-        url = reverse('dataclient-detail', kwargs={'pk': client_model.cif})
+        """GET /api/clients/{id}/ devuelve detalle."""
+        url = reverse('dataclient-detail', kwargs={'pk': client_model.id})
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
 
@@ -161,7 +161,7 @@ class TestDocumentViewSet:
         """POST /api/documents/ crea un documento."""
         url = reverse('document-list')
         data = {
-            'dataclient': client_model.cif,
+            'dataclient': client_model.id,
             'fecha_factura': '2026-07-01',
             'num_presupuesto': 'PRE0500',
         }

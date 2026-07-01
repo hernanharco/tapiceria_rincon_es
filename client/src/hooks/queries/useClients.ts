@@ -23,8 +23,8 @@ export function useCreateClient() {
 export function useUpdateClient() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ cif, data }: { cif: string; data: any }) =>
-      api.patch(`${ENDPOINT}${cif}/`, data).then(r => r.data),
+    mutationFn: ({ id, data }: { id: number; data: any }) =>
+      api.patch(`${ENDPOINT}${id}/`, data).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
@@ -34,7 +34,7 @@ export function useUpdateClient() {
 export function useDeleteClient() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (cif: string) => api.delete(`${ENDPOINT}${cif}/`),
+    mutationFn: (id: number) => api.delete(`${ENDPOINT}${id}/`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },

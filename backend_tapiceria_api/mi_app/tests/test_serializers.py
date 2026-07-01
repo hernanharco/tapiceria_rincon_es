@@ -165,9 +165,9 @@ class TestDocumentSerializer:
         assert serializer.data['num_presupuesto'] == 'PRE0001'
 
     def test_deserialize_document(self, client_model):
-        """Crear documento con SlugRelatedField (cif del cliente)."""
+        """Crear documento con PrimaryKeyRelatedField (id del cliente)."""
         data = {
-            'dataclient': client_model.cif,
+            'dataclient': client_model.id,
             'fecha_factura': '2026-06-15',
             'num_presupuesto': 'PRE0100',
         }
@@ -183,7 +183,7 @@ class TestDocumentSerializer:
     def test_deserialize_invalid_date(self, client_model):
         """Fecha inválida debe fallar."""
         data = {
-            'dataclient': client_model.cif,
+            'dataclient': client_model.id,
             'fecha_factura': 'no-es-una-fecha',
             'num_presupuesto': 'PRE9999',
         }

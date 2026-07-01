@@ -31,7 +31,7 @@ export const CreateClientView = () => {
 
   const handleSaveClient = async (cliente) => {
     try {
-      if (cliente.isEditing) await updateClients(cliente.cif, cliente);
+      if (cliente.isEditing) await updateClients(cliente.id, cliente);
       else await addClients(cliente);
       await refetchClients();
       setShowModal(false);
@@ -85,7 +85,7 @@ export const CreateClientView = () => {
     if (step3.isConfirmed) {
       toast.promise(
         async () => {
-          await deleteClients(client.cif);
+          await deleteClients(client.id);
           await refetchClients();
         },
         {
@@ -277,6 +277,8 @@ export const CreateClientView = () => {
         onClose={() => setShowModalHistory(false)}
         title="Logo"
         searchTerm={searchTerm}
+        clientId={editingClient?.id}
+        clientCif={editingClient?.cif}
       />
     </div>
   );
