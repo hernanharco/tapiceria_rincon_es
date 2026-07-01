@@ -202,7 +202,7 @@ export const HistoryModals = ({
               titledoc: documentId,
               titdescripcion: titleItem.descripcion,
             };
-            if (titleItem.id && !titleItem.id.startsWith('new-')) {
+            if (titleItem.id && !String(titleItem.id).startsWith('new-')) {
               await updateDocumentFieldsIdTitle(titleItem.id, payloadTitle);
             } else {
               await addProductTitle(payloadTitle);
@@ -218,7 +218,7 @@ export const HistoryModals = ({
           for (const item of subItems) {
             if (item.data) {
               const payloadDetail = { ...item.data, documento: documentId };
-              if (item.data.id && !item.data.id.startsWith('new-')) {
+              if (item.data.id && !String(item.data.id).startsWith('new-')) {
                 await updateProductTable(item.data.id, payloadDetail);
               } else {
                 await addProductTable(payloadDetail);
@@ -328,7 +328,7 @@ export const HistoryModals = ({
                 );
                 const idsToTrack = { titles: [], products: [] };
                 block.forEach((item) => {
-                  if (item.id && !item.id.startsWith('new-')) {
+                  if (item.id && !String(item.id).startsWith('new-')) {
                     if (
                       item.descripcion !== 'Materiales' &&
                       item.descripcion !== 'Mano de Obra'
