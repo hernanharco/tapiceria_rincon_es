@@ -1,0 +1,12 @@
+{
+  "name": "tapiceria-rincon",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"cd backend_tapiceria_api && python manage.py runserver 0.0.0.0:8000\" \"cd client && pnpm dev\"",
+    "build": "cd client && pnpm build",
+    "deploy": "bash scripts/deploy.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
