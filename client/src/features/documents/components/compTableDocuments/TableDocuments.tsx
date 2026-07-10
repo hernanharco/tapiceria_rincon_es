@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const TableDocuments = ({
   filteredProducts,
@@ -7,6 +7,7 @@ export const TableDocuments = ({
   onDeleteRow,
 }) => {
   const lastSerializedProductsRef = useRef("");
+  const [activeGroupIdx, setActiveGroupIdx] = useState(0);
 
   // Sincronización con el padre para totales
   useEffect(() => {
@@ -19,6 +20,14 @@ export const TableDocuments = ({
       onProductsChange(filteredProducts);
     }
   }, [filteredProducts, onProductsChange]);
+
+  // Reset active group index cuando se agrega/elimina un grupo
+  useEffect(() => {
+    const maxGroup = Math.ceil(filteredProducts.length / 3) - 1;
+    if (activeGroupIdx > maxGroup) {
+      setActiveGroupIdx(Math.max(0, maxGroup));
+    }
+  }, [filteredProducts.length, activeGroupIdx]);
 
   const handleAddRow = (e) => {
     if (e) e.preventDefault();
@@ -172,161 +181,181 @@ export const TableDocuments = ({
         </table>
       </div>
 
-      {/* --- VISTA MÓVIL (CARDS CON GRUPOS VISUALMENTE DISTINTOS) --- */}
-      {/* Leyenda de colores */}
-      <div className="md:hidden px-3 pt-3 pb-1 bg-gray-50 flex gap-3 text-[9px] font-bold uppercase tracking-wider">
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Descripción</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Materiales</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Mano de obra</span>
-      </div>
-      <div className="md:hidden p-2 space-y-6 overflow-y-auto max-h-[600px] bg-gray-50">
-        {Array.from({ length: totalBloques }).map((_, blockIdx) => {
+      {/* --- VISTA MÓVIL: UN GRUPO A LA VEZ CON NAVEGACIÓN --- */}
+      <div className="md:hidden bg-gray-50">
+        {/* Indicador de progreso: bolitas */}
+        {totalBloques > 0 && (
+          <div className="flex justify-center gap-1.5 pt-3 pb-2">
+            {Array.from({ length: totalBloques }).map((_, i) => (
+              <span
+                key={i}
+                className={`block h-2 rounded-full transition-all duration-300 ${
+                  i === activeGroupIdx
+                    ? 'w-6 bg-blue-600'
+                    : 'w-2 bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Grupo activo — UNO SOLO */}
+        {totalBloques > 0 && (() => {
+          const blockIdx = activeGroupIdx;
           const startIdx = blockIdx * 3;
           const group = filteredProducts.slice(startIdx, startIdx + 3);
 
           return (
-            <div key={blockIdx} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-              {/* Cabecera del Bloque — STICKY para que no se pierda el contexto */}
-              <div className="sticky top-0 z-10 bg-blue-600 p-3 flex justify-between items-center shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-white/20 text-white text-xs font-black">
-                    {blockIdx + 1}
-                  </span>
-                  <span className="text-white font-bold text-sm uppercase tracking-wider">
-                    Grupo
-                  </span>
+            <div className="px-2 pb-2" key={`group-${blockIdx}-${filteredProducts.length}`}>
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                {/* Cabecera del Bloque */}
+                <div className="bg-blue-600 p-3 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-white/20 text-white text-xs font-black">
+                      {blockIdx + 1}
+                    </span>
+                    <span className="text-white font-bold text-sm">
+                      Grupo <span className="opacity-70 font-normal">de {totalBloques}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDelete(startIdx, e)}
+                    className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors uppercase border border-white/30 active:scale-90"
+                  >
+                    Eliminar
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => handleDelete(startIdx, e)}
-                  className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors uppercase border border-white/30 active:scale-90"
-                >
-                  Eliminar
-                </button>
+
+                {/* 3 filas del grupo: Descripción, Materiales, Mano de Obra */}
+                <div className="p-2 space-y-1.5">
+                  {group.map((item, localIdx) => {
+                    const globalIdx = startIdx + localIdx;
+                    const isSystem = isSystemRow(item.descripcion);
+
+                    const rowStyle =
+                      localIdx === 0
+                        ? { borderColor: 'border-l-blue-500', bgColor: 'bg-blue-50/50', label: 'DESCRIPCIÓN', labelBg: 'bg-blue-600', accent: '#3b82f6', accentBorder: '#93c5fd' }
+                        : localIdx === 1
+                          ? { borderColor: 'border-l-emerald-500', bgColor: 'bg-emerald-50/40', label: 'MATERIALES', labelBg: 'bg-emerald-600', accent: '#10b981', accentBorder: '#6ee7b7' }
+                          : { borderColor: 'border-l-amber-500', bgColor: 'bg-amber-50/40', label: 'MANO DE OBRA', labelBg: 'bg-amber-600', accent: '#f59e0b', accentBorder: '#fcd34d' };
+
+                    return (
+                      <div
+                        key={globalIdx}
+                        className={`border-l-4 ${rowStyle.borderColor} ${rowStyle.bgColor} rounded-r-xl p-3 space-y-2`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full text-white ${rowStyle.labelBg}`}>
+                            {rowStyle.label}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-12 gap-1.5">
+                          <div className="col-span-4">
+                            <label className="text-[8px] text-gray-400 uppercase font-bold block mb-0.5">Ref</label>
+                            <input
+                              type="text"
+                              value={item.referencia || ""}
+                              onChange={(e) => handleChange(globalIdx, "referencia", e.target.value)}
+                              className="w-full text-xs border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                            />
+                          </div>
+                          <div className="col-span-8">
+                            <label className="text-[8px] text-gray-400 uppercase font-bold block mb-0.5">Descripción</label>
+                            <textarea
+                              rows={isSystem ? 1 : 2}
+                              value={item.descripcion || ""}
+                              readOnly={isSystem}
+                              onChange={(e) => handleChange(globalIdx, "descripcion", e.target.value)}
+                              className={`w-full text-xs border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none resize-none ${isSystem ? "bg-white font-bold text-gray-700" : "bg-white"}`}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-1">
+                          <div>
+                            <label className="text-[8px] text-gray-400 uppercase font-bold block mb-0.5 text-center">Cant</label>
+                            <input
+                              type="number"
+                              value={item.cantidad ?? ""}
+                              readOnly={!isSystem}
+                              onChange={(e) => handleChange(globalIdx, "cantidad", e.target.value)}
+                              className={`w-full text-center text-xs border rounded-lg p-2 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] text-gray-400 uppercase font-bold block mb-0.5 text-center">Precio</label>
+                            <input
+                              type="number"
+                              value={item.precio ?? ""}
+                              readOnly={!isSystem}
+                              onChange={(e) => handleChange(globalIdx, "precio", e.target.value)}
+                              className={`w-full text-center text-xs border rounded-lg p-2 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] text-gray-400 uppercase font-bold block mb-0.5 text-center">Dto %</label>
+                            <input
+                              type="number"
+                              value={item.dto ?? ""}
+                              readOnly={!isSystem}
+                              onChange={(e) => handleChange(globalIdx, "dto", e.target.value)}
+                              className={`w-full text-center text-xs border rounded-lg p-2 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] uppercase font-bold block mb-0.5 text-center" style={{ color: rowStyle.accent }}>Total</label>
+                            <input
+                              type="number"
+                              value={item.importe ?? ""}
+                              readOnly={true}
+                              className="w-full text-center text-xs border rounded-lg p-2 font-bold bg-white"
+                              style={{ borderColor: rowStyle.accentBorder, color: rowStyle.accent }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Mapeo de los 3 elementos del bloque: Título, Materiales, Mano de Obra */}
-              <div className="p-3 space-y-2">
-                {group.map((item, localIdx) => {
-                  const globalIdx = startIdx + localIdx;
-                  const isSystem = isSystemRow(item.descripcion);
+              {/* Navegación entre grupos */}
+              <div className="flex items-center justify-between mt-3 px-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveGroupIdx((prev) => Math.max(0, prev - 1))}
+                  disabled={activeGroupIdx === 0}
+                  className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    activeGroupIdx === 0
+                      ? 'text-gray-300'
+                      : 'text-blue-600 bg-white border border-blue-200 active:scale-95'
+                  }`}
+                >
+                  ← Anterior
+                </button>
 
-                  // 🎨 COLORES DISTINTIVOS por tipo de fila
-                  const rowStyle =
-                    localIdx === 0
-                      ? {
-                          borderColor: 'border-l-blue-500',
-                          bgColor: 'bg-blue-50/40',
-                          label: 'DESCRIPCIÓN',
-                          labelBg: 'bg-blue-600',
-                          badge: 'bg-blue-100 text-blue-700',
-                        }
-                      : localIdx === 1
-                        ? {
-                            borderColor: 'border-l-emerald-500',
-                            bgColor: 'bg-emerald-50/30',
-                            label: 'MATERIALES',
-                            labelBg: 'bg-emerald-600',
-                            badge: 'bg-emerald-100 text-emerald-700',
-                          }
-                        : {
-                            borderColor: 'border-l-amber-500',
-                            bgColor: 'bg-amber-50/30',
-                            label: 'MANO DE OBRA',
-                            labelBg: 'bg-amber-600',
-                            badge: 'bg-amber-100 text-amber-700',
-                          };
+                <span className="text-[10px] font-bold text-gray-400">
+                  {activeGroupIdx + 1} / {totalBloques}
+                </span>
 
-                  return (
-                    <div
-                      key={globalIdx}
-                      className={`border-l-4 ${rowStyle.borderColor} ${rowStyle.bgColor} rounded-r-xl p-3 space-y-3 transition-all`}
-                    >
-                      {/* Badge del tipo de fila */}
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full text-white ${rowStyle.labelBg}`}>
-                          {rowStyle.label}
-                        </span>
-                      </div>
-
-                      {/* Fila: Ref y Descripción */}
-                      <div className="grid grid-cols-12 gap-2">
-                        <div className="col-span-4">
-                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1">Ref</label>
-                          <input
-                            type="text"
-                            value={item.referencia || ""}
-                            onChange={(e) => handleChange(globalIdx, "referencia", e.target.value)}
-                            className="w-full text-xs border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-400 outline-none bg-white"
-                          />
-                        </div>
-                        <div className="col-span-8">
-                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1">Descripción</label>
-                          <textarea
-                            rows={isSystem ? 1 : 2}
-                            value={item.descripcion || ""}
-                            readOnly={isSystem}
-                            onChange={(e) => handleChange(globalIdx, "descripcion", e.target.value)}
-                            className={`w-full text-xs border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-400 outline-none resize-none ${isSystem ? "bg-white font-bold text-gray-700" : "bg-white"}`}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Fila: Cant, Precio, Dto e Importe */}
-                      <div className="grid grid-cols-4 gap-1.5">
-                        <div>
-                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Cant</label>
-                          <input
-                            type="number"
-                            value={item.cantidad ?? ""}
-                            readOnly={!isSystem}
-                            onChange={(e) => handleChange(globalIdx, "cantidad", e.target.value)}
-                            className={`w-full text-center text-xs border rounded-lg p-2.5 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Precio</label>
-                          <input
-                            type="number"
-                            value={item.precio ?? ""}
-                            readOnly={!isSystem}
-                            onChange={(e) => handleChange(globalIdx, "precio", e.target.value)}
-                            className={`w-full text-center text-xs border rounded-lg p-2.5 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Dto %</label>
-                          <input
-                            type="number"
-                            value={item.dto ?? ""}
-                            readOnly={!isSystem}
-                            onChange={(e) => handleChange(globalIdx, "dto", e.target.value)}
-                            className={`w-full text-center text-xs border rounded-lg p-2.5 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] uppercase font-bold block mb-1 text-center"
-                            style={{ color: localIdx === 0 ? '#3b82f6' : localIdx === 1 ? '#10b981' : '#f59e0b' }}
-                          >Total</label>
-                          <input
-                            type="number"
-                            value={item.importe ?? ""}
-                            readOnly={true}
-                            className={`w-full text-center text-xs border rounded-lg p-2.5 font-bold bg-white`}
-                            style={{
-                              borderColor: localIdx === 0 ? '#93c5fd' : localIdx === 1 ? '#6ee7b7' : '#fcd34d',
-                              color: localIdx === 0 ? '#2563eb' : localIdx === 1 ? '#059669' : '#d97706',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => setActiveGroupIdx((prev) => Math.min(totalBloques - 1, prev + 1))}
+                  disabled={activeGroupIdx === totalBloques - 1}
+                  className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    activeGroupIdx === totalBloques - 1
+                      ? 'text-gray-300'
+                      : 'text-blue-600 bg-white border border-blue-200 active:scale-95'
+                  }`}
+                >
+                  Siguiente →
+                </button>
               </div>
             </div>
           );
-        })}
+        })()}
       </div>
 
       <div className="p-4 bg-gray-50 border-t flex justify-center sticky bottom-0">
