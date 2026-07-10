@@ -172,38 +172,80 @@ export const TableDocuments = ({
         </table>
       </div>
 
-      {/* --- VISTA MÓVIL (CARDS CON TODOS LOS CAMPOS) --- */}
-      <div className="md:hidden p-3 space-y-8 overflow-y-auto max-h-[600px] bg-gray-50">
+      {/* --- VISTA MÓVIL (CARDS CON GRUPOS VISUALMENTE DISTINTOS) --- */}
+      {/* Leyenda de colores */}
+      <div className="md:hidden px-3 pt-3 pb-1 bg-gray-50 flex gap-3 text-[9px] font-bold uppercase tracking-wider">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Descripción</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Materiales</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Mano de obra</span>
+      </div>
+      <div className="md:hidden p-2 space-y-6 overflow-y-auto max-h-[600px] bg-gray-50">
         {Array.from({ length: totalBloques }).map((_, blockIdx) => {
           const startIdx = blockIdx * 3;
           const group = filteredProducts.slice(startIdx, startIdx + 3);
-          
+
           return (
             <div key={blockIdx} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-              {/* Cabecera del Bloque */}
-              <div className="bg-blue-600 p-3 flex justify-between items-center">
-                <span className="text-white font-bold text-xs uppercase tracking-widest">Grupo #{blockIdx + 1}</span>
-                <button 
-                  type="button" 
-                  onClick={(e) => handleDelete(startIdx, e)} 
-                  className="bg-white/20 hover:bg-red-500 text-white px-3 py-1 rounded text-[10px] font-bold transition-colors uppercase border border-white/30"
+              {/* Cabecera del Bloque — STICKY para que no se pierda el contexto */}
+              <div className="sticky top-0 z-10 bg-blue-600 p-3 flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-white/20 text-white text-xs font-black">
+                    {blockIdx + 1}
+                  </span>
+                  <span className="text-white font-bold text-sm uppercase tracking-wider">
+                    Grupo
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => handleDelete(startIdx, e)}
+                  className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors uppercase border border-white/30 active:scale-90"
                 >
-                  Eliminar Bloque
+                  Eliminar
                 </button>
               </div>
 
-              {/* Mapeo de los 3 elementos del bloque en el móvil */}
-              <div className="p-3 space-y-6 divide-y divide-gray-100">
+              {/* Mapeo de los 3 elementos del bloque: Título, Materiales, Mano de Obra */}
+              <div className="p-3 space-y-2">
                 {group.map((item, localIdx) => {
                   const globalIdx = startIdx + localIdx;
                   const isSystem = isSystemRow(item.descripcion);
 
+                  // 🎨 COLORES DISTINTIVOS por tipo de fila
+                  const rowStyle =
+                    localIdx === 0
+                      ? {
+                          borderColor: 'border-l-blue-500',
+                          bgColor: 'bg-blue-50/40',
+                          label: 'DESCRIPCIÓN',
+                          labelBg: 'bg-blue-600',
+                          badge: 'bg-blue-100 text-blue-700',
+                        }
+                      : localIdx === 1
+                        ? {
+                            borderColor: 'border-l-emerald-500',
+                            bgColor: 'bg-emerald-50/30',
+                            label: 'MATERIALES',
+                            labelBg: 'bg-emerald-600',
+                            badge: 'bg-emerald-100 text-emerald-700',
+                          }
+                        : {
+                            borderColor: 'border-l-amber-500',
+                            bgColor: 'bg-amber-50/30',
+                            label: 'MANO DE OBRA',
+                            labelBg: 'bg-amber-600',
+                            badge: 'bg-amber-100 text-amber-700',
+                          };
+
                   return (
-                    <div key={globalIdx} className={`pt-4 first:pt-0 space-y-3`}>
-                      {/* Etiqueta de Tipo */}
-                      <div className="flex justify-between items-center">
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded ${isSystem ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-                          {isSystem ? item.descripcion.toUpperCase() : "DESCRIPCIÓN PRINCIPAL"}
+                    <div
+                      key={globalIdx}
+                      className={`border-l-4 ${rowStyle.borderColor} ${rowStyle.bgColor} rounded-r-xl p-3 space-y-3 transition-all`}
+                    >
+                      {/* Badge del tipo de fila */}
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full text-white ${rowStyle.labelBg}`}>
+                          {rowStyle.label}
                         </span>
                       </div>
 
@@ -211,64 +253,70 @@ export const TableDocuments = ({
                       <div className="grid grid-cols-12 gap-2">
                         <div className="col-span-4">
                           <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1">Ref</label>
-                          <input 
-                            type="text" 
-                            value={item.referencia || ""} 
-                            onChange={(e) => handleChange(globalIdx, "referencia", e.target.value)} 
-                            className="w-full text-xs border rounded p-2 focus:ring-1 focus:ring-blue-400 outline-none" 
+                          <input
+                            type="text"
+                            value={item.referencia || ""}
+                            onChange={(e) => handleChange(globalIdx, "referencia", e.target.value)}
+                            className="w-full text-xs border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-400 outline-none bg-white"
                           />
                         </div>
                         <div className="col-span-8">
                           <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1">Descripción</label>
-                          <textarea 
+                          <textarea
                             rows={isSystem ? 1 : 2}
-                            value={item.descripcion || ""} 
-                            readOnly={isSystem} 
-                            onChange={(e) => handleChange(globalIdx, "descripcion", e.target.value)} 
-                            className={`w-full text-xs border rounded p-2 focus:ring-1 focus:ring-blue-400 outline-none ${isSystem ? "bg-gray-50 font-bold" : ""}`} 
+                            value={item.descripcion || ""}
+                            readOnly={isSystem}
+                            onChange={(e) => handleChange(globalIdx, "descripcion", e.target.value)}
+                            className={`w-full text-xs border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-400 outline-none resize-none ${isSystem ? "bg-white font-bold text-gray-700" : "bg-white"}`}
                           />
                         </div>
                       </div>
 
                       {/* Fila: Cant, Precio, Dto e Importe */}
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-4 gap-1.5">
                         <div>
                           <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Cant</label>
-                          <input 
-                            type="number" 
-                            value={item.cantidad ?? ""} 
-                            readOnly={!isSystem} 
-                            onChange={(e) => handleChange(globalIdx, "cantidad", e.target.value)} 
-                            className={`w-full text-center text-xs border rounded p-2 ${!isSystem ? "bg-gray-100 text-gray-400" : ""}`} 
+                          <input
+                            type="number"
+                            value={item.cantidad ?? ""}
+                            readOnly={!isSystem}
+                            onChange={(e) => handleChange(globalIdx, "cantidad", e.target.value)}
+                            className={`w-full text-center text-xs border rounded-lg p-2.5 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
                           />
                         </div>
                         <div>
                           <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Precio</label>
-                          <input 
-                            type="number" 
-                            value={item.precio ?? ""} 
-                            readOnly={!isSystem} 
-                            onChange={(e) => handleChange(globalIdx, "precio", e.target.value)} 
-                            className={`w-full text-center text-xs border rounded p-2 ${!isSystem ? "bg-gray-100 text-gray-400" : ""}`} 
+                          <input
+                            type="number"
+                            value={item.precio ?? ""}
+                            readOnly={!isSystem}
+                            onChange={(e) => handleChange(globalIdx, "precio", e.target.value)}
+                            className={`w-full text-center text-xs border rounded-lg p-2.5 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
                           />
                         </div>
                         <div>
                           <label className="text-[9px] text-gray-400 uppercase font-bold block mb-1 text-center">Dto %</label>
-                          <input 
-                            type="number" 
-                            value={item.dto ?? ""} 
-                            readOnly={!isSystem} 
-                            onChange={(e) => handleChange(globalIdx, "dto", e.target.value)} 
-                            className={`w-full text-center text-xs border rounded p-2 ${!isSystem ? "bg-gray-100 text-gray-400" : ""}`} 
+                          <input
+                            type="number"
+                            value={item.dto ?? ""}
+                            readOnly={!isSystem}
+                            onChange={(e) => handleChange(globalIdx, "dto", e.target.value)}
+                            className={`w-full text-center text-xs border rounded-lg p-2.5 bg-white ${!isSystem ? "text-gray-400" : "font-semibold"}`}
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] text-blue-600 uppercase font-bold block mb-1 text-center">Total</label>
-                          <input 
-                            type="number" 
-                            value={item.importe ?? ""} 
-                            readOnly={true} 
-                            className="w-full text-center text-xs border border-blue-200 rounded p-2 font-bold bg-blue-50 text-blue-700" 
+                          <label className="text-[9px] uppercase font-bold block mb-1 text-center"
+                            style={{ color: localIdx === 0 ? '#3b82f6' : localIdx === 1 ? '#10b981' : '#f59e0b' }}
+                          >Total</label>
+                          <input
+                            type="number"
+                            value={item.importe ?? ""}
+                            readOnly={true}
+                            className={`w-full text-center text-xs border rounded-lg p-2.5 font-bold bg-white`}
+                            style={{
+                              borderColor: localIdx === 0 ? '#93c5fd' : localIdx === 1 ? '#6ee7b7' : '#fcd34d',
+                              color: localIdx === 0 ? '#2563eb' : localIdx === 1 ? '#059669' : '#d97706',
+                            }}
                           />
                         </div>
                       </div>
