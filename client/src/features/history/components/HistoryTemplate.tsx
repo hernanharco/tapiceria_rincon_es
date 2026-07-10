@@ -249,6 +249,7 @@ export const HistoryTemplate = () => {
         onClose={() => setShowModal(false)}
         title="Logo"
         searchTerm={searchTerm}
+        allClients={clients}
       />
 
       {/* Tabla de documentos filtrados */}

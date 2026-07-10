@@ -18,6 +18,7 @@ export const HistoryModals = ({
   selectedItem,
   clientId: propClientId,
   clientCif: propClientCif,
+  allClients = [],
 }) => {
   const isEditing = !!selectedItem?.id;
   const [activeTab, setActiveTab] = useState('info');
@@ -100,10 +101,25 @@ export const HistoryModals = ({
   //    - Nuevo: propClientId o parseamos del searchTerm
   const parsed = parseSearchTerm(searchTerm);
   const clientId = selectedItem?.dataclient || propClientId || parsed.clientId || null;
-  const cleanCif = propClientCif || parsed.cif;
+  const cleanCif = propClientCif || parsed.cif || (clientId && allClients.length > 0 ? (allClients.find(c => c.id === clientId)?.cif || '') : '');
 
-  // 3. (Opcional) Nombre del cliente para mostrar en la UI si lo necesitas
-  //const clientName = selectedItem?.clienteNombre || "";
+  // 3. Nombre del cliente extraído — buscamos por ID o CIF en allClients
+  const clientName = (() => {
+    // Edición: si tenemos el ID del cliente, lo buscamos en la lista
+    if (clientId && allClients.length > 0) {
+      const found = allClients.find((c) => c.id === clientId);
+      if (found) return found.name;
+    }
+    // Si no encontramos por ID, buscamos por CIF
+    if (cleanCif && allClients.length > 0) {
+      const found = allClients.find((c) => c.cif === cleanCif);
+      if (found) return found.name;
+    }
+    // Formato "(#ID) NOMBRE" (desde el buscador)
+    const matchNamed = searchTerm?.match(/^\(#\d+\)\s*(.*)/);
+    if (matchNamed) return matchNamed[1];
+    return '';
+  })();
 
   useEffect(() => {
     if (!isOpen || !selectedItem) return;
@@ -267,16 +283,24 @@ export const HistoryModals = ({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md">
       <div className="bg-white rounded-2xl md:rounded-[2rem] shadow-2xl w-full max-w-full md:max-w-6xl mx-2 md:mx-0 max-h-[95vh] md:max-h-[90vh] flex flex-col relative overflow-hidden">
-        {/* HEADER */}
-        <div className="px-4 md:px-8 pt-4 md:pt-8 pb-4 bg-white shrink-0">
+        {/* HEADER — más compacto en móvil cuando estás en Detalles */}
+        <div className={`shrink-0 bg-white ${
+          activeTab === 'products'
+            ? 'px-2 pt-2 pb-0 md:px-8 md:pt-8 md:pb-4'
+            : 'px-4 md:px-8 pt-4 md:pt-8 pb-4'
+        }`}>
           <button
             onClick={onClose}
-            className="absolute top-4 md:top-6 right-4 md:right-8 w-11 h-11 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+            className={`absolute top-2 md:top-6 right-2 md:right-8 w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all z-10 ${
+              activeTab === 'products' ? 'bg-white/80 backdrop-blur-sm' : ''
+            }`}
             aria-label="Cerrar modal"
           >
-            <span className="text-xl md:text-2xl">&times;</span>
+            <span className="text-lg md:text-2xl">&times;</span>
           </button>
-          <div className="mb-4 md:mb-6">
+
+          {/* Título: oculto en móvil cuando estamos en Detalles */}
+          <div className={`${activeTab === 'products' ? 'hidden md:block mb-2 md:mb-6' : 'mb-4 md:mb-6'}`}>
             <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">
               Gestión de Documentos
             </span>
@@ -285,7 +309,9 @@ export const HistoryModals = ({
             </h2>
           </div>
 
-          <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-full md:w-fit overflow-x-auto">
+          <div className={`flex gap-1 md:gap-2 p-1 md:p-1.5 bg-slate-100/80 rounded-xl md:rounded-2xl w-full md:w-fit overflow-x-auto ${
+            activeTab === 'products' ? 'mb-0' : ''
+          }`}>
             {['info', 'products', 'summary'].map((tab) => (
               <button
                 key={tab}
@@ -307,10 +333,15 @@ export const HistoryModals = ({
         </div>
 
         {/* CONTENIDO DINÁMICO */}
-        <div key={formKey} className="flex-1 px-4 md:px-8 py-4 bg-white overflow-y-auto custom-scrollbar">
+        <div key={formKey} className={`flex-1 overflow-y-auto custom-scrollbar ${
+          activeTab === 'products'
+            ? 'p-0 md:px-8 md:py-4 bg-gray-50 md:bg-white'
+            : 'px-4 md:px-8 py-4 bg-white'
+        }`}>
           {activeTab === 'info' && (
             <DocumentsInfo
               cif={cleanCif}
+              clientName={clientName}
               datInfo={datInfo}
               setDatInfo={setDatInfo}
               isEditing={isEditing}
@@ -372,47 +403,66 @@ export const HistoryModals = ({
         </div>
 
         {/* ACCIONES */}
-        <div className="sticky bottom-0 px-4 md:px-8 py-4 md:py-6 bg-slate-50 border-t flex flex-col md:flex-row gap-3 md:gap-0 justify-between items-start md:items-center">
-          <p className="text-[11px] text-slate-400 italic">
-            * Campos obligatorios: Cliente y Fecha.
-          </p>
-          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 font-bold text-slate-400"
-            >
-              Cancelar
-            </button>
-            {activeTab !== 'summary' ? (
+        <div className="sticky bottom-0 px-3 md:px-8 py-2 md:py-6 bg-white md:bg-slate-50 border-t flex flex-row justify-between items-center gap-2">
+          {activeTab === 'products' ? (
+            <>
               <button
-                onClick={() =>
-                  setActiveTab(activeTab === 'info' ? 'products' : 'summary')
-                }
-                className="px-8 py-3 rounded-2xl bg-slate-800 text-white font-bold"
+                onClick={onClose}
+                className="px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm font-bold text-slate-400 hover:text-slate-600"
               >
-                Continuar →
+                Cancelar
               </button>
-            ) : (
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`px-10 py-3 rounded-2xl font-black shadow-lg transition-all ${
-                  isSaving
-                    ? 'bg-green-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {isSaving ? (
-                  <span className="flex items-center gap-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Guardando...
-                  </span>
+              {activeTab !== 'summary' && (
+                <button
+                  onClick={() => setActiveTab('summary')}
+                  className="px-5 py-2 md:px-8 md:py-3 rounded-xl md:rounded-2xl bg-slate-800 text-white text-xs md:text-sm font-bold"
+                >
+                  Totales →
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="hidden md:block text-[11px] text-slate-400 italic">
+                * Campos obligatorios: Cliente y Fecha.
+              </p>
+              <div className="flex flex-row gap-2">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm font-bold text-slate-400 hover:text-slate-600"
+                >
+                  Cancelar
+                </button>
+                {activeTab === 'info' ? (
+                  <button
+                    onClick={() => setActiveTab('products')}
+                    className="px-5 py-2 md:px-8 md:py-3 rounded-xl md:rounded-2xl bg-slate-800 text-white text-xs md:text-sm font-bold"
+                  >
+                    Detalles →
+                  </button>
                 ) : (
-                  isEditing ? 'Actualizar' : 'Guardar Documento'
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className={`px-5 py-2 md:px-10 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-black shadow-lg transition-all ${
+                      isSaving
+                        ? 'bg-green-400 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
+                  >
+                    {isSaving ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        <span className="hidden md:inline">Guardando...</span>
+                      </span>
+                    ) : (
+                      isEditing ? 'Actualizar' : 'Guardar'
+                    )}
+                  </button>
                 )}
-              </button>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
