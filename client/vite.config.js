@@ -19,4 +19,30 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'), // @ apunta a src
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Librerías de UI y utilidades pesadas separadas del bundle principal
+          'vendor-ui': [
+            'react-icons',
+            'sweetalert2',
+            'sonner',
+          ],
+          'vendor-pdf': [
+            'jspdf',
+            'html2canvas',
+            'react-pdf',
+          ],
+          'vendor-react': [
+            'react',
+            'react-dom',
+            'react-router-dom',
+          ],
+        },
+      },
+    },
+    // Advertencia de chunk grande a partir de 500kB (por defecto 500kB)
+    chunkSizeWarningLimit: 500,
+  },
 });
