@@ -102,7 +102,7 @@ export const HistoryTableDocumentView = ({
           </svg>
           Filtros
           {loadingFilter && (
-            <span className="text-xs text-gray-400 font-normal">actualizando...</span>
+            <span className="text-xs text-gray-600 font-normal">actualizando...</span>
           )}
         </button>
 
@@ -121,11 +121,13 @@ export const HistoryTableDocumentView = ({
       </div>
 
       {filterOpen && (
-        <DateRangeFilter
-          onFilter={handleFilter}
-          onClear={handleClearFilter}
-          loading={loadingFilter}
-        />
+        <div id="filter-section">
+          <DateRangeFilter
+            onFilter={handleFilter}
+            onClear={handleClearFilter}
+            loading={loadingFilter}
+          />
+        </div>
       )}
 
       {/* ESTADO VACÍO */}
@@ -395,13 +397,14 @@ export const HistoryTableDocumentView = ({
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => handleSelectOne(item.id)}
+                  aria-label={`Seleccionar documento ${item.num_presupuesto || item.id}`}
                   className="w-6 h-6 rounded-full border-gray-300 text-blue-600 shadow-sm"
                 />
               </div>
 
               {/* Cabecera: Cliente */}
               <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
+                <p className="text-[10px] text-gray-600 font-black uppercase tracking-tighter">
                   Cliente
                 </p>
                 <p className="font-bold text-gray-900 text-lg truncate pr-8">
@@ -415,7 +418,7 @@ export const HistoryTableDocumentView = ({
                 <div
                   className={`p-2 rounded-xl border ${item.num_presupuesto ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}
                 >
-                  <p className="text-[9px] font-bold text-blue-800 uppercase">
+                  <p className="text-[10px] font-bold text-white bg-blue-700 px-2 py-0.5 rounded-full uppercase inline-block">
                     Presu.
                   </p>
                   <button
@@ -427,7 +430,7 @@ export const HistoryTableDocumentView = ({
                   >
                     {item.num_presupuesto || '-'}
                   </button>
-                  <p className="text-[8px] text-gray-500 font-mono">
+                  <p className="text-[8px] text-gray-600 font-mono">
                     {item.fecha_factura
                       ? dayjs(item.fecha_factura).format('DD/MM/YY')
                       : '--/--'}
@@ -438,7 +441,7 @@ export const HistoryTableDocumentView = ({
                 <div
                   className={`p-2 rounded-xl border ${item.num_albaran ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}
                 >
-                  <p className="text-[9px] font-bold text-green-800 uppercase">
+                  <p className="text-[10px] font-bold text-white bg-green-700 px-2 py-0.5 rounded-full uppercase inline-block">
                     Albarán
                   </p>
                   <button
@@ -450,7 +453,7 @@ export const HistoryTableDocumentView = ({
                   >
                     {item.num_albaran || '-'}
                   </button>
-                  <p className="text-[8px] text-gray-500 font-mono">
+                  <p className="text-[8px] text-gray-600 font-mono">
                     {item.fecha_factalb
                       ? dayjs(item.fecha_factalb).format('DD/MM/YY')
                       : '--/--'}
@@ -461,7 +464,7 @@ export const HistoryTableDocumentView = ({
                 <div
                   className={`p-2 rounded-xl border ${item.num_factura ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}
                 >
-                  <p className="text-[9px] font-bold text-red-800 uppercase">
+                  <p className="text-[10px] font-bold text-white bg-red-700 px-2 py-0.5 rounded-full uppercase inline-block">
                     Factura
                   </p>
                   <button
@@ -473,7 +476,7 @@ export const HistoryTableDocumentView = ({
                   >
                     {item.num_factura || '-'}
                   </button>
-                  <p className="text-[8px] text-gray-500 font-mono">
+                  <p className="text-[8px] text-gray-600 font-mono">
                     {item.datefactura
                       ? dayjs(item.datefactura).format('DD/MM/YY')
                       : '--/--'}
@@ -492,9 +495,10 @@ export const HistoryTableDocumentView = ({
                   </button>
                   <button
                     onClick={() => handleDeleteFactura(item)}
+                    aria-label={`Eliminar documento ${item.num_presupuesto || ''}`}
                     className="px-3 py-2 bg-white border border-gray-200 text-red-500 rounded-lg text-xs font-bold shadow-sm active:bg-red-50"
                   >
-                    <FaTrash />
+                    <FaTrash aria-hidden="true" />
                   </button>
                 </div>
 
@@ -503,25 +507,27 @@ export const HistoryTableDocumentView = ({
                   <button
                     onClick={() => toggleChecklistItem(item.id, '1')}
                     disabled={!!item.num_albaran}
+                    aria-label={`Convertir ${item.num_presupuesto || 'presupuesto'} a albarán`}
                     className={`w-9 h-9 flex items-center justify-center rounded-full border shadow-sm transition-all ${
                       item.num_presupuesto
                         ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'bg-white border-gray-300 text-gray-400'
+                        : 'bg-white border-gray-300 text-gray-600'
                     } ${item.num_albaran ? 'opacity-30' : 'active:scale-90'}`}
                   >
-                    <FaCheck size={14} />
+                    <FaCheck size={14} aria-hidden="true" />
                   </button>
                   {/* Convertir ALB a FAC */}
                   <button
                     onClick={() => toggleChecklistItem(item.id, '2')}
                     disabled={!!item.num_factura}
+                    aria-label={`Convertir ${item.num_albaran || 'albarán'} a factura`}
                     className={`w-9 h-9 flex items-center justify-center rounded-full border shadow-sm transition-all ${
                       item.num_albaran
                         ? 'bg-green-600 border-green-600 text-white'
-                        : 'bg-white border-gray-300 text-gray-400'
+                        : 'bg-white border-gray-300 text-gray-600'
                     } ${item.num_factura ? 'opacity-30' : 'active:scale-90'}`}
                   >
-                    <FaCheck size={14} />
+                    <FaCheck size={14} aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -568,9 +574,10 @@ export const HistoryTableDocumentView = ({
 
             <button
               onClick={clearSelection}
-              className="text-gray-400 hover:text-red-500 transition-colors"
+              aria-label="Limpiar selección"
+              className="text-gray-600 hover:text-red-500 transition-colors"
             >
-              <FaTimes size={18} />
+              <FaTimes size={18} aria-hidden="true" />
             </button>
           </div>
 
