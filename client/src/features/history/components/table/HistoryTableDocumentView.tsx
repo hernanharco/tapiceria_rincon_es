@@ -169,6 +169,7 @@ export const HistoryTableDocumentView = ({
                     selectedIds.length === sortedProducts.length &&
                     sortedProducts.length > 0
                   }
+                  aria-label="Seleccionar todos los documentos"
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
               </th>
@@ -223,6 +224,7 @@ export const HistoryTableDocumentView = ({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleSelectOne(item.id)}
+                      aria-label={`Seleccionar ${item.clienteNombre || 'documento'} ${item.num_presupuesto || ''}`}
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </td>
@@ -244,7 +246,7 @@ export const HistoryTableDocumentView = ({
                     >
                       {item.num_presupuesto || '-'}
                     </div>
-                    <div className="text-xs text-gray-500 mb-2 font-mono">
+                    <div className="text-xs text-gray-600 mb-2 font-mono">
                       {item.fecha_factura &&
                         dayjs(item.fecha_factura).format('DD/MM/YYYY')}
                     </div>
@@ -255,13 +257,14 @@ export const HistoryTableDocumentView = ({
                           toggleChecklistItem(item.id, '1');
                         }}
                         disabled={!!item.num_albaran}
+                        aria-label={`Convertir a albarán ${item.num_presupuesto || ''}`}
                         className={`${checkStyle} ${item.num_albaran ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <div
                           className={`w-7 h-7 flex items-center justify-center rounded-full border shadow-sm ${item.num_presupuesto ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400 text-gray-400'}`}
                         >
                           {item.num_presupuesto && (
-                            <FaCheck className="w-3 h-3" />
+                            <FaCheck className="w-3 h-3" aria-hidden="true" />
                           )}
                         </div>
                       </button>
@@ -272,8 +275,9 @@ export const HistoryTableDocumentView = ({
                         }}
                         className={editStyle}
                         title="Editar"
+                        aria-label={`Editar ${item.clienteNombre || 'documento'} ${item.num_presupuesto || ''}`}
                       >
-                        <FaEdit size={18} />
+                        <FaEdit size={18} aria-hidden="true" />
                       </button>
                       <button
                         onClick={(e) => {
@@ -282,8 +286,9 @@ export const HistoryTableDocumentView = ({
                         }}
                         className={deleteStyle}
                         title="Eliminar"
+                        aria-label={`Eliminar ${item.clienteNombre || 'documento'} ${item.num_presupuesto || ''}`}
                       >
-                        <FaTrash size={18} />
+                        <FaTrash size={18} aria-hidden="true" />
                       </button>
                     </div>
                   </td>
@@ -299,38 +304,23 @@ export const HistoryTableDocumentView = ({
                     >
                       {item.num_albaran || '-'}
                     </div>
-                    <div className="text-xs text-gray-500 mb-2 font-mono">
-                      {item.fecha_factalb &&
-                        dayjs(item.fecha_factalb).format('DD/MM/YYYY')}
+                    <div className="text-xs text-gray-600 mb-2 font-mono">
+                      {item.fecha_factalb
+                        ? dayjs(item.fecha_factalb).format('DD/MM/YYYY')
+                        : '-'}
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleChecklistItem(item.id, '2');
-                      }}
-                      disabled={!!item.num_factura}
-                      className={`${checkStyle} mt-1 ${item.num_factura ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <div
-                        className={`w-7 h-7 flex items-center justify-center rounded-full border ${item.num_albaran ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400 text-gray-400'}`}
-                      >
-                        {item.num_albaran && <FaCheck className="w-3 h-3" />}
-                      </div>
-                    </button>
                   </td>
-
-                  {/* COLUMNA FACTURA */}
-                  <td className="px-3 py-2 text-center font-bold">
+                  <td className="px-3 py-2 text-center">
                     <div
                       onClick={() =>
                         item.num_factura &&
                         DocumentServicePDF.print(item.num_factura, 'FAC')
                       }
-                      className={`${item.num_factura ? 'text-blue-800 cursor-pointer hover:underline' : 'text-gray-400'}`}
+                      className="cursor-pointer font-bold text-red-700 hover:text-red-900 hover:underline transition-all"
                     >
                       {item.num_factura || '-'}
                     </div>
-                    <div className="text-xs text-gray-500 mb-2 font-mono">
+                    <div className="text-xs text-gray-600 mb-2 font-mono">
                       {item.datefactura &&
                         dayjs(item.datefactura).format('DD/MM/YYYY')}
                     </div>
