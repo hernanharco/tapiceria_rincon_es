@@ -358,6 +358,7 @@ export const HistoryTableDocumentLogic = ({
         onClose={() => setShowModalSearch(false)}
         selectedItem={selectedItem}
         searchTerm={searchTerm}
+        allClients={allClients}
       />
 
       <DateModal

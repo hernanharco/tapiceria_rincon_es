@@ -5,6 +5,7 @@ import { formatDateFor } from '@/utils/formatUtils';
 
 export const DocumentsInfo = ({
   cif,
+  clientName,
   datInfo,
   setDatInfo,
   isEditing,
@@ -109,17 +110,29 @@ export const DocumentsInfo = ({
         </div>
       </div>
 
-      {/* Código Cliente */}
+      {/* Cliente */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-semibold text-gray-700">
-          Cod. Cliente
+          Cliente
         </label>
-        <input
-          type="text"
-          value={cif}
-          readOnly
-          className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-600"
-        />
+        <div className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 flex items-center gap-2">
+          {clientName ? (
+            <>
+              <span className="font-medium">{clientName}</span>
+              {cif && (
+                <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded">
+                  CIF: {cif}
+                </span>
+              )}
+            </>
+          ) : cif ? (
+            <span className="font-mono">{cif}</span>
+          ) : (
+            <span className="text-gray-400 italic text-sm">
+              Selecciona un cliente en el buscador
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Observaciones */}
