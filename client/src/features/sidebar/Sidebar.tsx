@@ -91,13 +91,13 @@ export const Sidebar = () => {
                     <li key={label}>
                       <button
                         onClick={() => window.location.href = href}
-                        className="w-full flex items-center gap-4 p-4 rounded-2xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-300 group"
+                        className="w-full flex items-center gap-4 p-4 rounded-2xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-300 group"
                       >
                         <div className="group-hover:scale-110 transition-transform">
                           <IconComponent size={20} />
                         </div>
                         {isOpen && (
-                          <span className="text-sm font-bold tracking-tight opacity-70 group-hover:opacity-100">
+                          <span className="text-sm font-bold tracking-tight text-slate-300">
                             {label}
                           </span>
                         )}
@@ -115,7 +115,7 @@ export const Sidebar = () => {
                       className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 group
                       ${isActive 
                         ? `${activeColor} text-white shadow-lg shadow-blue-500/20` 
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
                     >
                       <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
                         <IconComponent size={isActive ? 22 : 20} />
@@ -143,7 +143,7 @@ export const Sidebar = () => {
             <div className={`p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 transition-all duration-500 ${!isOpen && 'flex justify-center'}`}>
               {isOpen ? (
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Desarrollado por</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Desarrollado por</p>
                   <p className="text-xs font-bold text-slate-300">v1.5.0 - hernan.harco</p>
                 </div>
               ) : (
