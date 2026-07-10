@@ -183,10 +183,22 @@ export const HistoryTemplate = () => {
     <div className="space-y-0">
       {/* Buscador con sugerencias */}
       <div className="relative" ref={dropdownRef}>
+        <label htmlFor="history-search" className="sr-only">Buscar cliente</label>
         <input
+          id="history-search"
           type="text"
           placeholder="Buscar cliente... 'Todos' muestra todo"
           value={searchTerm}
+          aria-label="Buscar cliente"
+          aria-autocomplete="list"
+          aria-controls="history-suggestions"
+          aria-expanded={showSuggestions && suggestions.length > 0}
+          aria-activedescendant={
+            activeSuggestionIndex >= 0
+              ? `suggestion-${suggestions[activeSuggestionIndex]?.id}`
+              : undefined
+          }
+          role="combobox"
           // Selecciona al hacer doble clic (lo que pediste)
           onDoubleClick={(e) => (e.target as HTMLInputElement).select()}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -201,10 +213,18 @@ export const HistoryTemplate = () => {
 
         {/* Dropdown de sugerencias */}
         {showSuggestions && (
-          <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+          <ul
+            id="history-suggestions"
+            role="listbox"
+            aria-label="Sugerencias de clientes"
+            className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg"
+          >
             {suggestions.map((client, index) => (
               <li
                 key={client.id}
+                id={`suggestion-${client.id}`}
+                role="option"
+                aria-selected={activeSuggestionIndex === index}
                 onClick={() => {
                   setSearchTerm(`(#${client.id}) ${client.name}`);
                   setShowSuggestions(false);

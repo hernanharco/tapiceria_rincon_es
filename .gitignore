@@ -130,3 +130,5 @@ image.png
 # --- EXCEPCIÓN: Permitir el archivo de ejemplo ---
 !.env.example
 DEPLOY.md
+.vercel
+.env*

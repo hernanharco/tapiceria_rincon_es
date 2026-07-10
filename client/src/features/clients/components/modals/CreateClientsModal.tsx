@@ -1,8 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 // Iconos para mejorar la UX
 import { FaIdCard, FaUser, FaMapMarkerAlt, FaEnvelope, FaCity, FaMapMarkedAlt, FaPhone } from 'react-icons/fa';
 
 export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, company }) => {
+  const modalRef = useRef(null);
+  const previousActiveElement = useRef(null);
+
+  // Focus trapping + Esc key
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+
+    // Focus trapping: Tab y Shift+Tab
+    if (e.key === 'Tab' && modalRef.current) {
+      const focusable = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      previousActiveElement.current = document.activeElement;
+      // Focus en el primer input después de render
+      requestAnimationFrame(() => {
+        const firstInput = modalRef.current?.querySelector('input, button');
+        firstInput?.focus();
+      });
+      document.addEventListener('keydown', handleKeyDown);
+    } else {
+      previousActiveElement.current?.focus();
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previousActiveElement.current?.focus();
+    };
+  }, [isOpen, handleKeyDown]);
   const [formData, setFormData] = useState({
     cif: '',
     name: '',
@@ -56,10 +106,15 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    <div
+      className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={isEditing ? 'Editar cliente' : 'Nuevo cliente'}
     >
       <div
+        ref={modalRef}
         className="bg-white rounded-xl shadow-lg w-full max-w-lg mx-4 sm:p-6 sm:max-w-xl lg:max-w-2xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -80,11 +135,14 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
               <input
                 type="text"
                 name="cif"
+                id="client-cif"
                 value={formData.cif || ''}
                 onChange={handleChange}
                 placeholder="Ej: B12345678"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required={!isEditing}
+                aria-required={!isEditing}
+                aria-label="CIF del cliente"
               />
             </div>
 
@@ -97,11 +155,14 @@ export const CreateClientsModal = ({ isOpen, onClose, onSubmit, client = null, c
               <input
                 type="text"
                 name="name"
+                id="client-name"
                 value={formData.name || ''}
                 onChange={handleChange}
                 placeholder="Nombre completo o razón social"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
+                aria-required="true"
+                aria-label="Nombre o razón social del cliente"
               />
             </div>
 

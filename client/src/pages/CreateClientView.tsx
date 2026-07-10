@@ -121,10 +121,13 @@ export const CreateClientView = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
             <div className="relative">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" aria-hidden="true" />
+              <label htmlFor="client-search" className="sr-only">Buscar cliente por nombre o CIF</label>
               <input
+                id="client-search"
                 type="text"
                 placeholder="Buscar cliente..."
+                aria-label="Buscar cliente por nombre o CIF"
                 className="pl-11 pr-4 py-3 bg-white border-none rounded-2xl w-full sm:w-64 text-sm shadow-sm ring-1 ring-slate-100 focus:ring-2 focus:ring-blue-500 transition-all outline-none"
                 onChange={(e) => setFilterQuery(e.target.value)}
               />
@@ -135,9 +138,10 @@ export const CreateClientView = () => {
                 setEditingClient(null);
                 setShowModal(true);
               }}
+              aria-label="Añadir nuevo cliente"
               className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-95"
             >
-              <FaUserPlus /> Nuevo Cliente
+              <FaUserPlus aria-hidden="true" /> Nuevo Cliente
             </button>
           </div>
         </div>
@@ -225,9 +229,10 @@ export const CreateClientView = () => {
                           setShowModalHistory(true);
                           setSearchTerm(client.cif);
                         }}
+                        aria-label={`Ver documentos de ${client.name}`}
                         className="p-3 md:p-2.5 rounded-xl text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
                       >
-                        <FaFileInvoice size={18} />
+                        <FaFileInvoice size={18} aria-hidden="true" />
                       </button>
 
                       <button
@@ -235,16 +240,18 @@ export const CreateClientView = () => {
                           setEditingClient(client);
                           setShowModal(true);
                         }}
+                        aria-label={`Editar cliente ${client.name}`}
                         className="p-3 md:p-2.5 rounded-xl text-amber-500 bg-amber-50 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
                       >
-                        <FaRegEdit size={18} />
+                        <FaRegEdit size={18} aria-hidden="true" />
                       </button>
 
                       <button
-                        onClick={() => handleDeleteClient(client)} // Enviamos el objeto cliente completo para la alerta
+                        onClick={() => handleDeleteClient(client)}
+                        aria-label={`Eliminar cliente ${client.name}`}
                         className="p-3 md:p-2.5 rounded-xl text-red-400 bg-red-50 hover:bg-red-500 hover:text-white transition-all shadow-sm"
                       >
-                        <FaRegTrashAlt size={18} />
+                        <FaRegTrashAlt size={18} aria-hidden="true" />
                       </button>
                     </div>
                   </div>
