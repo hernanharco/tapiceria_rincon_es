@@ -418,7 +418,7 @@ export const HistoryTableDocumentView = ({
                     }
                     className="text-xs font-black block w-full truncate py-1 text-blue-700 active:underline"
                   >
-                    {item.num_presupuesto || '-'}
+                    {item.num_presupuesto ? item.num_presupuesto.slice(3) : '-'}
                   </button>
                   <p className="text-[8px] text-gray-600 font-mono">
                     {item.fecha_factura
@@ -441,7 +441,7 @@ export const HistoryTableDocumentView = ({
                     }
                     className="text-xs font-black block w-full truncate py-1 text-green-700 active:underline"
                   >
-                    {item.num_albaran || '-'}
+                    {item.num_albaran ? item.num_albaran.slice(3) : '-'}
                   </button>
                   <p className="text-[8px] text-gray-600 font-mono">
                     {item.fecha_factalb
@@ -464,7 +464,7 @@ export const HistoryTableDocumentView = ({
                     }
                     className="text-xs font-black block w-full truncate py-1 text-red-700 active:underline"
                   >
-                    {item.num_factura || '-'}
+                    {item.num_factura ? item.num_factura.slice(3) : '-'}
                   </button>
                   <p className="text-[8px] text-gray-600 font-mono">
                     {item.datefactura
