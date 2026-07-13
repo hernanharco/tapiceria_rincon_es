@@ -94,6 +94,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
             filename = f"{label.lower()}_{numero_limpio}.pdf"
             
             response['Content-Disposition'] = f'inline; filename="{filename}"'
+            
+            # --- EVITAR CACHÉ EN MÓVILES ---
+            # Sin estos headers, los navegadores móviles cachean agresivamente el PDF
+            # y muestran datos viejos aunque el documento se haya actualizado.
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+            
             return response
 
         except Exception as e:
