@@ -379,6 +379,24 @@ export const TableDocuments = ({
         })()}
       </div>
 
+      {/* --- VISTA MÓVIL: cuando NO hay grupos (documento nuevo) --- */}
+      {totalBloques === 0 && (
+        <div className="md:hidden flex flex-col items-center justify-center py-16 px-4 bg-gray-50">
+          <div className="text-4xl mb-4 opacity-40">📋</div>
+          <p className="text-sm text-gray-400 font-medium text-center mb-6">
+            Todavía no hay grupos de productos.<br />
+            Agregá el primero para empezar.
+          </p>
+          <button
+            type="button"
+            onClick={handleAddRow}
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all text-sm"
+          >
+            <span>➕</span> Agregar Grupo 1
+          </button>
+        </div>
+      )}
+
       <div className="hidden md:flex p-4 bg-gray-50 border-t justify-center">
         <button 
           type="button" 
