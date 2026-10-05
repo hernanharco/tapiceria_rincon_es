@@ -49,9 +49,16 @@ El cliente no puede guardar un "Nuevo Presupuesto" desde `/clientes`; el modal m
 
 ## Evidencia de commits
 
-- `2a36e04` — `fix(client): stop 400 error when saving a new document` en `fix/save-document-400` (10 archivos, +747/−10; incluye tests y documento ODD). No se incluyó la modificación preexistente de `docker-compose.yml`. No push/PR (decisión del usuario).
+- `2a36e04` — `fix(client): stop 400 error when saving a new document` en `fix/save-document-400` (10 archivos, +747/−10; incluye tests y documento ODD).
+- `e0ad0a5` — docs(odd): hash del commit work-unit.
+- `a149af6` — `fix(client): serve print.css from public/ ...` (link `/print.css` + `client/public/print.css`), verificado build 4/4.
+- Push: rama `fix/save-document-400` y `dev` → `origin` (ff `6a3188d..a149af6`).
+- Release: `dev` → `master` (`be33dc7`), pull de `5fafda4` remoto → `e29f16d` → push a `origin/master`.
+- **Producción desplegada**: deployment `tapiceria-rincon-lq09dda06` (Production, Ready, 27s). Verificación en vivo: bundle `index-CkSD09cp.js` con los strings del fix; `/print.css` → `200 text/css`.
+- No se incluyó la modificación preexistente de `docker-compose.yml` (revertida por el review nativo).
 
 ## Cierre
 
-- Fix completo entregado: validación previa, detalle real del error en el toast, normalización numérica, retomada ante duplicado con verificación autoritativa de footer.
-- Pendiente solo del usuario: desplegar (Vercel) y comentar con el cliente.
+- Fix completo entregado y **desplegado en producción** (2026-10-05): validación previa, detalle real del error en el toast, normalización numérica, retomada ante duplicado con verificación autoritativa de footer, print.css corregido.
+- CSP `script-src 'none'` reportado por el cliente: **no existe en el servidor** (verificado con curl en raíz y /clientes, UA Firefox, sin caché; sin meta CSP, sin service worker, sin CSP en el código) → inyectado en el navegador del cliente (extensión/VPN). Pendiente de confirmar con ventana privada.
+- RDD clone-local: OFF (vía D) — volver con `gentle-ai review mode enable --scope clone`.
