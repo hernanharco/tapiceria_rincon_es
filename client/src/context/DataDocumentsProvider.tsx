@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import api from '@/api/config';
+import { toDecimal2 } from '@/utils/documentSaveValidation';
 
 const API_URL = "/api/datadocuments/";
 const DataDocumentsContext = createContext(null);
@@ -50,10 +51,10 @@ export const DataDocumentsProvider = ({ children }) => {
       const dataToSend= {
         referencia: newProduct.referencia,
         descripcion: newProduct.descripcion,
-        cantidad: newProduct.cantidad,
-        precio: newProduct.precio,
-        dto: newProduct.dto,
-        importe: newProduct.importe,
+        cantidad: toDecimal2(newProduct.cantidad),
+        precio: toDecimal2(newProduct.precio),
+        dto: toDecimal2(newProduct.dto),
+        importe: toDecimal2(newProduct.importe),
         entrega: "",
         line: true,        
         documento: newProduct.documento,
