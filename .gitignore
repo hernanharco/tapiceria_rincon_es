@@ -1,18 +1,4 @@
-# --- Entorno y Secretos (CRÍTICO) ---
-.env
-.env.*
-*.env
-local_settings.py
-secrets.py
-
-# --- Dependencias ---
-node_modules/
-jspm_packages/
-# Python
-venv/
-env/
-.venv/
-# --- SEGURIDAD Y ENTORNO (Actualizado) ---
+# --- Entorno y Secretos ---
 .env
 .env.*
 *.env
@@ -24,68 +10,56 @@ local_settings.py
 secrets.py
 personal.txt
 
-# --- DEPENDENCIAS Y NODE ---
+# --- Dependencias ---
 node_modules/
 jspm_packages/
 package-lock.json
 yarn.lock
+yarn.lock.bak
 /yarn-error.log
-/yarn.lock.bak
-/npm-debug.log
 /yarn-debug.log
 /lerna-debug.log
+/npm-debug.log
 
-# --- VITE / REACT / BUILDS ---
+# Python
+venv/
+env/
+.venv/
+*.py[cod]
+__pycache__/
+.pytest_cache/
+
+# --- Build / Salida ---
 dist/
 build/
 out/
-/vite.config.ts~
-/vite.config.js~
+.next/
+.nuxt/
+staticfiles/
+backend_tapiceria_api/staticfiles/
 
-# --- CACHÉ Y TEMPORALES ---
+# --- Django ---
+/db.sqlite3
+*.sqlite3
+/migrations/*.py
+!/migrations/__init__.py
+
+# --- Caché y Temporales ---
 .pnp.*
 .pnp/
 .cache/
 .temp/
 .tmp/
 /tmp/
-.pytest_cache/
-__pycache__/
-*.py[cod]
-
-# --- Build / Salida de compilación ---
-dist/
-build/
-out/
-.next/
-.nuxt/
-/static/admin/
-/media/
-
-# --- Logs y Debugging ---
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.swp
-*.swo
-*.map
-
-# --- IDEs y Editores ---
-.vscode/
-.idea/
-.history/
-# --- DEBUGGING Y LOGS ---
 *.log
 *.out
-*.map
 *.swp
 *.swo
 *.bak
 *.orig
 *~
 
-# --- IDEs (VS Code, IntelliJ, etc) ---
+# --- IDEs y Editores ---
 .vscode/
 .idea/
 .history/
@@ -93,42 +67,25 @@ yarn-error.log*
 *.iml
 *.iws
 *.ipr
-.DS_Store
 
-# --- Herramientas y Caché ---
-.pnp.*
-.pnp/
-.cache/
-.temp/
-.tmp/
-.pytest_cache/
-/coverage/
-
-# --- Bases de Datos Locales ---
-*.sqlite3
-
-# --- Archivos Propios / Otros ---
-personal.txt
-image.png
-# --- FRAMEWORKS (Next.js, Nuxt, Django) ---
-.next/
-.nuxt/
-/static/admin/
-/media/
-/db.sqlite3
-/migrations/*.py
-!/migrations/__init__.py
-
-# --- DOCKER ---
-/docker-compose.yml.swp
-/Dockerfile.swp
-
-# --- REPORTES ---
+# --- Reportes ---
 /coverage/
 /reports/
 
-# --- EXCEPCIÓN: Permitir el archivo de ejemplo ---
+# --- Docker ---
+docker-compose.yml.swp
+Dockerfile.swp
+
+# --- Vite ---
+/vite.config.ts~
+/vite.config.js~
+
+# --- Excepciones ---
 !.env.example
-DEPLOY.md
+
+# --- Vercel ---
 .vercel
-.env*
+
+# --- Archivos propios ---
+image.png
+DEPLOY.md

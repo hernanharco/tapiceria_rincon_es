@@ -9,9 +9,10 @@ services:
     env_file:
       - .env
     environment:
-      - USE_REMOTE_DB=True
+      - USE_REMOTE_DB=False
       - PORT=10000
       - DEBUG=True
+      - DB_HOST=172.17.0.1
     volumes:
       - ./backend_tapiceria_api:/app
     networks:

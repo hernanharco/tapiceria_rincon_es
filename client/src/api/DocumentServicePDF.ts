@@ -8,7 +8,10 @@ export const DocumentServicePDF = {
   generateDocUrl: (numero) => {
     if (!numero || numero === '-') return null;
     const baseURL = api.defaults.baseURL;
-    return `${baseURL}/api/documents/print/${numero}/`;
+    // Cache-busting: timestamp para evitar que el navegador móvil
+    // sirva un PDF viejo de su caché cuando la URL es la misma.
+    const cacheBust = Date.now();
+    return `${baseURL}/api/documents/print/${numero}/?_=${cacheBust}`;
   },
 
   /**

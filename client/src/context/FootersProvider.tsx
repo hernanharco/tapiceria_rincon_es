@@ -132,6 +132,13 @@ export const FootersProvider = ({ children }) => {
     [footers]
   );
 
+  // 5b. Verificación AUTORITATIVA vía API (evita falsos negativos del estado local)
+  const footerExistsForDoc = async (docId: string | number): Promise<boolean> => {
+    const res = await api.get(`${API_URL}?footer_documento=${docId}`);
+    if (Array.isArray(res.data)) return res.data.length > 0;
+    return Boolean(res.data);
+  };
+
   // 6. Carga por ID desde API (Híbrido)
   const loadFooterPorId = useCallback(async (id) => {
     try {
@@ -161,6 +168,7 @@ export const FootersProvider = ({ children }) => {
       saveFooter,
       updateFooter,
       getFootersByFieldId,
+      footerExistsForDoc,
       fetchFooterByNum,
     }),
     [
@@ -170,6 +178,7 @@ export const FootersProvider = ({ children }) => {
       cargarFooters,
       loadFooterPorId,
       getFootersByFieldId,
+      footerExistsForDoc,
       fetchFooterByNum,
     ]
   );

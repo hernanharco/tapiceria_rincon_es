@@ -10,6 +10,9 @@ import { useApiTitleTableDocumentsContext } from '@/context/TitleTableDocumentsP
 import { useApiDataDocumentsContext } from '@/context/DataDocumentsProvider';
 import { useApiFootersContext } from '@/context/FootersProvider';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/utils/apiErrorMessage';
+import { validateDocumentSave } from '@/utils/documentSaveValidation';
+import { classifyDuplicateHeader } from '@/utils/duplicateHeader';
 
 export const HistoryModals = ({
   isOpen,
@@ -24,7 +27,8 @@ export const HistoryModals = ({
   const [activeTab, setActiveTab] = useState('info');
 
   // --- LÓGICA DE PROVIDERS ---
-  const { updateDocumentFieldsId, addProduct } = useApiDocumentsContext();
+  const { updateDocumentFieldsId, addProduct, fetchDocumentByNum } =
+    useApiDocumentsContext();
   const {
     addProductTitle,
     getDocumentsByNumTitle,
@@ -37,8 +41,11 @@ export const HistoryModals = ({
     updateProductTable,
     deleteProduct,
   } = useApiDataDocumentsContext();
-  const { /*saveFooter,*/ updateFooter, getFootersByFieldId } =
-    useApiFootersContext();
+  const {
+    /*saveFooter,*/ updateFooter,
+    getFootersByFieldId,
+    footerExistsForDoc,
+  } = useApiFootersContext();
 
   const [datInfo, setDatInfo] = useState({
     dataInfoDocument: '',
@@ -173,6 +180,18 @@ export const HistoryModals = ({
     if (isSaving) return;
     setIsSaving(true);
     try {
+      // --- 0. VALIDAR ANTES DE CREAR NADA (evita cabeceras huérfanas) ---
+      const validation = validateDocumentSave({
+        clientId,
+        date: datInfo.dataInfoDate,
+        docNumber: datInfo.dataInfoDocument,
+        rows: filteredProducts,
+      });
+      if (!validation.ok) {
+        toast.error(validation.message);
+        return;
+      }
+
       // --- 1. PROCESAR ELIMINACIONES PENDIENTES ---
       if (isEditing) {
         if (deletedIds.products.length > 0) {
@@ -200,7 +219,50 @@ export const HistoryModals = ({
           documentPayload,
         );
       } else {
-        headerResponse = await addProduct(documentPayload);
+        // --- CREATE: header POST with duplicate-num_presupuesto recovery ---
+        try {
+          headerResponse = await addProduct(documentPayload);
+        } catch (err) {
+          const data = err?.response?.data;
+          const isDuplicate =
+            err?.response?.status === 400 &&
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            Object.prototype.hasOwnProperty.call(data, 'num_presupuesto');
+          if (!isDuplicate) throw err;
+
+          // Recover the existing document that owns this number.
+          const existing = await fetchDocumentByNum(
+            documentPayload.num_presupuesto,
+          );
+          let hasFooter = existing
+            ? !!getFootersByFieldId(existing.id)
+            : false;
+          try {
+            hasFooter = await footerExistsForDoc(existing.id);
+          } catch {
+            hasFooter = true; // conservative: never wipe a document we cannot verify as footer-less
+          }
+          const decision = classifyDuplicateHeader({
+            existing,
+            clientId,
+            hasFooter,
+          });
+          if (decision.action === 'abort') {
+            toast.error(decision.message);
+            return; // finally → setIsSaving(false)
+          }
+
+          // Reuse the partial artifact: wipe leftover titles/details first.
+          const [oldTitles, oldDetails] = await Promise.all([
+            getDocumentsByNumTitle(existing.id),
+            getDocumentsByNum(existing.id),
+          ]);
+          await Promise.all(oldTitles.map((t) => deleteProductTitle(t.id)));
+          await Promise.all(oldDetails.map((d) => deleteProduct(d.id)));
+          headerResponse = existing;
+        }
       }
 
       const documentId = headerResponse.id;
@@ -261,7 +323,7 @@ export const HistoryModals = ({
         // updateFooter decidirá internamente si llamar a saveFooter (POST) o hacer PATCH
         await updateFooter(documentId, footerPayload);
       } catch (footerError) {
-        console.error('Error al procesar el footer:', footerError);
+        console.error('Error al procesar el footer:', getApiErrorMessage(footerError));
         // Aquí podrías decidir si quieres lanzar el error o que el proceso siga
       }
 
@@ -270,7 +332,7 @@ export const HistoryModals = ({
       onClose();
     } catch (error) {
       console.error('Error general:', error);
-      toast.error('Error al guardar: ' + (error.message || 'Error desconocido'));
+      toast.error('Error al guardar: ' + getApiErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
