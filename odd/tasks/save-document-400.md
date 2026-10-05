@@ -49,7 +49,7 @@ El cliente no puede guardar un "Nuevo Presupuesto" desde `/clientes`; el modal m
 
 ## Evidencia de commits
 
-- `085021b` — `fix(client): stop 400 error when saving a new document` en `fix/save-document-400` (10 archivos, +747/−10; incluye tests y documento ODD). No se incluyó la modificación preexistente de `docker-compose.yml`. No push/PR (decisión del usuario).
+- `2a36e04` — `fix(client): stop 400 error when saving a new document` en `fix/save-document-400` (10 archivos, +747/−10; incluye tests y documento ODD). No se incluyó la modificación preexistente de `docker-compose.yml`. No push/PR (decisión del usuario).
 
 ## Cierre
 
