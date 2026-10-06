@@ -309,6 +309,39 @@ export const HistoryTableDocumentView = ({
                         ? dayjs(item.fecha_factalb).format('DD/MM/YYYY')
                         : '-'}
                     </div>
+                    {/* Confirmar albarán → factura (paridad con la vista móvil) */}
+                    <div className="flex justify-center items-center mt-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleChecklistItem(item.id, '2');
+                        }}
+                        disabled={!!item.num_factura}
+                        aria-label={`Convertir ${item.num_albaran || 'albarán'} a factura`}
+                        title={
+                          item.num_factura
+                            ? 'Factura ya generada'
+                            : 'Convertir albarán a factura'
+                        }
+                        className={`${checkStyle} ${
+                          item.num_factura
+                            ? 'opacity-50 cursor-not-allowed'
+                            : ''
+                        }`}
+                      >
+                        <div
+                          className={`w-7 h-7 flex items-center justify-center rounded-full border shadow-sm ${
+                            item.num_albaran
+                              ? 'bg-green-600 border-green-600 text-white'
+                              : 'bg-white border-gray-300 text-gray-600'
+                          }`}
+                        >
+                          {item.num_albaran && (
+                            <FaCheck className="w-3 h-3" aria-hidden="true" />
+                          )}
+                        </div>
+                      </button>
+                    </div>
                   </td>
                   <td className="px-3 py-2 text-center">
                     <div
